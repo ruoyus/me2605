@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ME2605: Training Neural Networks: Theory and Practice</title>
+<meta name="description" content="ME2605 Training Neural Networks: Theory and Practice — a PhD-level course on neural network training with emphasis on large language models. CUHK-Shenzhen, Fall 2026.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="index.html"><span class="code">ME2605</span></a>
+    <nav class="nav-links">
+      <a href="#overview"><span class="lang-en">Overview</span><span class="lang-zh">简介</span></a>
+      <a href="#prerequisites"><span class="lang-en">Prerequisites</span><span class="lang-zh">先修</span></a>
+      <a href="#schedule"><span class="lang-en">Schedule</span><span class="lang-zh">日程</span></a>
+      <a href="#assignments"><span class="lang-en">Assignments</span><span class="lang-zh">作业</span></a>
+      <a href="#resources"><span class="lang-en">Resources</span><span class="lang-zh">资料</span></a>
+      <button class="lang-toggle" type="button">中文</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section id="overview">
+  <h1><span class="lang-en">Training Neural Networks: Theory and Practice</span><span class="lang-zh">神经网络训练：理论与实践</span></h1>
+  <p class="subtitle">
+    <span class="tag">ME2605</span><span class="tag"><span class="lang-en">Fall 2026</span><span class="lang-zh">2026 秋季</span></span>
+    <span class="lang-en">School of Data Science, CUHK-Shenzhen</span>
+    <span class="lang-zh">香港中文大学（深圳）数据科学学院</span>
+  </p>
+  <p class="meta-line"><span class="lang-en">Instructor: Ruoyu Sun</span><span class="lang-zh">授课教师：孙若愚</span></p>
+  <p class="meta-line"><span class="lang-en">Contact: course announcements and Q&amp;A are made in class / via the course platform.</span>
+     <span class="lang-zh">联系方式：课程公告与答疑通过课堂及课程平台发布。</span></p>
+
+  <h2 style="margin-top:26px"><span class="lang-en">What is this course about?</span><span class="lang-zh">课程简介</span></h2>
+  <p class="lang-en">
+    This PhD-level course develops a principled and practical understanding of neural network training,
+    with particular emphasis on large language models. It connects mathematical foundations, empirical
+    analysis, and systems considerations to explain how modern models are trained, why training succeeds
+    or fails, and how training can be made more effective and efficient. Through lectures, hands-on
+    experiments, and an open-ended project, students learn to analyze training behavior, evaluate
+    competing explanations, and design reproducible improvements to real training pipelines.
+  </p>
+  <p class="lang-zh">
+    这门博士生课程旨在建立对神经网络训练的原则性理解与实用能力，重点放在大语言模型上。课程将数学基础、
+    实证分析与系统视角相结合，解释现代模型如何被训练、训练为何成功或失败，以及如何让训练更有效、更高效。
+    通过课堂讲授、动手实验和开放性项目，学生将学会分析训练行为、评估不同解释，
+    并为真实训练流程设计可复现的改进。
+  </p>
+</section>
+
+<!-- ============ PREREQUISITES ============ -->
+<section id="prerequisites">
+  <h2><span class="lang-en">Prerequisites</span><span class="lang-zh">先修要求</span></h2>
+  <ul>
+    <li class="lang-en"><b>Proficiency in Python and PyTorch</b> — the assignments are implementation-heavy.</li>
+    <li class="lang-zh"><b>熟练使用 Python 与 PyTorch</b> —— 本课程的作业以动手实现为主。</li>
+    <li class="lang-en"><b>College Calculus and Linear Algebra</b> — matrix/vector notation and operations.</li>
+    <li class="lang-zh"><b>微积分与线性代数</b> —— 熟悉矩阵/向量记号与运算。</li>
+    <li class="lang-en"><b>Probability and Statistics</b> — basics of distributions, expectation, variance.</li>
+    <li class="lang-zh"><b>概率与统计</b> —— 分布、期望、方差等基础。</li>
+    <li class="lang-en"><b>Machine Learning</b> — basics of supervised learning and deep learning.</li>
+    <li class="lang-zh"><b>机器学习</b> —— 监督学习与深度学习基础。</li>
+  </ul>
+</section>
+
+<!-- ============ SCHEDULE ============ -->
+<section id="schedule">
+  <h2><span class="lang-en">Schedule</span><span class="lang-zh">日程安排</span></h2>
+  <p class="subtitle lang-en">Tentative. Slides are attached to each session as the semester progresses.</p>
+  <p class="subtitle lang-zh">暂定安排。课件将在学期进行中逐次附上。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th><span class="lang-en">Topic</span><span class="lang-zh">主题</span></th>
+        <th><span class="lang-en">Slides / Materials</span><span class="lang-zh">课件 / 材料</span></th>
+        <th><span class="lang-en">Hands-on</span><span class="lang-zh">实践</span></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part 0 — Quick Guide to Run Neural Net Training</span><span class="lang-zh">Part 0 — 快速上手运行神经网络训练</span></td></tr>
+      <tr>
+        <td class="week">1</td>
+        <td><span class="lang-en">Run MLP for image classification: matrix-form back-propagation, cross-entropy, automatic differentiation</span>
+            <span class="lang-zh">用 MLP 做图像分类：矩阵形式反向传播、交叉熵、自动微分</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Implement a small MLP on MNIST (with the aid of AI)</span><span class="lang-zh">在 MNIST 上实现小型 MLP（可借助 AI）</span></td>
+      </tr>
+
+      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part I — Foundations of Neural Network Training</span><span class="lang-zh">Part I — 神经网络训练基础</span></td></tr>
+      <tr>
+        <td class="week">2</td>
+        <td><span class="lang-en">Optimization algorithms and stochastic training: GD, SGD with momentum, learning-rate selection; AdaGrad, RMSProp, Adam; convergence theory of Adam</span>
+            <span class="lang-zh">优化算法与随机训练：GD、带动量 SGD、学习率选择；AdaGrad、RMSProp、Adam；Adam 收敛理论</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Compare optimizers</span><span class="lang-zh">比较不同优化器</span></td>
+      </tr>
+      <tr>
+        <td class="week">3</td>
+        <td><span class="lang-en">Initialization and signal propagation: forward/backward signal propagation, activation functions, Xavier/He initialization, dynamical isometry</span>
+            <span class="lang-zh">初始化与信号传播：前向/后向信号传播、激活函数、Xavier/He 初始化、动力等距</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Measure activation and gradient statistics across depth</span><span class="lang-zh">测量不同深度的激活与梯度统计量</span></td>
+      </tr>
+      <tr>
+        <td class="week">4</td>
+        <td><span class="lang-en">Normalization, skip connections and landscape: BatchNorm, LayerNorm, RMSNorm; residual MLPs; local loss geometry</span>
+            <span class="lang-zh">归一化、跳跃连接与损失景观：BatchNorm、LayerNorm、RMSNorm；残差 MLP；局部损失几何</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Visualize landscape; train MLP and ResNet</span><span class="lang-zh">可视化损失景观；训练 MLP 与 ResNet</span></td>
+      </tr>
+
+      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>
+      <tr>
+        <td class="week">5</td>
+        <td><span class="lang-en">Seq2Seq, Transformers and nanoGPT: next-token prediction, tokenization, self-attention, multi-head attention, Transformer blocks</span>
+            <span class="lang-zh">Seq2Seq、Transformer 与 nanoGPT：next-token 预测、分词、自注意力、多头注意力、Transformer 模块</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Pre-train a small nanoGPT model</span><span class="lang-zh">预训练小型 nanoGPT 模型</span></td>
+      </tr>
+      <tr>
+        <td class="week">6</td>
+        <td><span class="lang-en">Supervised fine-tuning and LoRA: instruction/response formatting, full fine-tuning, forgetting; low-rank updates, rank and scaling, memory accounting</span>
+            <span class="lang-zh">监督微调与 LoRA：指令/回复格式、全量微调、遗忘问题；低秩更新、秩与缩放、显存核算</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Fine-tune a common LLM</span><span class="lang-zh">微调一个常见 LLM</span></td>
+      </tr>
+      <tr>
+        <td class="week">7</td>
+        <td><span class="lang-en">Distributed training: data parallelism, all-reduce, gradient accumulation, communication cost; scaling efficiency; acceleration theory</span>
+            <span class="lang-zh">分布式训练：数据并行、all-reduce、梯度累积、通信开销；扩展效率；加速理论</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Train on 4–8 NPUs</span><span class="lang-zh">在 4–8 张 NPU 上训练</span></td>
+      </tr>
+
+      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part III — Advanced LLM Training</span><span class="lang-zh">Part III — 进阶 LLM 训练</span></td></tr>
+      <tr>
+        <td class="week">8</td>
+        <td><span class="lang-en">Advanced architecture: sparse attention, GQA, MLA, DSA; MoE (optional)</span>
+            <span class="lang-zh">先进架构：稀疏注意力、GQA、MLA、DSA；MoE（可选）</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="week">9</td>
+        <td><span class="lang-en">Second-order optimization: relation of Adam and Gauss–Newton; Shampoo and Kronecker factorization; muon and matrix orthogonalization</span>
+            <span class="lang-zh">二阶优化：Adam 与 Gauss–Newton 的关系；Shampoo 与 Kronecker 分解；muon 与矩阵正交化</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="week">10</td>
+        <td><span class="lang-en">Advanced theory — Hessian structure and spectra: Hessian–vector product, computing the spectrum, Hessian structure of neural nets</span>
+            <span class="lang-zh">进阶理论——Hessian 结构与谱：Hessian–vector product、谱的计算、神经网络 Hessian 结构</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="week">11</td>
+        <td><span class="lang-en">Kernels and performance optimization: kernels and hardware architecture; Flash Attention</span>
+            <span class="lang-zh">Kernel 与性能优化：kernel 与硬件架构；Flash Attention</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="week">12</td>
+        <td><span class="lang-en">Scaling laws: Kaplan/Chinchilla-style scaling relations; model–data–systems tradeoffs under a fixed budget</span>
+            <span class="lang-zh">Scaling law：Kaplan/Chinchilla 式缩放关系；固定预算下的模型–数据–系统权衡</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="week">13</td>
+        <td><span class="lang-en">Advanced topics — precision and/or data selection: bf16 &amp; fp32; error analysis</span>
+            <span class="lang-zh">进阶专题——精度与/或数据选择：bf16 与 fp32；误差分析</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+
+      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Final</span><span class="lang-zh">结课</span></td></tr>
+      <tr>
+        <td class="week">14</td>
+        <td><span class="lang-en">Open poster symposium: student presentations of pre-training, LoRA, or theory projects</span>
+            <span class="lang-zh">开放海报研讨会：学生展示预训练、LoRA 或理论项目</span></td>
+        <td></td>
+        <td><span class="lang-en">Poster session</span><span class="lang-zh">海报展示</span></td>
+      </tr>
+
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ ASSIGNMENTS ============ -->
+<section id="assignments">
+  <h2><span class="lang-en">Assignments</span><span class="lang-zh">作业</span></h2>
+  <ul>
+    <li class="lang-en"><b>A1 — MLP on MNIST:</b> implement a small MLP for image classification.</li>
+    <li class="lang-zh"><b>A1 —— MNIST 上的 MLP：</b> 实现小型 MLP 完成图像分类。</li>
+    <li class="lang-en"><b>A2 — Optimization and training dynamics:</b> compare optimizers and analyze training behavior.</li>
+    <li class="lang-zh"><b>A2 —— 优化与训练动力学：</b> 比较优化器并分析训练行为。</li>
+    <li class="lang-en"><b>A3 — Initialization and signal propagation:</b> measure activation and gradient statistics.</li>
+    <li class="lang-zh"><b>A3 —— 初始化与信号传播：</b> 测量激活与梯度统计量。</li>
+    <li class="lang-en"><b>A4 — nanoGPT pre-training:</b> train a small decoder-only language model.</li>
+    <li class="lang-zh"><b>A4 —— nanoGPT 预训练：</b> 训练一个小型仅解码器语言模型。</li>
+    <li class="lang-en"><b>A5 — SFT and LoRA:</b> fine-tune an LLM and study forgetting and memory usage.</li>
+    <li class="lang-zh"><b>A5 —— SFT 与 LoRA：</b> 微调 LLM，研究遗忘与显存占用。</li>
+    <li class="lang-en"><b>Course project:</b> an open-ended project (pre-training / fine-tuning pipeline, a theoretical study with experiments, or another training-related project) presented at the final poster symposium.</li>
+    <li class="lang-zh"><b>课程项目：</b> 开放性项目（预训练/微调流程、带实验的理论研究，或其他训练相关课题），在结课海报研讨会展示。</li>
+  </ul>
+</section>
+
+<!-- ============ RESOURCES ============ -->
+<section id="resources">
+  <h2><span class="lang-en">Resources</span><span class="lang-zh">参考资料</span></h2>
+  <ul>
+    <li class="lang-en">Lecture notes: <i>Optimization for Deep Learning</i> (draft), Ruoyu Sun.</li>
+    <li class="lang-zh">讲义：<i>Optimization for Deep Learning</i>（草稿），孙若愚。</li>
+    <li class="lang-en"><a href="https://stanford-cs336.github.io/">Stanford CS336: Language Modeling from Scratch</a></li>
+    <li class="lang-zh"><a href="https://stanford-cs336.github.io/">斯坦福 CS336：Language Modeling from Scratch</a></li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <p><span class="lang-en">ME2605 Training Neural Networks: Theory and Practice · Fall 2026 · School of Data Science, CUHK-Shenzhen</span>
+     <span class="lang-zh">ME2605 神经网络训练：理论与实践 · 2026 秋季 · 香港中文大学（深圳）数据科学学院</span></p>
+</footer>
+
+<script src="assets/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Propagation Lab — ME2605 Week 2 Demo</title>
+<meta name="description" content="Interactive demo for ME2605: how the initialization scale controls signal propagation through the layers, and why that decides whether a deep network trains at all.">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
+  --accent-soft:#eaf2f8; --border:#e2e2e2; --code-bg:#f6f8fa; --maxw:1120px;
+  --good:#1e8449; --low:#2471a3; --high:#b03a2e; --warn:#b7791f;
+  --pre:#b7791f; --post:#1a5276; --grad:#6b46c1; --ref:#95a5a6;
+  --panel:#fbfcfd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);line-height:1.6;font-size:15.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+
+header.site-header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:54px;gap:12px}
+.brand{font-weight:700;white-space:nowrap;color:var(--fg)}
+.brand .code{color:var(--accent)}
+.nav-links{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.nav-links a,.nav-links button{font-size:.9rem;padding:6px 11px;border-radius:6px;color:var(--fg);background:none;
+  border:1px solid transparent;cursor:pointer;font-family:inherit}
+.nav-links a:hover,.nav-links button:hover{background:var(--accent-soft);text-decoration:none}
+.nav-links a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lang-toggle{border:1px solid var(--border)!important}
+main{max-width:var(--maxw);margin:0 auto;padding:26px 20px 70px}
+h1{font-size:1.75rem;line-height:1.3;margin-bottom:6px}
+h2{font-size:1.2rem;margin:0 0 12px}
+h3{font-size:1rem;margin:0 0 8px}
+p{margin-bottom:11px}
+ul{margin:0 0 12px 20px}
+li{margin-bottom:5px}
+.subtitle{color:var(--muted)}
+.lede{color:var(--muted);margin-bottom:18px}
+.tag{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:20px;
+  padding:2px 12px;font-size:.8rem;margin-right:8px;font-weight:600}
+.callout{background:var(--accent-soft);border-left:4px solid var(--accent);padding:12px 16px;
+  border-radius:0 8px 8px 0;margin:14px 0}
+.callout.warn{background:#fdf6e3;border-left-color:var(--warn)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-lab{display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start}
+.eq{font-family:Georgia,"Times New Roman",serif;font-size:1.12rem;text-align:center;
+  background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:12px auto;max-width:760px}
+.eq .tag{display:block;font-size:.78rem;color:var(--muted);margin-top:6px;font-weight:400;background:none;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:.87rem}
+
+/* ---- intro slides ---- */
+.slides{position:relative;min-height:430px;background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:26px 30px 60px}
+.slide{display:none}
+.slide.on{display:block}
+.slide h2{font-size:1.35rem;margin-bottom:4px}
+.slide .num{font-size:.78rem;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.slide-nav{position:absolute;left:30px;right:30px;bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.dots{display:flex;gap:7px}
+.dot{width:9px;height:9px;border-radius:50%;background:#cbd5dd;border:none;cursor:pointer;padding:0}
+.dot.on{background:var(--accent);transform:scale(1.15)}
+.btn{font-family:inherit;font-size:.9rem;font-weight:600;border:1px solid var(--border);background:#fff;
+  color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.12);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sm{font-size:.82rem;padding:5px 10px}
+
+/* ---- controls ---- */
+.ctrl{margin-bottom:14px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.86rem;font-weight:600;margin-bottom:4px}
+.ctrl label .val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);font-size:.95rem}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+select{width:100%;font-family:inherit;font-size:.9rem;padding:6px 8px;border:1px solid var(--border);
+  border-radius:6px;background:#fff}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 16px}
+.chk{display:flex;align-items:center;gap:7px;font-size:.86rem;margin-bottom:7px;cursor:pointer}
+.chk input{accent-color:var(--accent)}
+
+/* ---- charts ---- */
+.chart-wrap{position:relative}
+canvas{display:block;width:100%;background:#fff;border:1px solid var(--border);border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.84rem;margin:8px 0 4px}
+.legend span{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.swatch{width:16px;height:3px;border-radius:2px;display:inline-block}
+.swatch.sq{width:11px;height:11px;border-radius:3px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:12px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 12px}
+.stat .k{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.stat .v{font-family:ui-monospace,Menlo,monospace;font-size:1.06rem;font-weight:700}
+.verdict{margin-top:12px;border-radius:8px;padding:11px 15px;font-weight:600;font-size:.95rem;border:1px solid}
+.verdict.ok{background:#eafaf0;border-color:#a9dfbf;color:var(--good)}
+.verdict.low{background:#eaf2f8;border-color:#aed6f1;color:var(--low)}
+.verdict.high{background:#fdedec;border-color:#f5b7b1;color:var(--high)}
+.badge{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:20px;margin-left:8px}
+.badge.low{background:#eaf2f8;color:var(--low)}
+.badge.ok{background:#eafaf0;color:var(--good)}
+.badge.high{background:#fdedec;color:var(--high)}
+.footer-note{border-top:1px solid var(--border);margin-top:34px;padding-top:16px;color:var(--muted);font-size:.85rem}
+html[data-lang="zh"] .lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+@media (max-width:900px){.grid-lab{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}
+  .slides{padding:20px 18px 64px}.slide-nav{left:18px;right:18px}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Signal Propagation Lab</span><span class="lang-zh">信号传播实验室</span></a>
+    <nav class="nav-links">
+      <button id="nav-intro" class="active" type="button"><span class="lang-en">1 · Background</span><span class="lang-zh">1 · 背景</span></button>
+      <button id="nav-lab" type="button"><span class="lang-en">2 · The Lab</span><span class="lang-zh">2 · 实验台</span></button>
+      <a href="../../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
+      <button class="lang-toggle" id="langBtn" type="button">中文</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ================= 1. BACKGROUND ================= -->
+<section id="view-intro">
+  <h1><span class="lang-en">Why initialization decides whether a deep network can train</span>
+      <span class="lang-zh">为什么初始化决定了深层网络能否被训练</span></h1>
+  <p class="lede"><span class="lang-en">A five-slide background, then an interactive lab where you control the initialization scale and watch the signal travel through the layers.</span>
+     <span class="lang-zh">先看五页背景，然后进入交互实验台：自己调节初始化尺度，观察信号在各层之间如何传播。</span></p>
+
+  <div class="slides" id="slides">
+
+    <!-- 1 -->
+    <div class="slide on">
+      <div class="num">1 / 5</div>
+      <h2><span class="lang-en">A fully connected network is a stack of affine maps and activations</span>
+          <span class="lang-zh">全连接网络 = 一串仿射变换 + 激活函数</span></h2>
+      <p><span class="lang-en">A standard <b>L</b>-layer fully connected network (FCN, a.k.a. MLP) is</span>
+         <span class="lang-zh">一个标准的 <b>L</b> 层全连接网络（FCN，也叫 MLP）写作</span></p>
+      <div class="eq">f<sub>θ</sub>(x) = W<sup>L</sup> φ( ⋯ φ(W<sup>2</sup> φ(W<sup>1</sup>x + b<sup>1</sup>) + b<sup>2</sup>) ⋯ ) + b<sup>L</sup></div>
+      <p><span class="lang-en">or, with a clean recursion,</span><span class="lang-zh">或者写成更清爽的递推形式：</span></p>
+      <div class="eq">z<sup>0</sup> = x &nbsp;&nbsp;·&nbsp;&nbsp; z<sup>l</sup> = φ(W<sup>l</sup> z<sup>l−1</sup> + b<sup>l</sup>) &nbsp;&nbsp;·&nbsp;&nbsp; f<sub>θ</sub>(x) = W<sup>L</sup> z<sup>L−1</sup> + b<sup>L</sup></div>
+      <ul class="small">
+        <li><span class="lang-en">φ is the activation, applied element-wise; W<sup>l</sup> has dimension d<sub>l</sub> × d<sub>l−1</sub>; the parameters are θ = {W<sup>l</sup>, b<sup>l</sup>}.</span>
+            <span class="lang-zh">φ 是逐元素作用的激活函数；W<sup>l</sup> 的维度是 d<sub>l</sub> × d<sub>l−1</sub>；参数为 θ = {W<sup>l</sup>, b<sup>l</sup>}。</span></li>
+        <li><span class="lang-en">d<sub>0</sub> = d<sub>x</sub> (input dimension) and d<sub>L</sub> = d<sub>y</sub> (output dimension).</span>
+            <span class="lang-zh">d<sub>0</sub> = d<sub>x</sub>（输入维度），d<sub>L</sub> = d<sub>y</sub>（输出维度）。</span></li>
+        <li><span class="lang-en">Slide content follows the course book, <i>Optimization for Deep Learning</i>, §2.1.</span>
+            <span class="lang-zh">本页内容对应讲义 <i>Optimization for Deep Learning</i> 第 2.1 节。</span></li>
+      </ul>
+      <svg viewBox="0 0 720 130" style="width:100%;max-width:720px;height:auto;margin:6px auto 0;display:block">
+        <g font-family="-apple-system,Arial" font-size="13" text-anchor="middle">
+          <circle cx="45" cy="65" r="21" fill="#eaf2f8" stroke="#1a5276" stroke-width="1.5"/>
+          <text x="45" y="70" fill="#1a5276" font-weight="700">x</text>
+          <text x="45" y="105" fill="#5a5a5a" font-size="11">z⁰ = x</text>
+          <path d="M72 65 H108" stroke="#95a5a6" stroke-width="2" marker-end="url(#ar)"/>
+          <rect x="115" y="35" width="88" height="60" rx="9" fill="#fff" stroke="#b7791f" stroke-width="1.5"/>
+          <text x="159" y="60" fill="#b7791f" font-weight="700">W¹ , b¹</text>
+          <text x="159" y="80" fill="#5a5a5a" font-size="11">h¹ → z¹ = φ(h¹)</text>
+          <path d="M210 65 H246" stroke="#95a5a6" stroke-width="2" marker-end="url(#ar)"/>
+          <rect x="253" y="35" width="88" height="60" rx="9" fill="#fff" stroke="#b7791f" stroke-width="1.5"/>
+          <text x="297" y="60" fill="#b7791f" font-weight="700">W² , b²</text>
+          <text x="297" y="80" fill="#5a5a5a" font-size="11">h² → z²</text>
+          <path d="M348 65 H384" stroke="#95a5a6" stroke-width="2" marker-end="url(#ar)"/>
+          <text x="410" y="71" fill="#5a5a5a" font-size="17">⋯</text>
+          <path d="M436 65 H472" stroke="#95a5a6" stroke-width="2" marker-end="url(#ar)"/>
+          <rect x="479" y="35" width="88" height="60" rx="9" fill="#fff" stroke="#b7791f" stroke-width="1.5"/>
+          <text x="523" y="60" fill="#b7791f" font-weight="700">W<tspan font-size="10" dy="-6">L</tspan><tspan dy="6"> , b</tspan><tspan font-size="10" dy="-6">L</tspan></text>
+          <text x="523" y="80" fill="#5a5a5a" font-size="11">f<tspan font-size="9" dy="4">θ</tspan><tspan dy="-4">(x)</tspan></text>
+          <path d="M574 65 H610" stroke="#95a5a6" stroke-width="2" marker-end="url(#ar)"/>
+          <circle cx="638" cy="65" r="21" fill="#eaf2f8" stroke="#1a5276" stroke-width="1.5"/>
+          <text x="638" y="70" fill="#1a5276" font-weight="700">f<tspan font-size="10" dy="4">θ</tspan></text>
+          <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+            <path d="M0 0 L7 3.5 L0 7 z" fill="#95a5a6"/></marker></defs>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 2 -->
+    <div class="slide">
+      <div class="num">2 / 5</div>
+      <h2><span class="lang-en">Two values per layer: pre-activation and post-activation</span>
+          <span class="lang-zh">每一层有两个量：pre-activation 与 post-activation</span></h2>
+      <p><span class="lang-en">Each layer's operation splits into two stages — an affine transformation, then a non-linear activation:</span>
+         <span class="lang-zh">每层的运算分成两步——先做仿射变换，再做非线性激活：</span></p>
+      <div class="eq">
+        pre-activation:&nbsp; h<sup>l</sup> = W<sup>l</sup> z<sup>l−1</sup> + b<sup>l</sup>, &nbsp; l = 1, …, L<br>
+        post-activation:&nbsp; z<sup>l</sup> = φ(h<sup>l</sup>), &nbsp; l = 1, …, L−1
+        <span class="tag">The last layer is usually taken without activation: f<sub>θ</sub>(x) = h<sup>L</sup>.</span>
+      </div>
+      <p><span class="lang-en">This lab's dashboard tracks <b>both</b> of them, layer by layer. That is the whole point: the size of h<sup>l</sup> tells you what the weights did, and the size of z<sup>l</sup> tells you what survives into the next layer.</span>
+         <span class="lang-zh">本实验台的看板会<b>同时</b>跟踪这两个量。这正是关键：h<sup>l</sup> 的大小反映了权重做了什么，z<sup>l</sup> 的大小则决定了有多少信号能传到下一层。</span></p>
+      <svg viewBox="0 0 700 150" style="width:100%;max-width:700px;height:auto;margin:6px auto 0;display:block">
+        <g font-family="-apple-system,Arial" font-size="13" text-anchor="middle">
+          <rect x="18" y="46" width="96" height="52" rx="9" fill="#eaf2f8" stroke="#1a5276" stroke-width="1.4"/>
+          <text x="66" y="77" fill="#1a5276" font-weight="700">z<tspan font-size="10" dy="-6">l−1</tspan></text>
+          <text x="66" y="118" fill="#5a5a5a" font-size="11">layer l−1 output</text>
+          <path d="M122 72 H186" stroke="#95a5a6" stroke-width="2" marker-end="url(#a2)"/>
+          <text x="154" y="60" fill="#5a5a5a" font-size="11">× W<tspan font-size="9" dy="-5">l</tspan><tspan dy="5"> + b</tspan><tspan font-size="9" dy="-5">l</tspan></text>
+          <rect x="194" y="40" width="118" height="64" rx="9" fill="#fdf6e3" stroke="#b7791f" stroke-width="1.6"/>
+          <text x="253" y="68" fill="#b7791f" font-weight="700">h<tspan font-size="10" dy="-6">l</tspan></text>
+          <text x="253" y="92" fill="#5a5a5a" font-size="11">pre-activation</text>
+          <path d="M320 72 H384" stroke="#95a5a6" stroke-width="2" marker-end="url(#a2)"/>
+          <text x="352" y="60" fill="#5a5a5a" font-size="12">φ ( · )</text>
+          <rect x="392" y="40" width="118" height="64" rx="9" fill="#eafaf0" stroke="#1e8449" stroke-width="1.6"/>
+          <text x="451" y="68" fill="#1e8449" font-weight="700">z<tspan font-size="10" dy="-6">l</tspan></text>
+          <text x="451" y="92" fill="#5a5a5a" font-size="11">post-activation</text>
+          <path d="M518 72 H582" stroke="#95a5a6" stroke-width="2" marker-end="url(#a2)"/>
+          <text x="600" y="77" fill="#5a5a5a" font-size="13">to layer l+1</text>
+          <defs><marker id="a2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+            <path d="M0 0 L7 3.5 L0 7 z" fill="#95a5a6"/></marker></defs>
+        </g>
+      </svg>
+      <p class="small muted" style="margin-top:8px"><span class="lang-en">The same decomposition is what backpropagation uses: it needs the derivative φ′(h<sup>l</sup>) at the pre-activation.</span>
+      <span class="lang-zh">反向传播用的也是同一套分解——它需要 pre-activation 处的导数 φ′(h<sup>l</sup>)。</span></p>
+    </div>
+
+    <!-- 3 -->
+    <div class="slide">
+      <div class="num">3 / 5</div>
+      <h2><span class="lang-en">Signal propagation: what happens to the scale as depth grows?</span>
+          <span class="lang-zh">信号传播：层数变深时，信号的大小会怎样？</span></h2>
+      <p><span class="lang-en">Depth is a product of matrices: z<sup>L</sup> = W<sup>L</sup> W<sup>L−1</sup> ⋯ W<sup>1</sup> x (for a linear network). If each step multiplies the norm by a number slightly different from 1, the effect compounds exponentially.</span>
+         <span class="lang-zh">深度本质上是一串矩阵相乘：对线性网络，z<sup>L</sup> = W<sup>L</sup> W<sup>L−1</sup> ⋯ W<sup>1</sup> x。只要每一步把范数乘上一个略偏离 1 的因子，累积起来就是指数级的效果。</span></p>
+      <div class="eq">‖z<sup>L</sup>‖ ≈ ‖x‖ · c<sup>L</sup>
+        <span class="tag">c &lt; 1 → vanishing &nbsp;·&nbsp; c ≈ 1 → preserved &nbsp;·&nbsp; c &gt; 1 → exploding</span></div>
+      <p><span class="lang-en">We want the "energy" of the output to be comparable to the input — the <b>energy-preserving principle</b>:</span>
+         <span class="lang-zh">我们希望输出的"能量"与输入相当，也就是<b>能量守恒原则</b>：</span></p>
+      <div class="eq">E‖ W<sup>L</sup> ⋯ W<sup>1</sup> x ‖² / d<sub>L</sub> &nbsp;=&nbsp; ‖x‖² / d<sub>0</sub></div>
+      <p class="small"><span class="lang-en">That is why the lab plots the <b>per-unit RMS</b> (‖·‖² divided by the width) — on that scale the target is a flat horizontal line at the input value, for every depth.</span>
+         <span class="lang-zh">所以实验台画的是<b>单位维度 RMS</b>（‖·‖² 除以宽度）——在这个尺度下，理想情况就是从输入到输出的一条水平线，与深度无关。</span></p>
+    </div>
+
+    <!-- 4 -->
+    <div class="slide">
+      <div class="num">4 / 5</div>
+      <h2><span class="lang-en">The initialization scale is the knob that sets c</span>
+          <span class="lang-zh">初始化尺度就是控制 c 的那个旋钮</span></h2>
+      <p><span class="lang-en">Draw the weights i.i.d. from a Gaussian whose variance is scaled by the fan-in, with a tunable <b>gain g</b>:</span>
+         <span class="lang-zh">让权重独立地取自高斯分布，方差按 fan-in 缩放，并留一个可调的<b>增益 g</b>：</span></p>
+      <div class="eq">W<sup>l</sup><sub>ij</sub> ~ N( 0 , g² / d<sub>l−1</sub> )
+        <span class="tag">g = 1 → Bottou–LeCun (var = 1/fan-in) &nbsp;·&nbsp; g = √2 → He / Kaiming (for ReLU)</span></div>
+      <p><span class="lang-en">Both classical recipes are the same formula at a different gain. Set the gain too low and the signal decays to nothing; too high and it blows up. Somewhere in between, the network sits at the critical point where the signal neither vanishes nor explodes.</span>
+         <span class="lang-zh">两个经典方案其实是同一个公式、不同的增益。增益太小信号会衰减到零，太大则会爆炸；而在中间某个位置，网络处于临界点——信号既不消失也不爆炸。</span></p>
+      <svg viewBox="0 0 700 180" style="width:100%;max-width:700px;height:auto;margin:8px auto 0;display:block">
+        <g font-family="-apple-system,Arial" font-size="12">
+          <line x1="60" y1="150" x2="660" y2="150" stroke="#cbd5dd"/>
+          <line x1="60" y1="20" x2="60" y2="150" stroke="#cbd5dd"/>
+          <text x="360" y="172" text-anchor="middle" fill="#5a5a5a">layer index l</text>
+          <text x="18" y="90" fill="#5a5a5a" transform="rotate(-90 18 90)" text-anchor="middle">per-unit RMS</text>
+          <path d="M60 42 L660 148" stroke="#2471a3" stroke-width="2.5" fill="none"/>
+          <text x="606" y="140" fill="#2471a3" font-weight="700">g &lt; 1: vanishes</text>
+          <line x1="60" y1="62" x2="660" y2="62" stroke="#1e8449" stroke-width="2.5"/>
+          <text x="606" y="54" fill="#1e8449" font-weight="700">g ≈ g*: preserved</text>
+          <path d="M60 42 L660 16" stroke="#b03a2e" stroke-width="2.5" fill="none"/>
+          <text x="606" y="30" fill="#b03a2e" font-weight="700">g &gt; 1: explodes</text>
+          <line x1="60" y1="42" x2="660" y2="42" stroke="#95a5a6" stroke-width="1.5" stroke-dasharray="6 5"/>
+          <text x="64" y="36" fill="#95a5a6">input scale</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 5 -->
+    <div class="slide">
+      <div class="num">5 / 5</div>
+      <h2><span class="lang-en">A note on the numbers we report: error, not loss</span>
+          <span class="lang-zh">关于报告什么数字：用 error，而不是 loss</span></h2>
+      <p><span class="lang-en">Training minimises a <b>loss</b> (here, binary cross-entropy) because a smooth surrogate is what gradient descent can handle. But the quantity you actually care about is the <b>error</b> — the fraction of misclassified examples.</span>
+         <span class="lang-zh">训练时最小化的是 <b>loss</b>（这里是二元交叉熵），因为梯度下降需要一个光滑的替代目标。但你真正关心的是 <b>error</b>——分类错误的样本比例。</span></p>
+      <div class="callout">
+        <span class="lang-en">The two are different objects: a local minimum of the training loss is not necessarily a local minimum of the training error. The lab therefore plots <b>training error</b> and <b>test error</b> directly, so you can read the story off the y-axis without translating through a log-loss scale.</span>
+        <span class="lang-zh">两者不是一回事：训练 loss 的局部极小点未必是训练 error 的局部极小点。因此实验台直接画 <b>训练 error</b> 与 <b>测试 error</b>，你可以直接从纵轴读出结论，不必在 log-loss 尺度上做换算。</span>
+      </div>
+      <p class="small muted"><span class="lang-en">Task: two interleaved moons, 2 features, 400 training and 400 test samples. A deep network has to carve a curved boundary through them — easy with a healthy signal, impossible when the signal has died.</span>
+         <span class="lang-zh">任务：两条交错的月牙，2 个特征，400 个训练样本、400 个测试样本。深层网络需要切出一条弯曲的边界——信号健康时很容易，信号死掉时则完全做不到。</span></p>
+      <button class="btn primary" id="toLab" type="button" style="margin-top:10px">
+        <span class="lang-en">Go to the lab →</span><span class="lang-zh">进入实验台 →</span></button>
+    </div>
+
+    <div class="slide-nav">
+      <button class="btn" id="prevS" type="button">← <span class="lang-en">Back</span><span class="lang-zh">上一页</span></button>
+      <div class="dots" id="dots"></div>
+      <button class="btn primary" id="nextS" type="button"><span class="lang-en">Next</span><span class="lang-zh">下一页</span> →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. LAB ================= -->
+<section id="view-lab" style="display:none">
+  <h1><span class="lang-en">The Lab</span><span class="lang-zh">实验台</span></h1>
+  <p class="lede"><span class="lang-en">Pick an activation and a gain, then watch the signal travel. Everything runs in your browser — no server, no data leaves the page.</span>
+     <span class="lang-zh">选择激活函数与增益，观察信号如何逐层传播。所有计算都在你的浏览器里完成，不联网、不上传数据。</span></p>
+
+  <div class="grid-lab">
+    <!-- controls -->
+    <div class="card">
+      <h3><span class="lang-en">Controls</span><span class="lang-zh">控制面板</span></h3>
+
+      <div class="ctrl">
+        <label><span class="lang-en">Activation φ</span><span class="lang-zh">激活函数 φ</span></label>
+        <select id="act">
+          <option value="linear">linear (exact theory)</option>
+          <option value="tanh">tanh</option>
+          <option value="relu" selected>ReLU</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <label><span class="lang-en">Init gain g</span><span class="lang-zh">初始化增益 g</span><span class="val" id="gVal">1.41</span></label>
+        <input type="range" id="gain" min="0.20" max="2.40" step="0.01" value="1.414">
+        <div class="small muted"><span class="lang-en">W ~ N(0, g²/d<sub>in</sub>)</span><span class="lang-zh">W ~ N(0, g²/d<sub>in</sub>)</span></div>
+      </div>
+      <div class="presets">
+        <button class="btn sm" data-g="0.70"><span class="lang-en">too small 0.7</span><span class="lang-zh">过小 0.7</span></button>
+        <button class="btn sm" data-g="1.00">LeCun 1.0</button>
+        <button class="btn sm" data-g="1.4142">He √2</button>
+        <button class="btn sm" data-g="2.00"><span class="lang-en">too large 2.0</span><span class="lang-zh">过大 2.0</span></button>
+      </div>
+
+      <div class="ctrl">
+        <label><span class="lang-en">Hidden layers L</span><span class="lang-zh">隐藏层数 L</span><span class="val" id="LVal">12</span></label>
+        <input type="range" id="depth" min="2" max="30" step="1" value="12">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">Width d</span><span class="lang-zh">宽度 d</span><span class="val" id="dVal">48</span></label>
+        <input type="range" id="width" min="8" max="96" step="4" value="48">
+      </div>
+
+      <label class="chk"><input type="checkbox" id="showPre" checked>
+        <span class="lang-en">show pre-activation h<sup>l</sup></span><span class="lang-zh">显示 pre-activation h<sup>l</sup></span></label>
+      <label class="chk"><input type="checkbox" id="showPost" checked>
+        <span class="lang-en">show post-activation z<sup>l</sup></span><span class="lang-zh">显示 post-activation z<sup>l</sup></span></label>
+      <label class="chk"><input type="checkbox" id="showGrad" checked>
+        <span class="lang-en">show back-propagated error</span><span class="lang-zh">显示反传误差</span></label>
+      <label class="chk"><input type="checkbox" id="useLog" checked>
+        <span class="lang-en">log scale</span><span class="lang-zh">对数坐标</span></label>
+
+      <div class="ctrl" style="margin-top:12px">
+        <label><span class="lang-en">Layer to inspect</span><span class="lang-zh">查看某一层</span><span class="val" id="layVal">6</span></label>
+        <input type="range" id="layer" min="1" max="12" step="1" value="6">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">Random seed</span><span class="lang-zh">随机种子</span></label>
+        <select id="seed">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="7">7</option><option value="42">42</option>
+        </select>
+      </div>
+      <button class="btn" id="reseed" type="button" style="width:100%">
+        <span class="lang-en">Re-draw the initial weights</span><span class="lang-zh">重新抽取初始权重</span></button>
+    </div>
+
+    <!-- dashboard + training -->
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <h3><span class="lang-en">Dashboard A — magnitude through the layers</span>
+            <span class="lang-zh">看板 A — 各层信号大小</span></h3>
+        <p class="small muted"><span class="lang-en">Per-unit RMS of each layer's pre-activation h<sup>l</sup>, post-activation z<sup>l</sup>, and back-propagated error ∂ℓ/∂z<sup>l</sup>. The dashed line is the input scale — a healthy network stays near it. Increase the width d and the curves smooth out: “the expected signal is preserved” is an infinite-width statement, so a narrow net only fluctuates around it.</span>
+           <span class="lang-zh">每一层 pre-activation h<sup>l</sup>、post-activation z<sup>l</sup> 和反传误差 ∂ℓ/∂z<sup>l</sup> 的单位维度 RMS。虚线是输入的尺度——健康的网络应当贴近它。把宽度 d 调大，曲线会变光滑：「期望信号守恒」是一个无穷宽度的结论，窄网络只是在它附近波动。</span></p>
+        <div class="chart-wrap"><canvas id="sigChart" height="300"></canvas></div>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--pre)"></i><span class="lang-en">pre-activation</span><span class="lang-zh">pre-activation</span></span>
+          <span><i class="swatch" style="background:var(--post)"></i><span class="lang-en">post-activation</span><span class="lang-zh">post-activation</span></span>
+          <span><i class="swatch" style="background:var(--grad)"></i><span class="lang-en">back-propagated error</span><span class="lang-zh">反传误差</span></span>
+          <span><i class="swatch" style="background:var(--ref);height:0;border-top:2px dashed var(--ref)"></i><span class="lang-en">input scale</span><span class="lang-zh">输入尺度</span></span>
+        </div>
+        <div class="readout">
+          <div class="stat"><div class="k"><span class="lang-en">input RMS</span><span class="lang-zh">输入 RMS</span></div><div class="v" id="r-in">–</div></div>
+          <div class="stat"><div class="k"><span class="lang-en">out of layer L</span><span class="lang-zh">第 L 层输出</span></div><div class="v" id="r-out">–</div></div>
+          <div class="stat"><div class="k"><span class="lang-en">ratio (L / 0)</span><span class="lang-zh">比值 L / 0</span></div><div class="v" id="r-ratio">–</div></div>
+          <div class="stat"><div class="k"><span class="lang-en">back-error ratio</span><span class="lang-zh">反传误差比值</span></div><div class="v" id="r-grad">–</div></div>
+        </div>
+        <div class="verdict ok" id="verdict">–</div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h3><span class="lang-en">Dashboard B — the distribution at layer l</span>
+            <span class="lang-zh">看板 B — 第 l 层的分布</span></h3>
+        <p class="small muted" id="histCap"><span class="lang-en">Histogram of the pre-activation at the layer selected on the left. A vanishing signal collapses into a spike at 0; an exploding one spreads out.</span>
+           <span class="lang-zh">左侧所选层的 pre-activation 直方图。信号消失时会坍缩成 0 处的尖峰；信号爆炸时则铺得很开。</span></p>
+        <div class="chart-wrap"><canvas id="histChart" height="170"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="lang-en">Dashboard C — does it actually train?</span><span class="lang-zh">看板 C — 到底能不能训起来？</span></h3>
+        <p class="small muted"><span class="lang-en">Two interleaved moons · mini-batch SGD with momentum · classification error reported (not loss).</span>
+           <span class="lang-zh">两条交错的月牙 · 带动量的 mini-batch SGD · 报告分类 error（非 loss）。</span></p>
+        <button class="btn primary" id="run" type="button"><span class="lang-en">Train with the current gain</span><span class="lang-zh">用当前增益训练</span></button>
+        <button class="btn" id="run3" type="button" style="margin-left:8px"><span class="lang-en">Compare 3 gains</span><span class="lang-zh">对比 3 个增益</span></button>
+        <button class="btn" id="stop" type="button" disabled style="margin-left:8px"><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
+        <span class="small muted" id="trainStatus" style="margin-left:10px"></span>
+        <div class="grid2" style="margin-top:14px">
+          <div>
+            <div class="chart-wrap"><canvas id="errChart" height="260"></canvas></div>
+            <div class="legend" id="errLegend"></div>
+          </div>
+          <div>
+            <div class="chart-wrap"><canvas id="bdChart" height="260"></canvas></div>
+            <div class="small muted" style="margin-top:6px"><span class="lang-en">Decision boundary of the last trained network (shaded = predicted class 1).</span>
+            <span class="lang-zh">最近一次训练的网络的决策边界（着色区域 = 预测为类 1）。</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <p><span class="lang-en">Notes — the network is a plain FCN with no bias, no normalization and no skip connections, so that what you see is purely the effect of the initialization scale. Weight variance is g²/fan-in at every layer; the output layer is the same size as one hidden→output map. The two-moons data is generated in the page from the seed.</span>
+       <span class="lang-zh">说明 —— 网络是不含偏置、不含归一化、不含跳跃连接的纯 FCN，因此你看到的效果纯粹来自初始化尺度。每层权重方差为 g²/fan-in，输出层规模与一个普通隐层到输出层的映射相同。月牙数据由页面按种子实时生成。</span></p>
+    <p style="margin-top:8px"><span class="lang-en"><b>Two things worth noticing.</b> (1) For φ = linear the prescription var = 1/fan-in (g = 1) is exact, and for ReLU the variance-preserving gain is exactly √2 — that is the He/Kaiming rule. For tanh the variance-preserving gain is larger (≈1.6), because the non-linearity itself removes variance; the classical g = 1 is still the right practical default, and the lab lets you see both. (2) The training panel is deliberately small (≤ 24 layers, ≤ 24 wide, gradient clipping on) so that it finishes in a few seconds — the ordering of the curves is the message, not the absolute numbers.</span>
+       <span class="lang-zh"><b>两点值得注意。</b>（1）当 φ = linear 时，var = 1/fan-in（即 g = 1）是精确的解；当 φ = ReLU 时，保持方差的增益恰为 √2，这正是 He/Kaiming 规则。对 tanh，保持方差的增益更大（约 1.6），因为非线性本身会损失方差；而经典的 g = 1 仍是实用的默认值，实验台让你同时看到这两件事。（2）训练面板刻意做得很小（≤24 层、宽度 ≤24、开启梯度裁剪），以便几秒内跑完——要看的是曲线的相对次序，而不是绝对数值。</span></p>
+    <p style="margin-top:8px"><span class="lang-en">Background follows <i>Optimization for Deep Learning</i> §2.1 (pre-activation / post-activation) and the Week 2 lecture on signal propagation. Demo for ME2605 · DDA6204, CUHK-Shenzhen.</span>
+       <span class="lang-zh">背景内容对应讲义 <i>Optimization for Deep Learning</i> 第 2.1 节（pre-activation / post-activation）与第 2 周信号传播讲义。ME2605 · DDA6204 课程 demo，香港中文大学（深圳）。</span></p>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ==========================================================================
+   ME2605 · Signal Propagation Lab
+   Everything runs in the browser. No dependencies, no network.
+
+   Architecture per net:
+     x (2)  --W1--> h1 --phi--> z1  --W2--> ... --WL--> hL --phi--> zL --Wo--> s
+     p = sigmoid(s),  loss = BCE(p, y),  error = misclassification rate.
+   Every weight matrix has entries ~ N(0, g^2 / fan_in).
+   Backprop convention: ehat[l] = dLoss / d h^l  (the lecture's e^l).
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- utilities */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gaussFrom(rnd){var u=0,v=0;while(u===0)u=rnd();while(v===0)v=rnd();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function tickLabel(v){
+  if(!isFinite(v)||v<=0) return "";
+  if(v>=1) return String(+v.toPrecision(3));
+  var d=Math.min(20,Math.max(1,-Math.floor(Math.log10(v))+1));
+  return v.toFixed(d).replace(/0+$/,"").replace(/\.$/,"");
+}
+function fmt(x){ if(!isFinite(x))return "∞";
+  var ax=Math.abs(x);
+  if(ax!==0&&(ax>=10000||ax<0.001))return x.toExponential(1).replace("e+","·10^").replace("e-","·10^-");
+  if(ax>=100)return x.toFixed(0);
+  if(ax>=10)return x.toFixed(1);
+  if(ax>=1)return x.toFixed(2);
+  return x.toFixed(3);}
+function sumSq(a){var s=0;for(var i=0;i<a.length;i++)s+=a[i]*a[i];return s;}
+
+/* ------------------------------------------------------------------- data */
+function makeMoons(n,noise,seed){
+  var rnd=mulberry32(seed), X=new Float32Array(n*2), Y=new Uint8Array(n);
+  var half=Math.floor(n/2);
+  for(var i=0;i<n;i++){
+    var c = i<half ? 0 : 1, t = rnd()*Math.PI, px, py;
+    if(c===0){ px=Math.cos(t); py=Math.sin(t); }
+    else { px=1-Math.cos(t); py=0.5-Math.sin(t); }
+    X[2*i]   = px + gaussFrom(rnd)*noise;
+    X[2*i+1] = py + gaussFrom(rnd)*noise;
+    Y[i]=c;
+  }
+  return {X:X,Y:Y,n:n};
+}
+var HISTR = 4;   /* pre-activation histogram half-range, fixed on purpose */
+var TRAIN = makeMoons(400,0.13,11);
+var TEST  = makeMoons(400,0.13,29);
+var DASH  = makeMoons(150,0.13,51);      /* smaller batch for the live dashboard */
+function allIdx(d){ var a=new Array(d.n); for(var i=0;i<d.n;i++) a[i]=i; return a; }
+
+/* ---------------------------------------------------------------- network */
+function makeNet(cfg){
+  var rnd=mulberry32((cfg.seed|0)*7919+13), g=cfg.g, d=cfg.d, L=cfg.L, din=cfg.din;
+  var Ws=[], nin=din;
+  for(var l=0;l<L;l++){
+    var sd=g/Math.sqrt(nin), W=new Float32Array(d*nin);
+    for(var i=0;i<W.length;i++) W[i]=gaussFrom(rnd)*sd;
+    Ws.push(W); nin=d;
+  }
+  var sdo=g/Math.sqrt(nin), Wo=new Float32Array(nin);
+  for(var j=0;j<nin;j++) Wo[j]=gaussFrom(rnd)*sdo;
+  return {din:din,d:d,L:L,act:cfg.act,g:g,seed:cfg.seed,Ws:Ws,Wo:Wo};
+}
+function act(x,k){ return k==="relu" ? (x>0?x:0) : k==="linear" ? x : Math.tanh(x); }
+/* phi'(.) expressed through the POST-activation, which is what we have on hand */
+function dactFromZ(z,k){ return k==="relu" ? (z>0?1:0) : k==="linear" ? 1 : (1-z*z); }
+function logit(z){ return 1/(1+Math.exp(-z)); }
+
+function makeBuf(net){
+  var L=net.L,d=net.d,din=net.din, z=[],h=[],e=[];
+  for(var l=0;l<=L;l++) z.push(new Float32Array(l===0?din:d));
+  for(var l2=0;l2<L;l2++){ h.push(new Float32Array(d)); e.push(new Float32Array(d)); }
+  return {z:z,h:h,e:e};
+}
+function newGrads(net){
+  return {W:net.Ws.map(function(W){return new Float32Array(W.length);}),
+          O:new Float32Array(net.Wo.length)};
+}
+
+/* One forward + backward pass over the samples in idx.
+   grads  : accumulator (or null) — divided by idx.length by the caller
+   hist   : {vals:[], kind:'pre'|'post', layer:int} (or null)
+   returns {pre[],post[],grad[],loss,err}  — per-layer per-unit RMS, index 0 = input */
+function forwardBackward(net,data,idx,grads,hist){
+  var L=net.L,d=net.d,din=net.din,k=net.act;
+  var buf=makeBuf(net), preSq=new Float64Array(L+1), postSq=new Float64Array(L+1),
+      gSq=new Float64Array(L+1);
+  var n=idx.length, loss=0, bad=0;
+  for(var ii=0;ii<n;ii++){
+    var si=idx[ii];
+    /* ---------------- forward */
+    buf.z[0][0]=data.X[2*si]; buf.z[0][1]=data.X[2*si+1];
+    for(var l=1;l<=L;l++){
+      var W=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], hh=buf.h[l-1], zz=buf.z[l];
+      for(var o=0;o<d;o++){ var s=0,b0=o*nin; for(var kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; hh[o]=s; }
+      for(var o2=0;o2<d;o2++) zz[o2]=act(hh[o2],k);
+    }
+    var ztop=buf.z[L], sOut=0;
+    for(var k2=0;k2<d;k2++) sOut+=net.Wo[k2]*ztop[k2];
+    var p=logit(sOut), y=data.Y[si];
+    loss += -(y?Math.log(Math.max(p,1e-12)):Math.log(Math.max(1-p,1e-12)));
+    if(((p>0.5)?1:0)!==y) bad++;
+    /* ---------------- forward statistics */
+    for(var q=0;q<din;q++) postSq[0]+=buf.z[0][q]*buf.z[0][q];
+    for(var l2=1;l2<=L;l2++){
+      var hh2=buf.h[l2-1], zz2=buf.z[l2];
+      for(var q2=0;q2<d;q2++){ preSq[l2]+=hh2[q2]*hh2[q2]; postSq[l2]+=zz2[q2]*zz2[q2]; }
+    }
+    if(hist && hist.layer>=1 && hist.layer<=L){
+      var src=(hist.kind==="pre"? buf.h[hist.layer-1] : buf.z[hist.layer]);
+      for(var q3=0;q3<d;q3++) hist.vals.push(src[q3]);
+    }
+    /* ---------------- backward */
+    var dOut=p-y;
+    /* ehat[L] = dLoss/dh^L */
+    var eN=buf.e[L-1], zL=buf.z[L];
+    for(var o3=0;o3<d;o3++) eN[o3]=dOut*net.Wo[o3]*dactFromZ(zL[o3],k);
+    gSq[L]+=sumSq(eN);
+    if(grads){
+      for(var k3=0;k3<d;k3++) grads.O[k3]+=dOut*ztop[k3];
+      var ninL=(L===1?din:d), gWL=grads.W[L-1], zp=buf.z[L-1];
+      for(var o4=0;o4<d;o4++){ var ev=eN[o4], b1=o4*ninL;
+        for(var k4=0;k4<ninL;k4++) gWL[b1+k4]+=ev*zp[k4]; }
+    }
+    /* ehat[l] = (W^{l+1})^T ehat[l+1]  .*  phi'(z^l) */
+    for(var lb=L-1;lb>=1;lb--){
+      var eNext=buf.e[lb], ePrev=buf.e[lb-1], Wb=net.Ws[lb],
+          zPost=buf.z[lb], zPrev=buf.z[lb-1];
+      for(var kk2=0;kk2<d;kk2++){
+        var acc=0; for(var oo=0;oo<d;oo++) acc+=Wb[oo*d+kk2]*eNext[oo];
+        ePrev[kk2]=acc*dactFromZ(zPost[kk2],k);
+      }
+      gSq[lb]+=sumSq(ePrev);
+      if(grads){
+        var ninB=(lb===1?din:d), gWb=grads.W[lb-1];
+        for(var oo2=0;oo2<d;oo2++){ var ev2=ePrev[oo2], b2=oo2*ninB;
+          for(var kk3=0;kk3<ninB;kk3++) gWb[b2+kk3]+=ev2*zPrev[kk3]; }
+      }
+    }
+  }
+  var pre=[],post=[],grad=[],nd=din*n,ndl=d*n;
+  for(var l3=0;l3<=L;l3++){
+    pre.push(l3===0?0:Math.sqrt(preSq[l3]/ndl));
+    post.push(Math.sqrt(postSq[l3]/(l3===0?nd:ndl)));
+    grad.push(l3===0?0:Math.sqrt(gSq[l3]/ndl));
+  }
+  return {pre:pre,post:post,grad:grad,loss:loss/n,err:bad/n};
+}
+
+/* ------------------------------------------------------------------ update */
+function applyGrads(net,grads,scale,mom,vel){
+  for(var l=0;l<net.L;l++){
+    var W=net.Ws[l], G=grads.W[l], V=vel.W[l];
+    for(var j=0;j<W.length;j++){ V[j]=mom*V[j]-scale*G[j]; W[j]+=V[j]; }
+  }
+  var O=net.Wo, GO=grads.O, VO=vel.O;
+  for(var j2=0;j2<O.length;j2++){ VO[j2]=mom*VO[j2]-scale*GO[j2]; O[j2]+=VO[j2]; }
+}
+function newVel(net){
+  return {W:net.Ws.map(function(W){return new Float32Array(W.length);}),
+          O:new Float32Array(net.Wo.length)};
+}
+/* one SGD step. Gradients are globally clipped: without it the exploding-init run
+   goes to NaN, and the point of the demo is a comparison, not a blow-up. */
+function sgdStep(net,data,idx,lr,mom,vel,clip){
+  var g=newGrads(net);
+  forwardBackward(net,data,idx,g,null);
+  var tot=0,i,l;
+  for(l=0;l<g.W.length;l++){ var G=g.W[l]; for(i=0;i<G.length;i++) tot+=G[i]*G[i]; }
+  for(i=0;i<g.O.length;i++) tot+=g.O[i]*g.O[i];
+  var norm=Math.sqrt(tot);
+  if(!isFinite(norm)) return false;                 /* diverged */
+  if(clip>0 && norm>clip){ var sc=clip/norm;
+    for(l=0;l<g.W.length;l++){ var G2=g.W[l]; for(i=0;i<G2.length;i++) G2[i]*=sc; }
+    for(i=0;i<g.O.length;i++) g.O[i]*=sc;
+  }
+  applyGrads(net,g,lr/idx.length,mom,vel);
+  return true;
+}
+function errOf(net,data){
+  var idx=allIdx(data);                 /* classification error only */
+  var buf=makeBuf(net),L=net.L,d=net.d,din=net.din,bad=0;
+  for(var i=0;i<data.n;i++){
+    buf.z[0][0]=data.X[2*i]; buf.z[0][1]=data.X[2*i+1];
+    for(var l=1;l<=L;l++){
+      var W=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
+      for(var o=0;o<d;o++){ var s=0,b0=o*nin; for(var kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; zz[o]=act(s,net.act); }
+    }
+    var ztop=buf.z[L], so=0; for(var k2=0;k2<d;k2++) so+=net.Wo[k2]*ztop[k2];
+    if(((logit(so)>0.5)?1:0)!==data.Y[i]) bad++;
+  }
+  return bad/data.n;
+}
+
+/* ------------------------------------------------------------------ charts */
+function setupCanvas(cv,h){
+  var dpr=window.devicePixelRatio||1, w=Math.max(240,cv.parentElement.clientWidth||640);
+  cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.height=h+"px";
+  var g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return {g:g,w:w,h:h};
+}
+function niceLogTicks(lo,hi){
+  var out=[],p;
+  if(!isFinite(lo)||lo<=0) return out;
+  if(!isFinite(hi)||hi<=lo) return out;
+  p=Math.floor(Math.log10(lo));
+  var guard=0;
+  while(Math.pow(10,p)<=hi*1.001 && guard++<40){
+    [1,2,5].forEach(function(m){var v=m*Math.pow(10,p);
+      if(v>=lo*0.999&&v<=hi*1.001) out.push(v);});
+    p++;
+  }
+  return out;
+}
+function drawSigChart(st,opt){
+  var s=setupCanvas(document.getElementById("sigChart"),300), g=s.g, W=s.w, H=s.h;
+  var m={l:66,r:18,t:16,b:46}, L=st.pre.length-1;
+  var series=[];
+  if(opt.showPre)  series.push({v:st.pre, c:"#b7791f"});
+  if(opt.showPost) series.push({v:st.post,c:"#1a5276"});
+  if(opt.showGrad) series.push({v:st.grad,c:"#6b46c1"});
+  var ref=st.post[0]||1, lo=ref, hi=ref;
+  series.forEach(function(se){ for(var l=1;l<se.v.length;l++){
+    var v=se.v[l]; if(v>0&&isFinite(v)){ lo=Math.min(lo,v); hi=Math.max(hi,v);} } });
+  if(!isFinite(lo)||lo<=0) lo=ref*1e-6;
+  if(!isFinite(hi)||hi<lo) hi=lo*10;
+  var y0,y1;
+  if(opt.useLog){
+    var dLo=Math.floor(Math.log10(lo))-0.18, dHi=Math.ceil(Math.log10(hi))+0.18;
+    if(!isFinite(dLo)) dLo=-3;
+    if(!isFinite(dHi)||dHi<=dLo) dHi=dLo+3;
+    if(dHi-dLo<2)   dHi=dLo+2;          /* at least 2 decades, for reference line + data */
+    if(dHi-dLo>12)  dHi=dLo+12;         /* at most 12 decades, or the labels blur together */
+    y0=Math.pow(10,dLo); y1=Math.pow(10,dHi);
+    if(!isFinite(y0)||y0<=0) y0=1e-6;
+    if(!isFinite(y1)||y1<=y0) y1=y0*100;
+  } else { y0=0; y1=Math.max(hi,ref)*1.15; }
+  function X(l){ return m.l+(W-m.l-m.r)*(L<=1?0.5:(l-1)/Math.max(1,L-1)); }
+  function Y(v){
+    if(opt.useLog){ v=Math.max(v,y0*1.0001);
+      return m.t+(H-m.t-m.b)*(1-(Math.log10(v)-Math.log10(y0))/(Math.log10(y1)-Math.log10(y0))); }
+    return m.t+(H-m.t-m.b)*(1-(v-y0)/(y1-y0));
+  }
+  g.clearRect(0,0,W,H); g.font="12px -apple-system,Arial"; g.textBaseline="middle";
+  var ticks = opt.useLog? niceLogTicks(y0,y1) : [0,0.25,0.5,0.75,1].map(function(t){return y0+(y1-y0)*t;});
+  ticks.forEach(function(v){
+    var y=Y(v); if(y<m.t-1||y>H-m.b+1) return;
+    g.strokeStyle="#eef1f4"; g.lineWidth=1; g.beginPath(); g.moveTo(m.l,y); g.lineTo(W-m.r,y); g.stroke();
+    g.fillStyle="#8b98a5"; g.textAlign="right"; g.textBaseline="middle";
+    g.fillText(opt.useLog?tickLabel(v):fmt(v), m.l-8, y);
+  });
+  /* reference = input scale */
+  g.strokeStyle="#95a5a6"; g.lineWidth=1.6; g.setLineDash([6,5]);
+  g.beginPath(); g.moveTo(m.l,Y(ref)); g.lineTo(W-m.r,Y(ref)); g.stroke(); g.setLineDash([]);
+  g.fillStyle="#95a5a6"; g.textAlign="left"; g.fillText("input", m.l+5, Y(ref)-10);
+  /* inspected-layer marker */
+  var il=opt.inspectLayer;
+  if(il>=1&&il<=L){ g.strokeStyle="#1a5276"; g.globalAlpha=.22; g.lineWidth=1.4;
+    g.beginPath(); g.moveTo(X(il),m.t); g.lineTo(X(il),H-m.b); g.stroke(); g.globalAlpha=1; }
+  /* series */
+  series.forEach(function(se){
+    g.strokeStyle=se.c; g.lineWidth=2.4; g.beginPath();
+    for(var l=1;l<se.v.length;l++){ var px=X(l),py=Y(se.v[l]); l===1?g.moveTo(px,py):g.lineTo(px,py); }
+    g.stroke();
+    for(var l2=1;l2<se.v.length;l2++){ g.fillStyle=se.c; g.beginPath();
+      g.arc(X(l2),Y(se.v[l2]),2.7,0,6.2832); g.fill(); }
+  });
+  /* axes */
+  g.strokeStyle="#cbd5dd"; g.lineWidth=1; g.beginPath();
+  g.moveTo(m.l,H-m.b); g.lineTo(W-m.r,H-m.b); g.stroke();
+  g.fillStyle="#8b98a5"; g.textAlign="center"; g.textBaseline="middle";
+  var step=Math.max(1,Math.ceil(L/12));
+  for(var l4=1;l4<=L;l4+=step) g.fillText(l4, X(l4), H-m.b+14);
+  g.fillText("layer  l", m.l+(W-m.l-m.r)/2, H-7);
+}
+function drawHist(bins,lo,hi){
+  var s=setupCanvas(document.getElementById("histChart"),170), g=s.g, W=s.w, H=s.h;
+  var m={l:52,r:16,t:14,b:26}, nb=bins.length;
+  var mx=0; for(var i=0;i<nb;i++) mx=Math.max(mx,bins[i]);
+  g.clearRect(0,0,W,H); g.font="11px -apple-system,Arial";
+  var bw=(W-m.l-m.r)/nb;
+  for(var i2=0;i2<nb;i2++){
+    var hh=mx>0?(H-m.t-m.b)*(bins[i2]/mx):0;
+    var c=(lo+(i2+0.5)/nb*(hi-lo)); 
+    g.fillStyle = Math.abs(c)<(hi-lo)/nb*0.75 ? "#1a5276" : "#8ab4d0";
+    g.fillRect(m.l+i2*bw, H-m.b-hh, Math.max(1,bw-1), hh);
+  }
+  g.strokeStyle="#cbd5dd"; g.beginPath(); g.moveTo(m.l,H-m.b); g.lineTo(W-m.r,H-m.b); g.stroke();
+  g.fillStyle="#8b98a5"; g.textBaseline="middle";
+  var ntk=Math.max(2,Math.round((hi-lo)/2));
+  for(var t=0;t<=ntk;t++){
+    var v=lo+(hi-lo)*t/ntk, x=m.l+(v-lo)/(hi-lo)*(W-m.l-m.r);
+    g.textAlign="center"; g.fillText(String(+v.toFixed(2)), x, H-m.b+13);
+    g.strokeStyle="#eef1f4"; g.beginPath(); g.moveTo(x,m.t); g.lineTo(x,H-m.b); g.stroke();
+  }
+  g.textAlign="right"; g.fillStyle="#8b98a5"; g.fillText("count", m.l-6, m.t+7);
+}
+var GX0=-1.5,GX1=2.5,GY0=-1.3,GY1=1.8;
+function drawBoundary(cv,net,data){
+  var s=setupCanvas(cv,260), g=s.g, W=s.w, H=s.h;
+  var m={l:34,r:14,t:14,b:28}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  var NX=58, NY=50, buf=makeBuf(net), L=net.L,d=net.d,din=net.din;
+  g.clearRect(0,0,W,H);
+  for(var iy=0;iy<NY;iy++) for(var ix=0;ix<NX;ix++){
+    var xa=GX0+(ix+0.5)/NX*(GX1-GX0), xb=GY0+(iy+0.5)/NY*(GY1-GY0);
+    buf.z[0][0]=xa; buf.z[0][1]=xb;
+    for(var l=1;l<=L;l++){
+      var Wm=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
+      for(var o=0;o<d;o++){ var su=0,b0=o*nin;
+        for(var kk=0;kk<nin;kk++) su+=Wm[b0+kk]*prev[kk]; zz[o]=act(su,net.act); }
+    }
+    var ztop=buf.z[L], so=0; for(var k2=0;k2<d;k2++) so+=net.Wo[k2]*ztop[k2];
+    var p=logit(so), conf=Math.abs(p-0.5)*2;
+    g.fillStyle = p>0.5 ? "rgba(26,82,118,"+(0.07+0.55*conf).toFixed(3)+")"
+                        : "rgba(183,121,31,"+(0.07+0.55*conf).toFixed(3)+")";
+    g.fillRect(m.l+ix/NX*pw, m.t+(1-iy/NY)*ph, pw/NX+1, ph/NY+1);
+  }
+  for(var i=0;i<data.n;i++){
+    var a=data.X[2*i], b=data.X[2*i+1];
+    if(a<GX0||a>GX1||b<GY0||b>GY1) continue;
+    var cx=m.l+(a-GX0)/(GX1-GX0)*pw, cy=m.t+(1-(b-GY0)/(GY1-GY0))*ph;
+    g.beginPath(); g.arc(cx,cy,2.6,0,6.2832);
+    g.fillStyle=data.Y[i]?"#0b3954":"#7a4a06"; g.fill();
+    g.strokeStyle="rgba(255,255,255,.85)"; g.lineWidth=1; g.stroke();
+  }
+  g.strokeStyle="#cbd5dd"; g.lineWidth=1; g.strokeRect(m.l,m.t,pw,ph);
+  g.font="11px -apple-system,Arial"; g.fillStyle="#8b98a5"; g.textAlign="center";
+  g.textBaseline="middle"; g.fillText("feature 1", m.l+pw/2, H-9);
+  g.save(); g.translate(11,m.t+ph/2); g.rotate(-Math.PI/2); g.fillText("feature 2",0,0); g.restore();
+}
+var ERRCOL=["#0b5d3b","#1a5276","#b03a2e"];
+function drawErrChart(runs,steps){
+  var s=setupCanvas(document.getElementById("errChart"),260), g=s.g, W=s.w, H=s.h;
+  var m={l:50,r:16,t:16,b:36}, ymax=0.6;
+  g.clearRect(0,0,W,H); g.font="12px -apple-system,Arial"; g.textBaseline="middle";
+  function X(st){ return m.l+(W-m.l-m.r)*(steps<=1?0:st/(steps-1)); }
+  function Y(v){ return m.t+(H-m.t-m.b)*(1-Math.min(v,ymax)/ymax); }
+  [0,0.1,0.2,0.3,0.4,0.5,0.6].forEach(function(v){
+    var y=Y(v); g.strokeStyle=v===0?"#cbd5dd":"#eef1f4"; g.beginPath();
+    g.moveTo(m.l,y); g.lineTo(W-m.r,y); g.stroke();
+    g.fillStyle="#8b98a5"; g.textAlign="right"; g.fillText(Math.round(v*100)+"%", m.l-7, y);
+  });
+  g.textAlign="center"; g.fillStyle="#8b98a5";
+  g.fillText("SGD step", m.l+(W-m.l-m.r)/2, H-9);
+  [0,0.5,1].forEach(function(t){ g.fillText(Math.round(t*steps), X(t*steps), H-m.b+15); });
+  g.strokeStyle="#cbd5dd"; g.beginPath(); g.moveTo(m.l,H-m.b); g.lineTo(W-m.r,H-m.b); g.stroke();
+  if(!runs.length){
+    g.fillStyle="#b6c1cb"; g.textAlign="center"; g.textBaseline="middle";
+    g.fillText("press \u201cTrain\u201d to plot training / test error", m.l+(W-m.l-m.r)/2, m.t+(H-m.t-m.b)/2);
+  }
+  var legend=[];
+  runs.forEach(function(r,k){
+    var col=ERRCOL[k%ERRCOL.length];
+    if(r.test.length>1){
+      g.strokeStyle=col; g.lineWidth=2.6; g.beginPath();
+      for(var i=0;i<r.test.length;i++){ var px=X(r.step[i]),py=Y(r.test[i]); i?g.lineTo(px,py):g.moveTo(px,py); }
+      g.stroke();
+    }
+    if(r.train.length>1){
+      g.strokeStyle=col; g.lineWidth=1.4; g.setLineDash([4,3]); g.beginPath();
+      for(var j=0;j<r.train.length;j++){ var qx=X(r.step[j]),qy=Y(r.train[j]); j?g.lineTo(qx,qy):g.moveTo(qx,qy); }
+      g.stroke(); g.setLineDash([]);
+    }
+    var last=r.test.length?r.test[r.test.length-1]:null;
+    var tail = r.diverged ? ' · diverged' :
+      (r.done&&last!==null ? (' · test '+(100*last).toFixed(1)+'%') : ' · running\u2026');
+    legend.push('<span><i class="swatch" style="background:'+col+'"></i>g = '+r.g.toFixed(2)+
+      (r.label?' ('+r.label+')':'')+tail+'</span>');
+  });
+  if(runs.length) legend.push('<span><i class="swatch" style="background:none;border-top:2px dashed #8b98a5"></i>solid = test · dashed = train</span>');
+  document.getElementById("errLegend").innerHTML=legend.join("");
+}
+
+/* -------------------------------------------------------------------- state */
+var state={act:"relu",g:1.4142,L:12,d:48,seed:1,inspect:6,
+  showPre:true,showPost:true,showGrad:true,useLog:true};
+var net=null, stats=null, runs=[], training=null, rafPending=false;
+
+/* the gain each activation's classical recipe prescribes (what the lecture teaches) */
+function classicGain(){ return state.act==="relu" ? Math.SQRT2 : 1.0; }
+/* three points that show the benefit of a good scale */
+function compareGains(){
+  return state.act==="relu" ? [0.5,1.0,Math.SQRT2] : [0.4,1.0,1.4];
+}
+
+function rebuild(){
+  net=makeNet({din:2,d:state.d,L:state.L,g:state.g,act:state.act,seed:state.seed});
+  scheduleRefresh(true);
+}
+function scheduleRefresh(withBoundary){
+  if(withBoundary) rafPending="boundary";
+  else if(!rafPending) rafPending="signals";
+  requestAnimationFrame(function(){
+    var wb=rafPending; rafPending=false;
+    refreshSignals(wb==="boundary");
+  });
+}
+function refreshSignals(withBoundary){
+  var hist={vals:[],kind:"pre",layer:state.inspect};
+  stats=forwardBackward(net,DASH,allIdx(DASH),null,hist);
+  /* fixed axis range: a vanishing signal collapses into a spike near 0 and an
+     exploding one piles up at the edges — both are visible only on a fixed scale */
+  var nb=41, bins=new Int32Array(nb), lo2=-HISTR, hi2=HISTR;
+  for(var j=0;j<hist.vals.length;j++){
+    var bn=Math.floor((hist.vals[j]-lo2)/(hi2-lo2)*nb);
+    if(bn<0)bn=0; if(bn>=nb)bn=nb-1; bins[bn]++;
+  }
+  drawSigChart(stats,state);
+  drawHist(bins,lo2,hi2);
+  var inR=stats.post[0], outR=stats.post[net.L];
+  var ratio=inR>0?outR/inR:Infinity;
+  var gL=stats.grad[net.L], g1=stats.grad[1];
+  var grat=(g1>0)?gL/g1:Infinity;
+  document.getElementById("r-in").textContent=fmt(inR);
+  document.getElementById("r-out").textContent=fmt(outR);
+  document.getElementById("r-ratio").textContent=fmt(ratio);
+  document.getElementById("r-grad").textContent=fmt(grat);
+  var v=document.getElementById("verdict"), cls, txt;
+  if(!isFinite(ratio)||ratio<0.25){
+    cls="low";
+    txt='<span class="lang-en">Signal decays with depth — at layer L only '+fmt(ratio)+'× of the input survives. The back-propagated error decays the same way, so the early layers get almost no gradient.</span>'
+       +'<span class="lang-zh">信号随深度衰减——到第 L 层只剩输入的 '+fmt(ratio)+' 倍。反传误差同样衰减，前几层几乎拿不到梯度。</span>'
+       +'<span class="badge low">vanishing</span>';
+  } else if(ratio>6){
+    cls="high";
+    txt='<span class="lang-en">Signal grows with depth — it reaches '+fmt(ratio)+'× the input by layer L. Deep layers saturate (tanh) or a few units dominate (ReLU), so this regime is fragile even when training still runs.</span>'
+       +'<span class="lang-zh">信号随深度放大——到第 L 层达到输入的 '+fmt(ratio)+' 倍。深层会饱和（tanh）或被少数单元主导（ReLU），这个区间即使还能训练也很脆弱。</span>'
+       +'<span class="badge high">exploding</span>';
+  } else {
+    cls="ok";
+    txt='<span class="lang-en">Signal survives the depth: '+fmt(ratio)+'× the input at layer L. This is the energy-preserving regime, and the back-propagated error also survives.</span>'
+       +'<span class="lang-zh">信号能穿过整个深度：第 L 层为输入的 '+fmt(ratio)+' 倍，处于能量守恒区间，反传误差同样能存活。</span>'
+       +'<span class="badge ok">preserved</span>';
+  }
+  v.className="verdict "+cls; v.innerHTML=txt;
+  document.getElementById("histCap").innerHTML=
+    '<span class="lang-en">Pre-activation of layer '+state.inspect+' — '+hist.vals.length+' values over the dashboard batch, on a <b>fixed</b> axis ['+fmt(-HISTR)+', '+fmt(HISTR)+']. A vanishing signal collapses into a spike at 0; an exploding one piles up at the edges; a healthy one fills the middle.</span>'
+   +'<span class="lang-zh">第 '+state.inspect+' 层的 pre-activation，看板批次共 '+hist.vals.length+' 个值，坐标<b>固定</b>为 ['+fmt(-HISTR)+', '+fmt(HISTR)+']。信号消失时会坍缩成 0 处的尖峰，爆炸时堆在两端，健康时铺满中间。</span>';
+  if(withBoundary) drawBoundary(document.getElementById("bdChart"),net,TRAIN);
+}
+
+/* ------------------------------------------------------------------ wiring */
+function $(id){ return document.getElementById(id); }
+$("gain").addEventListener("input",function(){ state.g=parseFloat(this.value);
+  $("gVal").textContent=state.g.toFixed(2); rebuild(); });
+$("depth").addEventListener("input",function(){ state.L=parseInt(this.value,10);
+  $("LVal").textContent=state.L; $("layer").max=state.L;
+  if(state.inspect>state.L){ state.inspect=state.L; $("layer").value=state.L; $("layVal").textContent=state.L; }
+  rebuild(); });
+$("width").addEventListener("input",function(){ state.d=parseInt(this.value,10);
+  $("dVal").textContent=state.d; rebuild(); });
+$("act").addEventListener("change",function(){ state.act=this.value; rebuild(); });
+$("seed").addEventListener("change",function(){ state.seed=parseInt(this.value,10); rebuild(); });
+$("reseed").addEventListener("click",function(){ state.seed=state.seed+1;
+  var sel=$("seed"); if([...sel.options].some(function(o){return +o.value===state.seed;})) sel.value=state.seed;
+  rebuild(); });
+$("layer").addEventListener("input",function(){ state.inspect=parseInt(this.value,10);
+  $("layVal").textContent=state.inspect; scheduleRefresh(false); });
+["showPre","showPost","showGrad","useLog"].forEach(function(id){
+  $(id).addEventListener("change",function(){ state[id]=this.checked; drawSigChart(stats,state); });
+});
+document.querySelectorAll("[data-g]").forEach(function(b){
+  b.addEventListener("click",function(){ var g=parseFloat(this.getAttribute("data-g"));
+    state.g=g; $("gain").value=g; $("gVal").textContent=g.toFixed(2); rebuild(); });
+});
+window.addEventListener("resize",function(){ if(stats) scheduleRefresh(false); });
+
+/* ------------------------------------------------------------ training loop */
+var TSTEPS=500, BS=32, LR=0.03, MOM=0.9, CLIP=1.0;
+function startTraining(cfgs){
+  if(training) training.cancelled=true;
+  var td=Math.max(8,Math.min(state.d,24)), tL=Math.max(8,Math.min(state.L,24));
+  var tact=(state.act==="linear")?"tanh":state.act;
+  runs=cfgs.map(function(cfg){
+    var n=makeNet({din:2,d:td,L:tL,g:cfg.g,act:tact,seed:state.seed});
+    return {g:cfg.g,label:cfg.label||"",net:n,vel:newVel(n),step:[],train:[],test:[],done:false};
+  });
+  var rnd=mulberry32(state.seed*31+5), cur=0, done=0;
+  training={cancelled:false};
+  $("run").disabled=true; $("run3").disabled=true; $("stop").disabled=false;
+  $("trainStatus").textContent="0%";
+  function batchIdx(){ var a=[]; for(var i=0;i<BS;i++) a.push(Math.floor(rnd()*TRAIN.n)); return a; }
+  function tick(){
+    if(!training||training.cancelled){ finish(); return; }
+    var t0=performance.now();
+    while(performance.now()-t0<24){
+      var r=runs[cur];
+      if(!r.done && !sgdStep(r.net,TRAIN,batchIdx(),LR,MOM,r.vel,CLIP)){
+        r.done=true; r.diverged=true; cur++; done=0;
+        if(cur>=runs.length){ finish(); return; }
+        continue;
+      }
+      done++;
+      if(done%10===0){ r.step.push(done); r.train.push(errOf(r.net,TRAIN)); r.test.push(errOf(r.net,TEST)); }
+      if(done>=TSTEPS){ r.done=true; cur++; done=0;
+        if(cur>=runs.length){ finish(); return; } }
+    }
+    drawErrChart(runs,TSTEPS);
+    $("trainStatus").textContent=Math.round(100*((cur+done/TSTEPS)/runs.length))+"%";
+    requestAnimationFrame(tick);
+  }
+  function finish(){
+    drawErrChart(runs,TSTEPS);
+    $("run").disabled=false; $("run3").disabled=false; $("stop").disabled=true;
+    var note = (state.act==="linear")
+      ? ' <span class="lang-en">(a purely linear net cannot separate the moons, so the training panel used tanh)</span><span class="lang-zh">（纯线性网络无法分开月牙，训练面板改用了 tanh）</span>'
+      : "";
+    note += ' <span class="small muted lang-en">· '+(tL)+' layers, width '+td+', '+TSTEPS+' steps, gradient clipping '+CLIP+'</span><span class="small muted lang-zh">· '+(tL)+' 层，宽度 '+td+'，'+TSTEPS+' 步，梯度裁剪 '+CLIP+'</span>';
+    $("trainStatus").innerHTML = runs.map(function(r){
+        return 'g='+r.g.toFixed(2)+' → test '+(100*r.test[r.test.length-1]).toFixed(1)+'%';}).join(" · ")+note;
+    if(runs[0]) drawBoundary($("bdChart"),runs[0].net,TRAIN);
+    training=null;
+  }
+  requestAnimationFrame(tick);
+}
+$("run").addEventListener("click",function(){ startTraining([{g:state.g,label:""}]); });
+$("run3").addEventListener("click",function(){
+  var gs=compareGains(), lbl=["too small","LeCun 1/\u221afan-in","He \u221a2"];
+  if(state.act!=="relu") lbl=["too small","LeCun 1/\u221afan-in","larger"];
+  startTraining(gs.map(function(g,i){ return {g:g,label:lbl[i]}; }));
+});
+$("stop").addEventListener("click",function(){ if(training) training.cancelled=true; });
+
+/* -------------------------------------------------------------- view switch */
+function show(v){
+  $("view-intro").style.display = (v==="intro") ? "" : "none";
+  $("view-lab").style.display   = (v==="lab")   ? "" : "none";
+  $("nav-intro").classList.toggle("active", v==="intro");
+  $("nav-lab").classList.toggle("active", v==="lab");
+  if(v==="lab") scheduleRefresh(true);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+$("nav-intro").addEventListener("click",function(){ show("intro"); });
+$("nav-lab").addEventListener("click",function(){ show("lab"); });
+$("toLab").addEventListener("click",function(){ show("lab"); });
+
+/* ------------------------------------------------------------ intro slides */
+var slides=document.querySelectorAll("#slides .slide"), curS=0, dots=$("dots");
+slides.forEach(function(_,i){
+  var b=document.createElement("button"); b.className="dot"+(i?"":" on"); b.type="button";
+  b.setAttribute("aria-label","slide "+(i+1));
+  b.addEventListener("click",function(){ goS(i); });
+  dots.appendChild(b);
+});
+function goS(i){
+  curS=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach(function(sl,k){ sl.classList.toggle("on",k===curS); });
+  dots.querySelectorAll(".dot").forEach(function(d,k){ d.classList.toggle("on",k===curS); });
+  $("prevS").disabled = (curS===0);
+  $("nextS").innerHTML = (curS===slides.length-1)
+    ? '<span class="lang-en">Go to the lab →</span><span class="lang-zh">进入实验台 →</span>'
+    : '<span class="lang-en">Next</span><span class="lang-zh">下一页</span> →';
+}
+$("prevS").addEventListener("click",function(){ goS(curS-1); });
+$("nextS").addEventListener("click",function(){ if(curS===slides.length-1) show("lab"); else goS(curS+1); });
+document.addEventListener("keydown",function(e){
+  if($("view-lab").style.display!=="none") return;
+  if(e.key==="ArrowRight"){ if(curS===slides.length-1) show("lab"); else goS(curS+1); }
+  if(e.key==="ArrowLeft") goS(curS-1);
+});
+
+/* --------------------------------------------------------- language toggle */
+$("langBtn").addEventListener("click",function(){
+  var zh=document.documentElement.getAttribute("data-lang")==="zh";
+  document.documentElement.setAttribute("data-lang",zh?"en":"zh");
+  this.textContent=zh?"中文":"English";
+});
+
+/* ------------------------------- deep link: ?g=1.4&L=12&d=16&act=tanh&v=lab */
+(function(){
+  var q=new URLSearchParams(location.search);
+  if(q.has("g")){ var g=parseFloat(q.get("g")); if(isFinite(g)) state.g=Math.max(0.2,Math.min(2.4,g)); }
+  if(q.has("L")){ var L=parseInt(q.get("L"),10); if(isFinite(L)) state.L=Math.max(2,Math.min(30,L)); }
+  if(q.has("d")){ var d=parseInt(q.get("d"),10); if(isFinite(d)) state.d=Math.max(8,Math.min(96,d)); }
+  if(q.has("act")&&["linear","tanh","relu"].indexOf(q.get("act"))>=0) state.act=q.get("act");
+  if(q.has("seed")) state.seed=parseInt(q.get("seed"),10)||1;
+  $("gain").value=state.g;  $("gVal").textContent=state.g.toFixed(2);
+  $("depth").value=state.L; $("LVal").textContent=state.L;
+  $("width").value=state.d; $("dVal").textContent=state.d;
+  $("act").value=state.act;
+  if(q.has("seed")) $("seed").value=String(state.seed);
+  $("layer").max=state.L; state.inspect=Math.max(1,Math.round(state.L/2));
+  $("layer").value=state.inspect; $("layVal").textContent=state.inspect;
+  goS(0);
+  rebuild();
+  drawErrChart([],TSTEPS);
+  if(q.get("v")==="lab") show("lab");
+})();
+</script>
+</body>
+</html>

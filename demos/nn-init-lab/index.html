@@ -50,44 +50,47 @@ li{margin-bottom:5px}
 .muted{color:var(--muted)}
 .small{font-size:.87rem}
 
-/* ---- panels ---- */
-.panel{margin-bottom:26px}
-.phead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
-.phead .step{font-size:.74rem;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
-.grid-net{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+/* ---- controls panel ---- */
+.panel{margin-bottom:22px}
 .grid-run{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
-.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.86rem;font-weight:600;margin-bottom:4px}
-.ctrl label .val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);font-size:.95rem}
+.cols4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.sect{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.sect:first-child{border-top:none;padding-top:0;margin-top:0}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.shead h4{margin:0;font-size:.74rem;letter-spacing:1.3px;text-transform:uppercase;color:var(--accent);font-weight:800}
+.shead .hint{font-size:.8rem;color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none;margin-left:8px}
+.lbtns{display:flex;gap:6px}
+.stepbar{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;font-weight:600;margin-bottom:4px}
+.ctrl label .val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);font-size:.92rem}
 input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0;cursor:pointer}
-select{width:100%;font-family:inherit;font-size:.9rem;padding:6px 8px;border:1px solid var(--border);
+select{width:100%;font-family:inherit;font-size:.88rem;padding:5px 7px;border:1px solid var(--border);
   border-radius:6px;background:#fff;cursor:pointer}
 .seedrow{display:flex;gap:6px;align-items:center}
+.fixed{font-size:.8rem;color:var(--muted);line-height:1.5;margin-top:2px}
 
-/* ---- layer stack ---- */
-.lstack{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
-.lhead,.lrow{display:grid;grid-template-columns:86px 122px 74px minmax(210px,1fr) 176px 96px;gap:10px;
-  align-items:center;padding:9px 14px}
-.lhead{background:var(--code-bg);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;
-  color:var(--muted);font-weight:700;border-bottom:1px solid var(--border)}
-.lrow{border-bottom:1px solid #f1f3f5}
+/* ---- layer stack (compact) ---- */
+.lstack{border:1px solid var(--border);border-radius:9px;overflow:hidden;background:#fff}
+.lhead,.lrow{display:grid;grid-template-columns:56px 106px 46px minmax(0,1fr) 104px 34px;
+  gap:9px;align-items:center;padding:5px 10px}
+.lhead{background:var(--code-bg);font-size:.66rem;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);padding:6px 10px}
+.lhead span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow{min-height:40px;border-bottom:1px solid #f1f3f5}
 .lrow:last-child{border-bottom:none}
 .lrow.outrow{background:#fdfcf7}
-.lname{font-weight:700;font-size:.92rem}
-.lname .fan{display:block;font-weight:500;font-size:.71rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
-.lprev{width:68px;height:68px;border:1px solid var(--border);border-radius:6px;background:#fff}
-.lp label{display:flex;justify-content:space-between;align-items:baseline;font-size:.75rem;font-weight:600;margin-bottom:0}
-.lp label .val{font-family:ui-monospace,Menlo,monospace;color:var(--accent)}
-.lp input[type=range]{margin:0 0 3px;height:16px}
-.lstats{font-family:ui-monospace,Menlo,monospace;font-size:.74rem;color:var(--muted);line-height:1.45}
+.lname{font-weight:700;font-size:.8rem;line-height:1.1}
+.lname .fan{display:block;font-weight:500;font-size:.62rem;color:var(--muted);
+  font-family:ui-monospace,Menlo,monospace;margin-top:1px}
+.lprev{width:34px;height:34px;border:1px solid var(--border);border-radius:5px;background:#fff;display:block}
+.lp{display:flex;gap:16px;align-items:center;min-width:0}
+.lpg{display:flex;align-items:center;gap:7px;flex:1 1 0;max-width:420px;min-width:0}
+.lpg .lbl{font-size:.68rem;color:var(--muted);font-weight:700;white-space:nowrap}
+.lpg input[type=range]{flex:1 1 auto;min-width:30px;margin:0;height:15px}
+.lpg .val{font-family:ui-monospace,Menlo,monospace;font-size:.7rem;color:var(--accent);
+  flex:0 0 auto;min-width:44px;text-align:right}
+.lstats{font-family:ui-monospace,Menlo,monospace;font-size:.62rem;line-height:1.25;color:var(--muted);white-space:nowrap}
 .lstats b{color:var(--fg);font-weight:700}
-.lbtns{display:flex;gap:5px;justify-content:flex-end}
-.btn{font-family:inherit;font-size:.9rem;font-weight:600;border:1px solid var(--border);background:#fff;
-  color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
-.btn:hover{border-color:var(--accent);color:var(--accent)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primary:hover{filter:brightness(1.12);color:#fff}
-.btn:disabled{opacity:.45;cursor:default}
-.btn.sm{font-size:.78rem;padding:4px 9px;font-weight:600}
 
 /* ---- charts ---- */
 canvas{display:block;width:100%;background:#fff;border:1px solid var(--border);border-radius:8px}
@@ -123,7 +126,7 @@ html[data-lang="en"] .lang-zh{display:none}
   <div class="nav-inner">
     <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Part 1 · Initialization Lab</span><span class="lang-zh">第 1 部分 · 初始化实验室</span></a>
     <nav class="nav-links">
-      <a href="../nn-signal-lab/" class="next"><span class="lang-en">Part 2 · Signal Propagation Lab →</span><span class="lang-zh">第 2 部分 · 信号传播实验室 →</span></a>
+      <a href="../nn-signal-lab/" class="next"><span class="lang-en">Part 2 · Next experiment →</span><span class="lang-zh">第 2 部分 · 下一个实验 →</span></a>
       <a href="../../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
       <button class="lang-toggle" id="langBtn" type="button">中文</button>
     </nav>
@@ -132,33 +135,29 @@ html[data-lang="en"] .lang-zh{display:none}
 
 <main>
 
-<!-- ============================ 0. framing ============================ -->
-<section class="panel">
-  <h1><span class="lang-en">You choose the initialization</span><span class="lang-zh">初始化由你来选</span></h1>
-  <p class="lede">
-    <span class="lang-en">Build a small network, then decide <b>how every single layer is initialized</b> — a 0/1 matrix, a Gaussian matrix or a uniform matrix, each with your own mean and variance. Press Train and look at the error curves. Nothing on this page tells you which choice is right; finding that out is the experiment.</span>
-    <span class="lang-zh">先搭一个小网络，然后<b>逐层决定初始化方式</b>——0/1 矩阵、高斯矩阵或均匀分布矩阵，均值与方差都自己调。按下 Train，只误差曲线。这一页不会告诉你哪种选择是对的，把它试出来就是这次实验的目的。</span>
-  </p>
-  <div class="callout warn">
-    <span class="lang-en"><b>The only feedback is the error.</b> We deliberately do not plot anything about the signal inside the network — at this point we have not introduced it yet. Judge an initialization by whether training and test error come down.</span>
-    <span class="lang-zh"><b>唯一的反馈就是误差。</b>我们刻意不画网络内部的任何信号量——此时还没讲到它。判断一个初始化好不好，只看训练误差和测试误差有没有降下来。</span>
-  </div>
-</section>
+<h1><span class="lang-en">Find settings that make the network train</span><span class="lang-zh">调出一组能 work 的网络设置</span></h1>
+<p class="lede">
+  <span class="lang-en">Build the network, then set <b>how every single layer is initialized</b> — a constant, a 0/1 matrix, Gaussian or uniform — and pick the learning rate. Press Train and look at the error. Nothing on this page tells you which choice is right; finding that out is the experiment.</span>
+  <span class="lang-zh">先搭好网络，然后逐层设置<b>初始化方式</b>——常数、0/1 矩阵、高斯或均匀分布——再选学习率。按下 Train，看误差。这一页不会告诉你哪种选择是对的，把它试出来就是这次实验的目的。</span>
+</p>
+<div class="callout warn">
+  <span class="lang-en"><b>An error of 50% means the network learned nothing at all</b> — that is the chance level for this data set. Judge a configuration only by whether the two curves come down and stay down.</span>
+  <span class="lang-zh"><b>误差 50% 意味着网络什么都没学到</b>——这正是这份数据集的瞎猜水平。判断一组配置好不好，只看两条曲线有没有降下来并稳住。</span>
+</div>
 
-<!-- ============================ 1. network ============================ -->
-<section class="panel">
-  <div class="phead">
-    <h2><span class="step">1</span> &nbsp;<span class="lang-en">Build the network</span><span class="lang-zh">搭建网络</span></h2>
-  </div>
-  <div class="card">
-    <div class="grid-net">
+<section class="card">
+
+  <div class="sect">
+    <div class="shead"><h4><span class="lang-en">1 · Network</span><span class="lang-zh">1 · 网络</span></h4>
+      <span class="hint"><span class="lang-en">no bias in the initialization — biases start at zero and are learned</span><span class="lang-zh">初始化不涉及偏置——偏置从 0 开始自己学</span></span></div>
+    <div class="cols4">
       <div class="ctrl">
         <label><span class="lang-en">hidden layers L</span><span class="lang-zh">隐藏层层数 L</span><span class="val" id="LVal">6</span></label>
         <input type="range" id="depth" min="1" max="8" step="1" value="6">
       </div>
       <div class="ctrl">
-        <label><span class="lang-en">width d</span><span class="lang-zh">宽度 d</span><span class="val" id="dVal">16</span></label>
-        <input type="range" id="width" min="8" max="32" step="2" value="16">
+        <label><span class="lang-en">width d</span><span class="lang-zh">宽度 d</span><span class="val" id="dVal">24</span></label>
+        <input type="range" id="width" min="8" max="32" step="2" value="24">
       </div>
       <div class="ctrl">
         <label><span class="lang-en">activation φ</span><span class="lang-zh">激活函数 φ</span></label>
@@ -175,82 +174,89 @@ html[data-lang="en"] .lang-zh{display:none}
             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
             <option value="4">4</option><option value="5">5</option>
           </select>
-          <button class="btn sm" id="reseed" type="button" title="draw new random matrices"><span class="lang-en">re-draw</span><span class="lang-zh">重抽</span></button>
+          <button class="btn sm" id="reseed" type="button"><span class="lang-en">re-draw</span><span class="lang-zh">重抽</span></button>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="sect">
+    <div class="shead">
+      <h4><span class="lang-en">2 · Initialization of every layer</span><span class="lang-zh">2 · 逐层设置初始化</span>
+        <span class="hint"><span class="lang-en">four families per layer; the last row is the output layer</span><span class="lang-zh">每层四选一；最后一行是输出层</span></span></h4>
+      <div class="lbtns">
+        <button class="btn sm" id="naive" type="button"><span class="lang-en">reset all to N(0, 1)</span><span class="lang-zh">全部重置为 N(0, 1)</span></button>
+        <button class="btn sm" id="copyLink" type="button"><span class="lang-en">copy link</span><span class="lang-zh">复制链接</span></button>
+      </div>
+    </div>
+    <div class="lstack">
+      <div class="lhead">
+        <span><span class="lang-en">layer</span><span class="lang-zh">层</span></span>
+        <span><span class="lang-en">family</span><span class="lang-zh">分布</span></span>
+        <span><span class="lang-en">matrix</span><span class="lang-zh">矩阵</span></span>
+        <span><span class="lang-en">parameters</span><span class="lang-zh">参数</span></span>
+        <span><span class="lang-en">as drawn</span><span class="lang-zh">实际抽样</span></span>
+        <span></span>
+      </div>
+      <div id="rows"></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div class="shead"><h4><span class="lang-en">3 · Training</span><span class="lang-zh">3 · 训练</span></h4></div>
+    <div class="cols4">
+      <div class="ctrl">
+        <label><span class="lang-en">learning rate</span><span class="lang-zh">学习率</span><span class="val" id="lrVal">0.050</span></label>
+        <input type="range" id="lr" min="-2.3" max="-0.3" step="0.01" value="-1.301">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">momentum</span><span class="lang-zh">动量</span><span class="val" id="momVal">0.90</span></label>
+        <input type="range" id="mom" min="0" max="0.99" step="0.01" value="0.90">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">batch / steps</span><span class="lang-zh">批大小 / 步数</span><span class="val">32 / 900</span></label>
+        <div class="fixed"><span class="lang-en">fixed · no gradient clipping</span><span class="lang-zh">固定 · 不做梯度裁剪</span></div>
+      </div>
+      <div class="ctrl">
+        <label>&nbsp;</label>
+        <div class="stepbar">
+          <button class="btn" id="clear" type="button"><span class="lang-en">Clear</span><span class="lang-zh">清空</span></button>
+          <button class="btn" id="stop" type="button" disabled><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
+          <button class="btn primary" id="run" type="button"><span class="lang-en">Train</span><span class="lang-zh">开始训练</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<section class="grid-run">
+  <div class="card">
+    <div class="legend" id="errLegend"></div>
+    <canvas id="errChart"></canvas>
+    <div class="readout">
+      <div class="stat"><div class="k"><span class="lang-en">train error</span><span class="lang-zh">训练误差</span></div><div class="v" id="r-tr">—</div></div>
+      <div class="stat"><div class="k"><span class="lang-en">test error</span><span class="lang-zh">测试误差</span></div><div class="v" id="r-te">—</div></div>
+      <div class="stat"><div class="k"><span class="lang-en">chance level</span><span class="lang-zh">瞎猜水平</span></div><div class="v">50.0%</div></div>
+      <div class="stat"><div class="k"><span class="lang-en">runs kept</span><span class="lang-zh">保留次数</span></div><div class="v" id="r-n">0</div></div>
+    </div>
+    <div class="statusline" id="trainStatus"></div>
+  </div>
+  <div class="card">
+    <h3><span class="lang-en">Decision boundary</span><span class="lang-zh">决策边界</span></h3>
+    <canvas id="bdChart"></canvas>
     <p class="small muted" style="margin:10px 0 0">
-      <span class="lang-en">A plain fully connected network for two-moon classification: no bias, no normalization, no skip connections, so that everything you see comes from the initialization. Layer 1 takes the 2-d input; every other layer takes a d-d vector.</span>
-      <span class="lang-zh">一个用于月牙二分类的普通全连接网络：无偏置、无归一化、无跳跃连接，因此你看到的一切都只来自初始化。第 1 层接收 2 维输入，其余每层接收 d 维向量。</span>
+      <span class="lang-en">The most recent run, on the two interleaved spirals. A network that has actually learned bends the boundary around the origin.</span>
+      <span class="lang-zh">最近一次训练的结果，数据是两条互相缠绕的螺旋。真正学到的网络，决策边界会绕着原点弯过去。</span>
     </p>
   </div>
 </section>
 
-<!-- ============================ 2. initialization ============================ -->
-<section class="panel">
-  <div class="phead">
-    <h2><span class="step">2</span> &nbsp;<span class="lang-en">Choose the initialization of every layer</span><span class="lang-zh">逐层选择初始化</span></h2>
-    <div class="lbtns">
-      <button class="btn sm" id="naive" type="button"><span class="lang-en">reset to N(0, 1) everywhere</span><span class="lang-zh">重置为逐层 N(0, 1)</span></button>
-      <button class="btn sm" id="copyLink" type="button"><span class="lang-en">copy link</span><span class="lang-zh">复制链接</span></button>
-    </div>
-  </div>
-  <p class="small muted" style="margin-bottom:10px">
-    <span class="lang-en">Three families are available for each layer. <b>0/1</b>: every entry is 0 or 1, and you tune the fraction of ones. <b>N(μ, σ²)</b>: i.i.d. Gaussian entries with the mean and variance you set. <b>U(μ, σ²)</b>: i.i.d. uniform entries with the mean and variance you set. The last row is the output layer.</span>
-    <span class="lang-zh">每一层都有三类可选。<b>0/1</b>：每个元素取 0 或 1，你调 1 的比例。<b>N(μ, σ²)</b>：独立同分布高斯，均值与方差自己设。<b>U(μ, σ²)</b>：独立同分布均匀分布，均值与方差自己设。最后一行是输出层。</span>
-  </p>
-  <div class="lstack">
-    <div class="lhead">
-      <span><span class="lang-en">layer</span><span class="lang-zh">层</span></span>
-      <span><span class="lang-en">family</span><span class="lang-zh">分布</span></span>
-      <span class="cl-prev"><span class="lang-en">matrix</span><span class="lang-zh">矩阵</span></span>
-      <span class="cl-params"><span class="lang-en">parameters</span><span class="lang-zh">参数</span></span>
-      <span class="cl-stats"><span class="lang-en">as drawn</span><span class="lang-zh">实际抽样</span></span>
-      <span></span>
-    </div>
-    <div id="rows"></div>
-  </div>
-</section>
-
-<!-- ============================ 3. train ============================ -->
-<section class="panel">
-  <div class="phead">
-    <h2><span class="step">3</span> &nbsp;<span class="lang-en">Train it and look at the error</span><span class="lang-zh">训练它，看误差</span></h2>
-    <div class="lbtns">
-      <button class="btn primary" id="run" type="button"><span class="lang-en">Train</span><span class="lang-zh">开始训练</span></button>
-      <button class="btn" id="stop" type="button" disabled><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
-      <button class="btn" id="clear" type="button"><span class="lang-en">Clear history</span><span class="lang-zh">清空历史</span></button>
-    </div>
-  </div>
-  <div class="grid-run">
-    <div class="card">
-      <div class="legend" id="errLegend"></div>
-      <canvas id="errChart"></canvas>
-      <div class="readout">
-        <div class="stat"><div class="k"><span class="lang-en">train error</span><span class="lang-zh">训练误差</span></div><div class="v" id="r-tr">—</div></div>
-        <div class="stat"><div class="k"><span class="lang-en">test error</span><span class="lang-zh">测试误差</span></div><div class="v" id="r-te">—</div></div>
-        <div class="stat"><div class="k"><span class="lang-en">chance level</span><span class="lang-zh">瞎猜水平</span></div><div class="v">50.0%</div></div>
-        <div class="stat"><div class="k"><span class="lang-en">runs kept</span><span class="lang-zh">保留次数</span></div><div class="v" id="r-n">0</div></div>
-      </div>
-      <div class="statusline" id="trainStatus"></div>
-    </div>
-    <div class="card">
-      <h3><span class="lang-en">Decision boundary</span><span class="lang-zh">决策边界</span></h3>
-      <canvas id="bdChart"></canvas>
-      <p class="small muted" style="margin:10px 0 0">
-        <span class="lang-en">The most recent run. A well-initialized network usually shows a broad region of confident prediction, not a uniform grey.</span>
-        <span class="lang-zh">最近一次训练的结果。初始化得当的网络通常会出现大片置信度较高的区域，而不是一片均匀的灰色。</span>
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- ============================ notes ============================ -->
 <div class="footer-note">
-  <p><span class="lang-en">Each run keeps its curve when you train again (up to five), so you can change one layer and compare directly. The curves show <b>error</b>, not loss: the fraction of misclassified points, which is what you can actually read off an axis.</span>
-     <span class="lang-zh">每次训练都会把曲线留在图上（最多保留五条），这样可以只改一层然后直接比较。图上画的是<b>误差</b>而不是损失：分错点的比例，这是真正能从坐标轴上读出来的量。</span></p>
-  <p style="margin-top:8px"><span class="lang-en">Two-moons data is generated in the page from the seed; 400 training and 400 test points. Optimizer: SGD with momentum at one fixed learning rate and <b>no gradient clipping</b>, so runs differ only because of the initialization — a scale that is far too large is allowed to blow up, and a run whose gradients turn non-finite is marked <i>diverged</i> and stopped. The curves are noisy on purpose: they are what a single run actually looks like.</span>
-     <span class="lang-zh">月牙数据由页面按种子实时生成，训练集与测试集各 400 点。优化器：带动量的 SGD，学习率固定，且<b>不做梯度裁剪</b>，因此各次运行的差别只来自初始化——尺度过大时就真的会炸，梯度出现非有限值的运行会被标记为 <i>diverged</i> 并中止。曲线有抖动是刻意的：单次训练实际就是这样。</span></p>
+  <p><span class="lang-en">Each run keeps its curve when you train again (up to five), so you can change one thing and compare directly. The curves show <b>error</b>, not loss: the fraction of misclassified points, which is what you can actually read off an axis.</span>
+     <span class="lang-zh">每次训练都会把曲线留在图上（最多保留五条），这样可以只改一处然后直接比较。图上画的是<b>误差</b>而不是损失：分错点的比例，这是真正能从坐标轴上读出来的量。</span></p>
+  <p style="margin-top:8px"><span class="lang-en">400 training and 400 test points, generated in the page from the seed. SGD with momentum, a fixed number of steps and <b>no gradient clipping</b>, so that a scale which is far too large is allowed to blow up; a run whose gradients turn non-finite is marked <i>diverged</i> and stopped. The curves are noisy on purpose — that is what a single run actually looks like.</span>
+     <span class="lang-zh">训练集与测试集各 400 点，由页面按种子实时生成。带动量的 SGD，步数固定，且<b>不做梯度裁剪</b>，因此尺度过大时就真的会炸；梯度出现非有限值的运行会被标记为 <i>diverged</i> 并中止。曲线有抖动是刻意的——单次训练实际就是这样。</span></p>
 </div>
 
 </main>
@@ -267,7 +273,8 @@ html[data-lang="en"] .lang-zh{display:none}
        0/1 Bernoulli with a tunable fraction of ones,
        i.i.d. Gaussian  with a tunable mean and variance,
        i.i.d. uniform   with a tunable mean and variance.
-   There is deliberately no per-layer signal readout on this page.
+   The error curves are the ONLY feedback: nothing about the network's internals
+   is displayed here, on purpose.
    ========================================================================== */
 
 /* ---------------------------------------------------------------- utilities */
@@ -286,21 +293,24 @@ function num(x,n){ return (Math.round(x*Math.pow(10,n))/Math.pow(10,n)).toFixed(
 function $(id){ return document.getElementById(id); }
 
 /* ------------------------------------------------------------------- data */
-function makeMoons(n,noise,seed){
+/* Two interleaved spirals: the two classes wind around each other, so a
+   classifier has to bend around the origin — much harder than two separated blobs. */
+var SPIRAL_TURNS = 1.2;
+function makeSpiral(n,noise,seed,turns){
   var rnd=mulberry32(seed), X=new Float32Array(n*2), Y=new Uint8Array(n);
   var half=Math.floor(n/2);
   for(var i=0;i<n;i++){
-    var c = i<half ? 0 : 1, t = rnd()*Math.PI, px, py;
-    if(c===0){ px=Math.cos(t); py=Math.sin(t); }
-    else { px=1-Math.cos(t); py=0.5-Math.sin(t); }
-    X[2*i]   = px + gaussFrom(rnd)*noise;
-    X[2*i+1] = py + gaussFrom(rnd)*noise;
+    var c = i<half ? 0 : 1, k = (i%half)/(half-1);
+    var r = 0.16 + 0.84*k;
+    var t = k*turns*2*Math.PI + (c ? Math.PI : 0);
+    X[2*i]   = r*Math.cos(t) + gaussFrom(rnd)*noise;
+    X[2*i+1] = r*Math.sin(t) + gaussFrom(rnd)*noise;
     Y[i]=c;
   }
   return {X:X,Y:Y,n:n};
 }
-var TRAIN = makeMoons(400,0.13,11);
-var TEST  = makeMoons(400,0.13,29);
+var TRAIN = makeSpiral(400,0.06,11,SPIRAL_TURNS);
+var TEST  = makeSpiral(400,0.06,29,SPIRAL_TURNS);
 
 /* ============================================================ initializers */
 /* a spec is one of
@@ -310,7 +320,9 @@ var TEST  = makeMoons(400,0.13,29);
    "v" is always a VARIANCE, never a standard deviation.                    */
 function drawMatrix(W,spec,rnd){
   var n=W.length,i;
-  if(spec.t==="b"){
+  if(spec.t==="c"){
+    for(i=0;i<n;i++) W[i] = spec.k;
+  } else if(spec.t==="b"){
     for(i=0;i<n;i++) W[i] = (rnd()<spec.p) ? 1 : 0;
   } else if(spec.t==="g"){
     var sd=Math.sqrt(Math.max(spec.v,0));
@@ -326,27 +338,34 @@ function matStats(W){
   var mean=s/n, v=Math.max(0, s2/n-mean*mean);
   return {mean:mean, v:v, n:n};
 }
-function cloneSpec(sp){ return sp.t==="b" ? {t:"b",p:sp.p} : {t:sp.t,m:sp.m,v:sp.v}; }
+function cloneSpec(sp){
+  if(sp.t==="b") return {t:"b",p:sp.p};
+  if(sp.t==="c") return {t:"c",k:sp.k};
+  return {t:sp.t,m:sp.m,v:sp.v};
+}
 function specDesc(sp){
   if(!sp) return "?";
+  if(sp.t==="c") return "all entries = "+num(sp.k,2);
   if(sp.t==="b") return "0/1  P(1)="+num(sp.p,2);
   if(sp.t==="g") return "N("+num(sp.m,2)+", "+num(sp.v,3)+")";
   return "U("+num(sp.m,2)+", "+num(sp.v,3)+")";
 }
 
 /* ---------------------------------------------------------------- network */
+/* Only the weights are under study here, so every bias starts at zero — the
+   usual convention — and is learned. */
 function makeNet(cfg){
   var rnd=mulberry32((cfg.seed|0)*7919+13);
-  var d=cfg.d, L=cfg.L, din=cfg.din, Ws=[], nin=din, l;
+  var d=cfg.d, L=cfg.L, din=cfg.din, Ws=[], bs=[], nin=din, l;
   for(l=0;l<L;l++){
     var spec=cfg.inits[l]||cfg.inits[cfg.inits.length-1];
     var W=new Float32Array(d*nin);
     drawMatrix(W,spec,rnd);
-    Ws.push(W); nin=d;
+    Ws.push(W); bs.push(new Float32Array(d)); nin=d;
   }
   var Wo=new Float32Array(nin);
   drawMatrix(Wo,cfg.out,rnd);
-  return {din:din,d:d,L:L,act:cfg.act,seed:cfg.seed,Ws:Ws,Wo:Wo};
+  return {din:din,d:d,L:L,act:cfg.act,seed:cfg.seed,Ws:Ws,Wo:Wo,bs:bs,bo:0};
 }
 function act(x,k){ return k==="relu" ? (x>0?x:0) : k==="linear" ? x : Math.tanh(x); }
 function dactFromZ(z,k){ return k==="relu" ? (z>0?1:0) : k==="linear" ? 1 : (1-z*z); }
@@ -358,14 +377,12 @@ function makeBuf(net){
   for(l=0;l<L;l++){ h.push(new Float32Array(d)); e.push(new Float32Array(d)); }
   return {z:z,h:h,e:e};
 }
-function newGrads(net){
+function zeroGrads(net){
   return {W:net.Ws.map(function(W){return new Float32Array(W.length);}),
-          O:new Float32Array(net.Wo.length)};
+          b:net.bs.map(function(b){return new Float32Array(b.length);}),
+          O:new Float32Array(net.Wo.length), bo:0};
 }
-function newVel(net){
-  return {W:net.Ws.map(function(W){return new Float32Array(W.length);}),
-          O:new Float32Array(net.Wo.length)};
-}
+var newGrads=zeroGrads, newVel=zeroGrads;
 /* one forward + backward pass over the samples in idx; grads may be null */
 function forwardBackward(net,data,idx,grads){
   var L=net.L,d=net.d,din=net.din,k=net.act, buf=makeBuf(net);
@@ -374,11 +391,11 @@ function forwardBackward(net,data,idx,grads){
     var si=idx[ii];
     buf.z[0][0]=data.X[2*si]; buf.z[0][1]=data.X[2*si+1];
     for(l=1;l<=L;l++){
-      var W=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], hh=buf.h[l-1], zz=buf.z[l];
-      for(o=0;o<d;o++){ var s=0,b0=o*nin; for(kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; hh[o]=s; }
+      var W=net.Ws[l-1], bb=net.bs[l-1], nin=(l===1?din:d), prev=buf.z[l-1], hh=buf.h[l-1], zz=buf.z[l];
+      for(o=0;o<d;o++){ var s=bb[o],b0=o*nin; for(kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; hh[o]=s; }
       for(o=0;o<d;o++) zz[o]=act(hh[o],k);
     }
-    var ztop=buf.z[L], sOut=0;
+    var ztop=buf.z[L], sOut=net.bo;
     for(kk=0;kk<d;kk++) sOut+=net.Wo[kk]*ztop[kk];
     var p=logit(sOut), y=data.Y[si];
     loss += -(y?Math.log(Math.max(p,1e-12)):Math.log(Math.max(1-p,1e-12)));
@@ -387,9 +404,11 @@ function forwardBackward(net,data,idx,grads){
     var dOut=p-y, eN=buf.e[L-1], zL=buf.z[L];
     for(o=0;o<d;o++) eN[o]=dOut*net.Wo[o]*dactFromZ(zL[o],k);
     if(grads){
+      grads.bo+=dOut;
       for(kk=0;kk<d;kk++) grads.O[kk]+=dOut*ztop[kk];
-      var ninL=(L===1?din:d), gWL=grads.W[L-1], zp=buf.z[L-1];
+      var ninL=(L===1?din:d), gWL=grads.W[L-1], gbL=grads.b[L-1], zp=buf.z[L-1];
       for(o=0;o<d;o++){ var ev=eN[o], b1=o*ninL;
+        gbL[o]+=ev;
         for(kk=0;kk<ninL;kk++) gWL[b1+kk]+=ev*zp[kk]; }
     }
     for(var lb=L-1;lb>=1;lb--){
@@ -399,8 +418,9 @@ function forwardBackward(net,data,idx,grads){
         ePrev[kk]=acc*dactFromZ(zPost[kk],k);
       }
       if(grads){
-        var ninB=(lb===1?din:d), gWb=grads.W[lb-1];
+        var ninB=(lb===1?din:d), gWb=grads.W[lb-1], gbb=grads.b[lb-1];
         for(o=0;o<d;o++){ var ev2=ePrev[o], b2=o*ninB;
+          gbb[o]+=ev2;
           for(kk=0;kk<ninB;kk++) gWb[b2+kk]+=ev2*zPrev[kk]; }
       }
     }
@@ -412,9 +432,12 @@ function applyGrads(net,grads,scale,mom,vel){
   for(l=0;l<net.L;l++){
     var W=net.Ws[l], G=grads.W[l], V=vel.W[l];
     for(j=0;j<W.length;j++){ V[j]=mom*V[j]-scale*G[j]; W[j]+=V[j]; }
+    var B=net.bs[l], GB=grads.b[l], VB=vel.b[l];
+    for(j=0;j<B.length;j++){ VB[j]=mom*VB[j]-scale*GB[j]; B[j]+=VB[j]; }
   }
   var O=net.Wo, GO=grads.O, VO=vel.O;
   for(j=0;j<O.length;j++){ VO[j]=mom*VO[j]-scale*GO[j]; O[j]+=VO[j]; }
+  net.bo += mom*vel.bo - scale*grads.bo; vel.bo = mom*vel.bo - scale*grads.bo;
 }
 /* one SGD step with an optional global gradient clip.
    The lab runs with clip = 0 ON PURPOSE: a badly scaled initialization is
@@ -425,12 +448,16 @@ function sgdStep(net,data,idx,lr,mom,vel,clip){
   forwardBackward(net,data,idx,g);
   var tot=0,i,l;
   for(l=0;l<g.W.length;l++){ var G=g.W[l]; for(i=0;i<G.length;i++) tot+=G[i]*G[i]; }
+  for(l=0;l<g.b.length;l++){ var GB=g.b[l]; for(i=0;i<GB.length;i++) tot+=GB[i]*GB[i]; }
   for(i=0;i<g.O.length;i++) tot+=g.O[i]*g.O[i];
+  tot+=g.bo*g.bo;
   var norm=Math.sqrt(tot);
   if(!isFinite(norm)) return false;                       /* diverged */
   if(clip>0 && norm>clip){ var sc=clip/norm;
     for(l=0;l<g.W.length;l++){ var G2=g.W[l]; for(i=0;i<G2.length;i++) G2[i]*=sc; }
+    for(l=0;l<g.b.length;l++){ var GB2=g.b[l]; for(i=0;i<GB2.length;i++) GB2[i]*=sc; }
     for(i=0;i<g.O.length;i++) g.O[i]*=sc;
+    g.bo*=sc;
   }
   applyGrads(net,g,lr/idx.length,mom,vel);
   return true;
@@ -440,10 +467,10 @@ function errOf(net,data){
   for(i=0;i<data.n;i++){
     buf.z[0][0]=data.X[2*i]; buf.z[0][1]=data.X[2*i+1];
     for(l=1;l<=L;l++){
-      var W=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
-      for(o=0;o<d;o++){ var s=0,b0=o*nin; for(kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; zz[o]=act(s,net.act); }
+      var W=net.Ws[l-1], bb=net.bs[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
+      for(o=0;o<d;o++){ var s=bb[o],b0=o*nin; for(kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; zz[o]=act(s,net.act); }
     }
-    var so=0; for(kk=0;kk<d;kk++) so+=net.Wo[kk]*buf.z[L][kk];
+    var so=net.bo; for(kk=0;kk<d;kk++) so+=net.Wo[kk]*buf.z[L][kk];
     if(((logit(so)>0.5)?1:0)!==data.Y[i]) bad++;
   }
   return bad/data.n;
@@ -502,27 +529,29 @@ function drawErrChart(runs,steps){
   $("errLegend").innerHTML=legend.join("");
   $("r-n").textContent=String(runs.length);
 }
-var GX0=-1.5,GX1=2.5,GY0=-1.3,GY1=1.8;
+var WORLD_W = 2.6;      /* width of the world window shown in the boundary plot */
 function drawBoundary(cv,net,data){
-  var s=setupCanvas(cv,272), g=s.g, W=s.w, H=s.h;
-  var m={l:30,r:14,t:14,b:26}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  var s=setupCanvas(cv,300), g=s.g, W=s.w, H=s.h;
+  var m={l:30,r:14,t:12,b:30}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  /* keep the units square: derive the world height from the pixel aspect */
+  var xw=WORLD_W, yw=WORLD_W*ph/pw, x0=-xw/2, y0=-yw/2;
   var NX=54, NY=46, buf=makeBuf(net), L=net.L, d=net.d, din=net.din, l, o, kk;
   g.clearRect(0,0,W,H);
   for(var iy=0;iy<NY;iy++) for(var ix=0;ix<NX;ix++){
-    var xa=GX0+(ix+0.5)/NX*(GX1-GX0), xb=GY0+(iy+0.5)/NY*(GY1-GY0);
+    var xa=x0+(ix+0.5)/NX*xw, xb=y0+(iy+0.5)/NY*yw;
     buf.z[0][0]=xa; buf.z[0][1]=xb;
     for(l=1;l<=L;l++){
-      var Wm=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
-      for(o=0;o<d;o++){ var su=0,b0=o*nin; for(kk=0;kk<nin;kk++) su+=Wm[b0+kk]*prev[kk]; zz[o]=act(su,net.act); }
+      var Wm=net.Ws[l-1], bb2=net.bs[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
+      for(o=0;o<d;o++){ var su=bb2[o],b0=o*nin; for(kk=0;kk<nin;kk++) su+=Wm[b0+kk]*prev[kk]; zz[o]=act(su,net.act); }
     }
-    var so=0; for(kk=0;kk<d;kk++) so+=net.Wo[kk]*buf.z[L][kk];
+    var so=net.bo; for(kk=0;kk<d;kk++) so+=net.Wo[kk]*buf.z[L][kk];
     var p=logit(so), c=p>0.5?216:26;
     g.fillStyle="rgb("+Math.round(c+(255-c)*0.10)+","+Math.round(c+(255-c)*0.55)+","+Math.round(c+(255-c)*0.45)+")";
     g.fillRect(m.l+ix*pw/NX, m.t+(NY-1-iy)*ph/NY, pw/NX+0.7, ph/NY+0.7);
   }
   g.strokeStyle="#cbd5dd"; g.strokeRect(m.l,m.t,pw,ph);
   for(var i2=0;i2<data.n;i2++){
-    var cx=m.l+(data.X[2*i2]-GX0)/(GX1-GX0)*pw, cy=m.t+(GY1-data.X[2*i2+1])/(GY1-GY0)*ph;
+    var cx=m.l+(data.X[2*i2]-x0)/xw*pw, cy=m.t+(y0+yw-data.X[2*i2+1])/yw*ph;
     if(cx<m.l||cx>m.l+pw||cy<m.t||cy>m.t+ph) continue;
     g.beginPath(); g.arc(cx,cy,2.1,0,6.2832);
     g.fillStyle = data.Y[i2] ? "#ffffff" : "#111111";
@@ -560,7 +589,7 @@ function drawPreview(cv,W,rows,cols){
 
 /* ==================================================================== state */
 var DEF = {t:"g", m:0, v:1};
-var state={ d:16, L:6, act:"relu", seed:1,
+var state={ d:24, L:6, act:"relu", seed:1, lr:0.05, mom:0.9,
             inits:[], out:cloneSpec(DEF) };
 for(var _i=0;_i<state.L;_i++) state.inits.push(cloneSpec(DEF));
 var net=null, RUNS=[], running=null;
@@ -573,35 +602,33 @@ function buildRows(){
   var host=rowsHost(); host.innerHTML="";
   var rowSpecs=[];
   for(var l=0;l<state.L;l++) rowSpecs.push({i:l,label:"L"+(l+1),spec:state.inits[l],out:false});
-  rowSpecs.push({i:state.L,label:"output",spec:state.out,out:true});
+  rowSpecs.push({i:state.L,label:"out",spec:state.out,out:true});
   rowSpecs.forEach(function(rs){
     var el=document.createElement("div");
     el.className="lrow"+(rs.out?" outrow":"");
     el.innerHTML =
-      '<div class="lname">'+ (rs.out?'<span class="lang-en">output</span><span class="lang-zh">输出层</span>':rs.label)
-      + '<span class="fan">'+(rs.out?state.d:"")+'</span></div>'
+      '<div class="lname">'+rs.label+'<span class="fan"></span></div>'
       + '<select class="ltype">'
+      +   '<option value="c">constant</option>'
       +   '<option value="b">0 / 1</option>'
-      +   '<option value="g">N(μ, σ²)</option>'
-      +   '<option value="u">U(μ, σ²)</option>'
+      +   '<option value="g">N(&mu;, &sigma;&sup2;)</option>'
+      +   '<option value="u">U(&mu;, &sigma;&sup2;)</option>'
       + '</select>'
       + '<canvas class="lprev"></canvas>'
       + '<div class="lp"></div>'
       + '<div class="lstats"></div>'
-      + '<div class="lbtns"><button class="btn sm lall" type="button"><span class="lang-en">→ all</span><span class="lang-zh">→ 全部</span></button></div>';
+      + '<div class="lbtns"><button class="btn sm lall" type="button" title="apply this layer to every layer">&rarr;</button></div>';
     host.appendChild(el);
     rs.el=el;
     var sel=el.querySelector(".ltype");
     sel.value=rs.spec.t;
-    /* keep the fan-in label in sync: layer 1 is 2 -> d, the rest d -> d */
-    var fan=el.querySelector(".fan");
-    fan.textContent = rs.out ? (state.d+" → 1")
-                    : (state.d+"×"+fanInOf(rs.i));
+    el.querySelector(".fan").textContent = rs.out ? (state.d+"\u21921") : (state.d+"\u00d7"+fanInOf(rs.i));
     sel.addEventListener("change",function(){
       var t=sel.value;
-      if(t==="b") rs.spec={t:"b", p:(rs.spec.t==="b"?rs.spec.p:0.5)};
-      else rs.spec={t:t, m:(rs.spec.m!==undefined?rs.spec.m:0),
-                    v:(rs.spec.v!==undefined?rs.spec.v:1)};
+      if(t==="b")      rs.spec={t:"b", p:(rs.spec.t==="b"?rs.spec.p:0.5)};
+      else if(t==="c") rs.spec={t:"c", k:(rs.spec.t==="c"?rs.spec.k:1)};
+      else             rs.spec={t:t, m:(rs.spec.m!==undefined?rs.spec.m:0),
+                                v:(rs.spec.v!==undefined?rs.spec.v:1)};
       renderParams(rs); refreshAll();
     });
     el.querySelector(".lall").addEventListener("click",function(){
@@ -616,30 +643,31 @@ function buildRows(){
 function renderParams(rs){
   var host=rs.el.querySelector(".lp");
   host.innerHTML="";
-  function slider(key,lab,min,max,step,val,fmtf){
-    var wrap=document.createElement("div");
-    wrap.innerHTML='<label>'+lab+'<span class="val">'+fmtf(val)+'</span></label>'
-      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'">';
-    var inp=wrap.querySelector("input"), out=wrap.querySelector(".val");
+  /* one compact inline slider: label | range | current value */
+  function grp(lab,min,max,step,val,show,apply){
+    var d=document.createElement("div"); d.className="lpg";
+    d.innerHTML='<span class="lbl">'+lab+'</span>'
+      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'">'
+      +'<span class="val">'+show(val)+'</span>';
+    var inp=d.querySelector("input"), out=d.querySelector(".val");
     inp.addEventListener("input",function(){
-      var v=parseFloat(inp.value);
-      if(key==="p") rs.spec.p=v;
-      else if(key==="m") rs.spec.m=v;
-      else rs.spec.v=Math.pow(10,v);
-      out.textContent=fmtf(key==="v"?Math.pow(10,v):v);
-      refreshAll();
+      var v=parseFloat(inp.value); apply(v); out.textContent=show(v); refreshAll();
     });
-    host.appendChild(wrap);
+    host.appendChild(d);
   }
-  if(rs.spec.t==="b"){
-    slider("p",'<span class="lang-en">P(1) · fraction of ones</span><span class="lang-zh">P(1) · 取 1 的比例</span>',
-           0,1,0.01,rs.spec.p,function(v){return num(v,2);});
+  var sp=rs.spec;
+  if(sp.t==="c"){
+    grp("value", -1, 1, 0.01, sp.k,
+        function(v){return num(v,2);}, function(v){ sp.k=v; });
+  } else if(sp.t==="b"){
+    grp("P(1)", 0, 1, 0.01, sp.p,
+        function(v){return num(v,2);}, function(v){ sp.p=v; });
   } else {
-    slider("m",'<span class="lang-en">mean μ</span><span class="lang-zh">均值 μ</span>',
-           -2,2,0.01,rs.spec.m,function(v){return num(v,2);});
-    var lgv=Math.log10(Math.max(rs.spec.v,1e-6));
-    slider("v",'<span class="lang-en">variance σ²</span><span class="lang-zh">方差 σ²</span>',
-           -4,2,0.01,lgv,function(v){return num(Math.pow(10,v),4);});
+    grp("&mu;", -2, 2, 0.01, sp.m,
+        function(v){return num(v,2);}, function(v){ sp.m=v; });
+    var lg=Math.log10(Math.max(sp.v,1e-6));
+    grp("&sigma;&sup2;", -4, 2, 0.01, lg,
+        function(v){return num(Math.pow(10,v),4);}, function(v){ sp.v=Math.pow(10,v); });
   }
 }
 /* re-draw every preview + realized-statistics cell from the current net */
@@ -667,18 +695,27 @@ function refreshAll(){
                inits:state.inits,out:state.out});
   refreshRows();
 }
+/* which net the decision-boundary panel shows: the last trained one if there is
+   one, otherwise the current draft. Redrawing a *draft* net over a finished
+   result (on resize, say) would silently contradict the error readouts. */
+function boundaryNet(){
+  return (RUNS.length && RUNS[RUNS.length-1].net) ? RUNS[RUNS.length-1].net : net;
+}
+function redrawBoundary(){ if(boundaryNet()) drawBoundary($("bdChart"),boundaryNet(),TRAIN); }
 
 /* ------------------------------------------------------------ training loop */
-/* Small enough to finish in about a second even at the largest settings, so a
-   lecture can run several trials back to back. Learning rate and batch size are
-   FIXED and there is NO gradient clipping, so that the only thing that differs
-   between runs is the initialization. */
-var TSTEPS=600, BS=32, LR=0.05, MOM=0.9, CLIP=0, ERR_EVERY=10, MAXRUNS=5;
+/* Fixed budget so a run finishes in about a second even at the largest settings
+   and several trials fit into a lecture. Batch size and step count are fixed;
+   there is NO gradient clipping, so a too-large scale is allowed to blow up. */
+var TSTEPS=900, BS=32, CLIP=0, ERR_EVERY=15, MAXRUNS=5;
 
 function runLabel(){
-  var all=state.inits.concat([state.out]), first=JSON.stringify(all[0]);
-  for(var i=1;i<all.length;i++) if(JSON.stringify(all[i])!==first) return "mixed";
-  return specDesc(all[0]);
+  var all=state.inits.concat([state.out]), first=JSON.stringify(all[0]), txt="mixed";
+  var same=true;
+  for(var i=1;i<all.length;i++) if(JSON.stringify(all[i])!==first){ same=false; break; }
+  if(same) txt=specDesc(all[0]);
+  if(state.act!=="relu") txt+=" \u00b7 "+state.act;
+  return txt+" \u00b7 lr "+num(state.lr,3);
 }
 function startTraining(){
   if(running) running.cancelled=true;
@@ -697,8 +734,10 @@ function startTraining(){
     if(!running||running.cancelled){ finish(); return; }
     var t0=performance.now();
     while(performance.now()-t0<24){
-      if(!sgdStep(r.net,TRAIN,batchIdx(),LR,MOM,r.vel,CLIP)){
-        r.done=true; r.diverged=true; finish(); return;
+      if(!sgdStep(r.net,TRAIN,batchIdx(),state.lr,state.mom,r.vel,CLIP)){
+        r.done=true; r.diverged=true;
+        if(!r.step.length){ r.step.push(1); r.train.push(1); r.test.push(1); }  /* mark where it died */
+        finish(); return;
       }
       done++;
       if(done%ERR_EVERY===0){ r.step.push(done); r.train.push(errOf(r.net,TRAIN)); r.test.push(errOf(r.net,TEST)); }
@@ -717,9 +756,10 @@ function startTraining(){
     $("run").disabled=false; $("stop").disabled=true;
     var lastT=r.train.length?r.train[r.train.length-1]:null;
     var lastE=r.test.length?r.test[r.test.length-1]:null;
-    $("r-tr").textContent = r.diverged ? "—" : (lastT===null?"—":(100*lastT).toFixed(1)+"%");
-    $("r-te").textContent = r.diverged ? "—" : (lastE===null?"—":(100*lastE).toFixed(1)+"%");
-    drawBoundary($("bdChart"),r.net,TRAIN);
+    var dead = r.diverged ? "diverged" : null;
+    $("r-tr").textContent = dead || (lastT===null?"—":(100*lastT).toFixed(1)+"%");
+    $("r-te").textContent = dead || (lastE===null?"—":(100*lastE).toFixed(1)+"%");
+    redrawBoundary();
     var note = r.diverged
       ? ' <span class="lang-en">— the gradients became non-finite, so the run was stopped.</span><span class="lang-zh">—— 梯度出现非有限值，该次运行已中止。</span>'
       : "";
@@ -742,6 +782,10 @@ $("width").addEventListener("input",function(){
   buildRows(); refreshAll();
 });
 $("act").addEventListener("change",function(){ state.act=this.value; refreshAll(); });
+$("lr").addEventListener("input",function(){
+  state.lr=Math.pow(10,parseFloat(this.value)); $("lrVal").textContent=num(state.lr,3); });
+$("mom").addEventListener("input",function(){
+  state.mom=parseFloat(this.value); $("momVal").textContent=num(state.mom,2); });
 $("seed").addEventListener("change",function(){ state.seed=parseInt(this.value,10); refreshAll(); });
 $("reseed").addEventListener("click",function(){
   state.seed=state.seed+1;
@@ -770,7 +814,7 @@ $("copyLink").addEventListener("click",function(){
     navigator.clipboard.writeText(u).then(done,function(){ window.prompt("copy:",u); });
   else window.prompt("copy:",u);
 });
-window.addEventListener("resize",function(){ if(net) drawBoundary($("bdChart"),net,TRAIN); });
+window.addEventListener("resize",redrawBoundary);
 
 /* --------------------------------------------------------- language toggle */
 $("langBtn").addEventListener("click",function(){
@@ -783,15 +827,18 @@ $("langBtn").addEventListener("click",function(){
 /* ?d=16&L=6&act=relu&seed=1&init=g:0.00:-0.00|b:0.50|...&out=g:0.00:-0.00
    g/u encode the mean and log10(variance); b encodes the fraction of ones.  */
 function encodeSpec(sp){
+  if(sp.t==="c") return "c:"+sp.k.toFixed(2);
   if(sp.t==="b") return "b:"+sp.p.toFixed(2);
   return sp.t+":"+sp.m.toFixed(2)+":"+Math.log10(Math.max(sp.v,1e-6)).toFixed(2);
 }
 function encodeState(){
   return "?d="+state.d+"&L="+state.L+"&act="+state.act+"&seed="+state.seed
+    +"&lr="+Math.log10(state.lr).toFixed(2)+"&mom="+state.mom.toFixed(2)
     +"&init="+state.inits.map(encodeSpec).join("|")+"&out="+encodeSpec(state.out);
 }
 function decodeSpec(s){
   var a=s.split(":");
+  if(a[0]==="c") return {t:"c", k:Math.max(-1,Math.min(1,parseFloat(a[1])))};   /* c = constant */
   if(a[0]==="b") return {t:"b", p:Math.max(0,Math.min(1,parseFloat(a[1])))};
   if(a[0]==="g"||a[0]==="u")
     return {t:a[0], m:Math.max(-2,Math.min(2,parseFloat(a[1]))),
@@ -804,6 +851,8 @@ function decodeSpec(s){
   if(q.has("L")){ var L=parseInt(q.get("L"),10); if(L>=1&&L<=8) state.L=L; }
   if(q.has("act")&&["linear","tanh","relu"].indexOf(q.get("act"))>=0) state.act=q.get("act");
   if(q.has("seed")){ var sd=parseInt(q.get("seed"),10); if(sd>=1&&sd<=5) state.seed=sd; }
+  if(q.has("lr")){ var ql=parseFloat(q.get("lr")); if(isFinite(ql)) state.lr=Math.pow(10,Math.max(-2.3,Math.min(-0.3,ql))); }
+  if(q.has("mom")){ var qm=parseFloat(q.get("mom")); if(isFinite(qm)) state.mom=Math.max(0,Math.min(0.99,qm)); }
   state.inits=[];
   if(q.has("init")){
     q.get("init").split("|").forEach(function(t){ var s=decodeSpec(t); if(s) state.inits.push(s); });
@@ -814,9 +863,11 @@ function decodeSpec(s){
   $("depth").value=state.L; $("LVal").textContent=state.L;
   $("width").value=state.d; $("dVal").textContent=state.d;
   $("act").value=state.act; $("seed").value=String(state.seed);
+  $("lr").value=Math.log10(state.lr); $("lrVal").textContent=num(state.lr,3);
+  $("mom").value=state.mom;           $("momVal").textContent=num(state.mom,2);
   buildRows(); refreshAll();
   drawErrChart(RUNS,TSTEPS);
-  drawBoundary($("bdChart"),net,TRAIN);
+  redrawBoundary();
   if(q.get("run")==="1") startTraining();   /* handy for a prepared lecture link */
 })();
 </script>

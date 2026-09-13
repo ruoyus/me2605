@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backprop Lab — ME2605 Demo</title>
+<meta name="description" content="ME2605 interactive demo: backpropagation stepped one phase at a time — forward pass, backward pass, weight update — with the gradient of every edge visible, and a node-by-node computation table.">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
+  --accent-soft:#eaf2f8; --border:#e2e2e2; --code-bg:#f6f8fa; --maxw:1200px;
+  --good:#1e8449; --low:#2471a3; --high:#b03a2e; --warn:#b7791f;
+  --fwd:#1a5276; --bwd:#b03a2e; --upd:#1e8449; --ref:#95a5a6;
+  --panel:#fbfcfd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);line-height:1.6;font-size:15.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+
+header.site-header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:54px;gap:12px}
+.brand{font-weight:700;white-space:nowrap;color:var(--fg)}
+.brand .code{color:var(--accent)}
+.nav-links{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.nav-links a,.nav-links button{font-size:.9rem;padding:6px 11px;border-radius:6px;color:var(--fg);background:none;
+  border:1px solid transparent;cursor:pointer;font-family:inherit}
+.nav-links a:hover,.nav-links button:hover{background:var(--accent-soft);text-decoration:none}
+.nav-links a.next{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lang-toggle{border:1px solid var(--border)!important}
+main{max-width:var(--maxw);margin:0 auto;padding:24px 20px 70px}
+h1{font-size:1.7rem;line-height:1.3;margin-bottom:6px}
+h2{font-size:1.15rem;margin:0 0 4px}
+h3{font-size:1rem;margin:0 0 8px}
+p{margin-bottom:11px}
+ul{margin:0 0 12px 20px}
+li{margin-bottom:5px}
+.lede{color:var(--muted);margin-bottom:16px;max-width:900px}
+.callout{background:var(--accent-soft);border-left:4px solid var(--accent);padding:11px 16px;
+  border-radius:0 8px 8px 0;margin:14px 0;max-width:960px}
+.callout.warn{background:#fdf6e3;border-left-color:var(--warn)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.muted{color:var(--muted)}
+.small{font-size:.87rem}
+
+/* ---- panels ---- */
+.panel{margin-bottom:22px}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.shead h2,.shead h3{margin:0}
+.shead .step{font-size:.74rem;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--accent)}
+.shead .hint{font-size:.82rem;color:var(--muted);font-weight:400;margin-left:8px}
+.cols4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.cols3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;font-weight:600;margin-bottom:4px}
+.ctrl label .val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);font-size:.92rem}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0;cursor:pointer}
+select{width:100%;font-family:inherit;font-size:.88rem;padding:5px 7px;border:1px solid var(--border);
+  border-radius:6px;background:#fff;cursor:pointer}
+.btn{font-family:inherit;font-size:.88rem;font-weight:600;border:1px solid var(--border);background:#fff;
+  color:var(--fg);border-radius:7px;padding:6px 13px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.12);color:#fff}
+.btn:disabled{opacity:.42;cursor:default}
+.btn.sm{font-size:.78rem;padding:4px 9px}
+.btnrow{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+/* ---- phase strip ---- */
+.phases{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-bottom:12px}
+.phase{flex:1 1 150px;border:1px solid var(--border);border-radius:9px;padding:8px 12px;background:#fff;min-width:0}
+.phase .n{font-size:.68rem;font-weight:800;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+.phase .t{font-weight:700;font-size:.9rem}
+.phase .d{font-size:.74rem;color:var(--muted);line-height:1.35}
+.phase.on{border-color:transparent;box-shadow:0 0 0 2px currentColor}
+.phase.on.p1{color:var(--fwd);background:#f2f8fc}
+.phase.on.p2{color:var(--bwd);background:#fdf3f2}
+.phase.on.p3{color:var(--upd);background:#f1faf4}
+.phase.on .n,.phase.on .t{color:currentColor}
+
+/* ---- network diagram ---- */
+.diawrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+svg.dia{display:block;width:100%;height:auto}
+.edgelbl{font:600 11px ui-monospace,Menlo,monospace;stroke:#fff;stroke-width:3px;paint-order:stroke;fill:#374151}
+.nodelbl{font:700 12px ui-monospace,Menlo,monospace;text-anchor:middle;dominant-baseline:middle;stroke:#fff;stroke-width:3.2px;paint-order:stroke}
+.uname{font:700 11px -apple-system,Arial;text-anchor:middle;fill:#6b7280}
+.layname{font:700 11px -apple-system,Arial;text-anchor:middle;fill:#9ca3af;letter-spacing:.6px}
+
+/* ---- table ---- */
+.tblwrap{max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:9px;background:#fff}
+table.nt{width:100%;border-collapse:collapse;font-size:.8rem}
+table.nt th{position:sticky;top:0;background:var(--code-bg);text-align:left;font-size:.68rem;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border);z-index:2}
+table.nt td{padding:5px 10px;border-bottom:1px solid #f1f3f5;vertical-align:top}
+table.nt tr.grp td{background:#f8fafc;font-weight:800;font-size:.72rem;letter-spacing:.8px;
+  text-transform:uppercase;color:var(--accent);padding:5px 10px}
+table.nt tr.fwd td.sym{color:var(--fwd)}
+table.nt tr.bwd td.sym{color:var(--bwd)}
+table.nt td.sym{font-family:ui-monospace,Menlo,monospace;font-weight:700;white-space:nowrap}
+table.nt td.expr{font-family:ui-monospace,Menlo,monospace;color:var(--muted);white-space:nowrap}
+table.nt td.val{font-family:ui-monospace,Menlo,monospace;font-weight:700;text-align:right;white-space:nowrap}
+table.nt tr.hid{opacity:.16}
+table.nt tr.bwd td.expr{color:#9b7b7b}
+
+/* ---- charts ---- */
+canvas{display:block;width:100%;background:#fff;border:1px solid var(--border);border-radius:8px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-top:12px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.stat .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-family:ui-monospace,Menlo,monospace;font-size:1.02rem;font-weight:700}
+.footer-note{border-top:1px solid var(--border);margin-top:32px;padding-top:16px;color:var(--muted);font-size:.85rem}
+html[data-lang="zh"] .lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+@media (max-width:900px){.cols4{grid-template-columns:1fr 1fr}.phase{flex:1 1 100%}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Part 1 · Backprop Lab</span><span class="lang-zh">第 1 部分 · 反向传播实验室</span></a>
+    <nav class="nav-links">
+      <a href="../nn-init-lab/" class="next"><span class="lang-en">Part 2 · Initialization Lab →</span><span class="lang-zh">第 2 部分 · 初始化实验室 →</span></a>
+      <a href="../../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
+      <button class="lang-toggle" id="langBtn" type="button">中文</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<h1><span class="lang-en">Backpropagation, one phase at a time</span><span class="lang-zh">一步一步看反向传播</span></h1>
+<p class="lede">
+  <span class="lang-en">A tiny network, one training example, and three phases you can step through: <b>forward</b> to get the prediction, <b>backward</b> to get the gradient of every edge, <b>update</b> to change the weights. Nothing is pre-computed — the numbers on screen are the numbers the code just produced.</span>
+  <span class="lang-zh">一个很小的网络、一个训练样本、三个可以逐步走的阶段：<b>前向</b>算出预测，<b>反向</b>算出每条边的梯度，<b>更新</b>改权重。页面上显示的数是代码刚刚算出来的，没有任何预录。</span>
+</p>
+
+<div class="callout">
+  <span class="lang-en"><b>The one formula to take away.</b> For every layer, the backward pass needs only two things: the error signal coming from the layer above, and the activations of the layer below. <br>
+  &nbsp;&nbsp;<span class="mono">δ&#8202;<sup>l</sup> = (W&#8202;<sup>l+1</sup>)<sup>T</sup> δ&#8202;<sup>l+1</sup> ⊙ φ′(z&#8202;<sup>l</sup>)</span> &nbsp;&nbsp;and&nbsp;&nbsp; <span class="mono">∂L/∂W&#8202;<sup>l</sup> = δ&#8202;<sup>l</sup> (a&#8202;<sup>l−1</sup>)<sup>T</sup></span></span>
+  <span class="lang-zh"><b>唯一要记住的公式。</b>每一层的反向传播只需要两样东西：从上一层传回来的误差信号，和下面一层的激活值。<br>
+  &nbsp;&nbsp;<span class="mono">δ&#8202;<sup>l</sup> = (W&#8202;<sup>l+1</sup>)<sup>T</sup> δ&#8202;<sup>l+1</sup> ⊙ φ′(z&#8202;<sup>l</sup>)</span> &nbsp;&nbsp;以及&nbsp;&nbsp; <span class="mono">∂L/∂W&#8202;<sup>l</sup> = δ&#8202;<sup>l</sup> (a&#8202;<sup>l−1</sup>)<sup>T</sup></span></span>
+</div>
+
+<!-- ================= 1. setup ================= -->
+<section class="panel">
+  <div class="card">
+    <div class="shead"><h2><span class="step">A</span> &nbsp;<span class="lang-en">The network and the example</span><span class="lang-zh">网络与样本</span></h2>
+      <span class="hint"><span class="lang-en">keep it small — the point is that you can check every number by hand</span><span class="lang-zh">刻意保持很小——目的是每个数都能手算核对</span></span></div>
+    <div class="cols4">
+      <div class="ctrl">
+        <label><span class="lang-en">hidden layers</span><span class="lang-zh">隐藏层数</span><span class="val" id="hlVal">1</span></label>
+        <input type="range" id="hl" min="1" max="2" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">hidden width</span><span class="lang-zh">隐藏层宽度</span><span class="val" id="wVal">3</span></label>
+        <input type="range" id="w" min="1" max="4" step="1" value="3">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">activation φ</span><span class="lang-zh">激活函数 φ</span></label>
+        <select id="act">
+          <option value="tanh" selected>tanh</option>
+          <option value="sigmoid">sigmoid</option>
+          <option value="relu">ReLU</option>
+          <option value="linear">linear</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">learning rate η</span><span class="lang-zh">学习率 η</span><span class="val" id="lrVal">0.50</span></label>
+        <input type="range" id="lr" min="-1.3" max="0.4" step="0.01" value="-0.301">
+      </div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">
+      <span class="lang-en">2 input features → hidden layer(s) with φ → 1 output with sigmoid → binary cross-entropy on one example. <code>p = σ(z)</code>, <code>L = −[y log p + (1−y) log(1−p)]</code>. Every hidden layer also has a bias, and so does the output.</span>
+      <span class="lang-zh">2 个输入特征 → 一到两层带 φ 的隐藏层 → 1 个 sigmoid 输出 → 在单个样本上的二元交叉熵。<code>p = σ(z)</code>，<code>L = −[y log p + (1−y) log(1−p)]</code>。每个隐藏层和输出层都带偏置。</span>
+    </p>
+  </div>
+</section>
+
+<!-- ================= 2. the diagram ================= -->
+<section class="panel">
+  <div class="shead">
+    <h2><span class="step">B</span> &nbsp;<span class="lang-en">Forward → backward → update</span><span class="lang-zh">前向 → 反向 → 更新</span></h2>
+    <div class="btnrow">
+      <button class="btn" id="back" type="button"><span class="lang-en">◀ back</span><span class="lang-zh">◀ 上一步</span></button>
+      <button class="btn primary" id="next" type="button"><span class="lang-en">▶ next phase</span><span class="lang-zh">▶ 下一阶段</span></button>
+      <button class="btn" id="auto" type="button"><span class="lang-en">Auto play</span><span class="lang-zh">自动播放</span></button>
+      <select id="speed" style="width:auto">
+        <option value="1100">slow</option>
+        <option value="650" selected>normal</option>
+        <option value="220">fast</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="phases">
+    <div class="phase p1" id="ph1"><div class="n">1 · forward</div>
+      <div class="t"><span class="lang-en">compute the prediction</span><span class="lang-zh">算出预测值</span></div>
+      <div class="d"><span class="lang-en">z = Wa + b, then a = φ(z), left to right until p</span><span class="lang-zh">z = Wa + b，再 a = φ(z)，从左到右直到 p</span></div></div>
+    <div class="phase p2" id="ph2"><div class="n">2 · backward</div>
+      <div class="t"><span class="lang-en">propagate the error</span><span class="lang-zh">把误差往回传</span></div>
+      <div class="d"><span class="lang-en">each edge gets ∂L/∂w; colour = sign, thickness = size</span><span class="lang-zh">每条边得到 ∂L/∂w；颜色表示正负，粗细表示大小</span></div></div>
+    <div class="phase p3" id="ph3"><div class="n">3 · update</div>
+      <div class="t"><span class="lang-en">take one step downhill</span><span class="lang-zh">往下坡走一步</span></div>
+      <div class="d"><span class="lang-en">w ← w − η ∂L/∂w, then the next example</span><span class="lang-zh">w ← w − η ∂L/∂w，然后换下一个样本</span></div></div>
+  </div>
+
+  <div class="diawrap"><svg class="dia" id="dia" viewBox="0 0 980 470" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+  <div class="readout">
+    <div class="stat"><div class="k"><span class="lang-en">example</span><span class="lang-zh">样本</span></div><div class="v" id="r-ex">—</div></div>
+    <div class="stat"><div class="k">x₁ , x₂</div><div class="v" id="r-x">—</div></div>
+    <div class="stat"><div class="k">y</div><div class="v" id="r-y">—</div></div>
+    <div class="stat"><div class="k">p</div><div class="v" id="r-p">—</div></div>
+    <div class="stat"><div class="k"><span class="lang-en">loss on this example</span><span class="lang-zh">该样本损失</span></div><div class="v" id="r-l">—</div></div>
+    <div class="stat"><div class="k"><span class="lang-en">steps done</span><span class="lang-zh">已走步数</span></div><div class="v" id="r-steps">0</div></div>
+  </div>
+  <p class="small muted" style="margin-top:10px">
+    <span class="lang-en">Each press of <b>▶ next phase</b> advances one phase; the third press applies the update and moves to the next example. Hover an edge to read its weight or its gradient. <b>Red = positive gradient, blue = negative.</b></span>
+    <span class="lang-zh">每按一次 <b>▶ 下一阶段</b> 前进一个阶段；第三次按下会真正更新权重并换到下一个样本。把鼠标放在任意一条边上可以看到它的权重或梯度。<b>红色 = 梯度为正，蓝色 = 梯度为负。</b></span>
+  </p>
+</section>
+
+<!-- ================= 3. node table ================= -->
+<section class="panel">
+  <div class="shead">
+    <h2><span class="step">C</span> &nbsp;<span class="lang-en">Every node, in order</span><span class="lang-zh">逐个节点的账本</span></h2>
+    <div class="btnrow">
+      <button class="btn sm" id="line" type="button"><span class="lang-en">reveal next line</span><span class="lang-zh">显示下一行</span></button>
+      <button class="btn sm" id="all" type="button"><span class="lang-en">reveal all</span><span class="lang-zh">全部显示</span></button>
+      <button class="btn sm" id="none" type="button"><span class="lang-en">hide all</span><span class="lang-zh">全部隐藏</span></button>
+    </div>
+  </div>
+  <div class="tblwrap">
+    <table class="nt" id="nt">
+      <thead><tr>
+        <th style="width:26%"><span class="lang-en">node</span><span class="lang-zh">节点</span></th>
+        <th style="width:44%"><span class="lang-en">expression</span><span class="lang-zh">表达式</span></th>
+        <th style="width:30%;text-align:right"><span class="lang-en">value</span><span class="lang-zh">数值</span></th>
+      </tr></thead>
+      <tbody id="ntb"></tbody>
+    </table>
+  </div>
+  <p class="small muted" style="margin-top:10px">
+    <span class="lang-en">Read it top to bottom: that <i>is</i> backprop. The forward column you already believe; the backward column is the chain rule applied at one node at a time, in reverse order. Notice how each layer's four lines are the same four lines.</span>
+    <span class="lang-zh">从上往下读，这就是反向传播本身。前向那一半你本来就信；反向那一半不过是把链式法则一个节点一个节点地倒着用。注意每一层的那四行完全一样。</span>
+  </p>
+</section>
+
+<!-- ================= 4. training ================= -->
+<section class="panel">
+  <div class="shead">
+    <h2><span class="step">D</span> &nbsp;<span class="lang-en">Does it actually work?</span><span class="lang-zh">那它真的有用吗</span></h2>
+    <div class="btnrow">
+      <button class="btn primary" id="run" type="button"><span class="lang-en">Run 400 steps</span><span class="lang-zh">跑 400 步</span></button>
+      <button class="btn" id="pause" type="button" disabled><span class="lang-en">Pause</span><span class="lang-zh">暂停</span></button>
+      <button class="btn" id="reset" type="button"><span class="lang-en">Reset weights</span><span class="lang-zh">重置权重</span></button>
+    </div>
+  </div>
+  <div class="cols3">
+    <div class="card">
+      <h3><span class="lang-en">Training data</span><span class="lang-zh">训练数据</span></h3>
+      <canvas id="scChart"></canvas>
+      <p class="small muted" style="margin:10px 0 0">
+        <span class="lang-en">32 points in four clusters, labelled by XOR of the two signs. The ringed point is the example currently being fed in — click any point to inspect it above.</span>
+        <span class="lang-zh">四个簇共 32 个点，标签是两个坐标符号的异或（XOR）。带圈的那个是当前正在用的样本——点任意一个点可以在上面检查它。</span>
+      </p>
+    </div>
+    <div class="card">
+      <h3><span class="lang-en">Loss on the whole training set</span><span class="lang-zh">整个训练集的损失</span></h3>
+      <canvas id="lsChart"></canvas>
+      <p class="small muted" style="margin:10px 0 0">
+        <span class="lang-en">Grey dashed line: the loss of a network that always answers 0.5 (log 2). Every step is one example, so the curve is noisy — that is what stochastic gradient descent looks like. Try setting φ to <b>linear</b>: the curve will stall exactly on that line, because then the network cannot represent XOR at all.</span>
+        <span class="lang-zh">灰色虚线：永远回答 0.5 的网络所对应的损失（log 2）。每步只用一个样本，所以曲线会抖——随机梯度下降本来就是这样。把 φ 换成 <b>linear</b> 试试：曲线会恰好停在这条线上，因为此时网络根本无法表示 XOR。</span>
+      </p>
+    </div>
+    <div class="card">
+      <h3><span class="lang-en">Decision boundary</span><span class="lang-zh">决策边界</span></h3>
+      <canvas id="bdChart"></canvas>
+      <p class="small muted" style="margin:10px 0 0">
+        <span class="lang-en">The same function the network computes, drawn over the whole plane.</span>
+        <span class="lang-zh">把网络算出来的那个函数画在整个平面上。</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="footer-note">
+  <p><span class="lang-en">Everything runs in the browser: no server, no data leaves the page, and it works offline. Parameters are stored in 64-bit floats so that the numbers shown agree with a hand calculation to the last digit. The loss is cross-entropy on one example; the gradient shown on each edge is ∂L/∂w for that single example, which is exactly what stochastic gradient descent uses.</span>
+     <span class="lang-zh">全部在浏览器里运行：没有服务器、数据不出页面、断网可用。参数用 64 位浮点存储，所以显示的数和手算结果能对到最后一位。损失是单样本的交叉熵；每条边上显示的梯度就是该样本的 ∂L/∂w，也正是随机梯度下降实际使用的东西。</span></p>
+</div>
+
+</main>
+
+<script>
+/* ==========================================================================
+   ME2605 · Backprop Lab
+   One tiny network, one example, three phases: forward → backward → update.
+   Nothing is precomputed; every number on screen comes from the code below.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- utilities */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gaussFrom(rnd){var u=0,v=0;while(u===0)u=rnd();while(v===0)v=rnd();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function $(id){ return document.getElementById(id); }
+function num(x,n){ return (Math.round(x*Math.pow(10,n))/Math.pow(10,n)).toFixed(n); }
+function fx(x,n){ if(!isFinite(x)) return "∞";
+  if(Math.abs(x)>=1000||(Math.abs(x)>0&&Math.abs(x)<1e-4)) return x.toExponential(1);
+  return num(x,n===undefined?3:n); }
+function vec(a,n){ var s=[]; for(var i=0;i<a.length;i++) s.push(num(a[i],n===undefined?2:n)); return "["+s.join(", ")+"]"; }
+
+/* ------------------------------------------------------------------- data */
+/* Four clusters at the corners of a square, labelled by the parity of the
+   quadrant — i.e. XOR. Two reasons for this choice:
+     - a network with phi = linear can NEVER fit it (the loss stalls at log 2),
+       so you can check for yourself that the hidden layer is doing something;
+     - the loss takes a few hundred steps to come down, so the descent is
+       something you can watch rather than a jump. */
+function makeXor(n,seed){
+  var rnd=mulberry32(seed), X=new Float64Array(n*2), Y=new Uint8Array(n);
+  for(var i=0;i<n;i++){
+    var q=i%4, sx=(q===0||q===1)?-1:1, sy=(q===0||q===2)?-1:1;
+    var x=sx*0.80+gaussFrom(rnd)*0.30, y=sy*0.80+gaussFrom(rnd)*0.30;
+    X[2*i]=x; X[2*i+1]=y;
+    Y[i] = ((x>0)!==(y>0)) ? 1 : 0;              /* XOR of the two signs */
+  }
+  return {X:X,Y:Y,n:n};
+}
+var DATA = makeXor(32,7);
+var ORDER = null;
+function makeOrder(seed){                       /* a shuffled visiting order */
+  var rnd=mulberry32(seed*1013+77), a=[];
+  for(var i=0;i<DATA.n;i++) a.push(i);
+  for(var j=a.length-1;j>0;j--){ var k=Math.floor(rnd()*(j+1)), t=a[j]; a[j]=a[k]; a[k]=t; }
+  return a;
+}
+
+/* ----------------------------------------------------------------- network */
+function sigmoid(z){ return z>=0 ? 1/(1+Math.exp(-z)) : (function(){var e=Math.exp(z);return e/(1+e);})(); }
+function act(x,k){ return k==="relu" ? (x>0?x:0) : k==="linear" ? x : k==="sigmoid" ? sigmoid(x) : Math.tanh(x); }
+/* phi'(.) expressed through the POST-activation a = phi(z) */
+function dact(a,k){
+  if(k==="relu")    return a>0?1:0;
+  if(k==="linear")  return 1;
+  if(k==="sigmoid") return a*(1-a);
+  return 1-a*a;                                  /* tanh */
+}
+function dactName(k){
+  return k==="relu" ? "1{a>0}" : k==="linear" ? "1" : k==="sigmoid" ? "a(1−a)" : "1−a²";
+}
+
+function makeNet(dims,act,seed){
+  var rnd=mulberry32(seed*7919+13), layers=[];
+  for(var l=0;l+1<dims.length;l++){
+    var nin=dims[l], nout=dims[l+1];
+    var W=new Float64Array(nout*nin), b=new Float64Array(nout);
+    var sd=Math.sqrt(1/Math.max(1,nin));
+    for(var i=0;i<W.length;i++) W[i]=gaussFrom(rnd)*sd;
+    layers.push({nin:nin,nout:nout,W:W,b:b});
+  }
+  return {dims:dims,L:layers.length,act:act,seed:seed,layers:layers};
+}
+/* one forward pass. the output layer is always a sigmoid. */
+function forward(net,x){
+  var acts=[x], zs=[], a=x;
+  for(var l=0;l<net.L;l++){
+    var ly=net.layers[l], z=new Float64Array(ly.nout);
+    for(var o=0;o<ly.nout;o++){
+      var s=ly.b[o];
+      for(var k=0;k<ly.nin;k++) s+=ly.W[o*ly.nin+k]*a[k];
+      z[o]=s;
+    }
+    zs.push(z);
+    var last=(l===net.L-1), nx=new Float64Array(ly.nout);
+    for(var o2=0;o2<ly.nout;o2++) nx[o2] = last ? sigmoid(z[o2]) : act(z[o2],net.act);
+    acts.push(nx); a=nx;
+  }
+  return {acts:acts, zs:zs, p:a[0]};
+}
+function lossOf(p,y){
+  p=Math.min(Math.max(p,1e-12),1-1e-12);
+  return -(y?Math.log(p):Math.log(1-p));
+}
+/* backward: returns the error signals and the gradients of every W and b */
+function backward(net,fw,y){
+  var G=[], d=new Float64Array(1);
+  d[0]=fw.p-y;                                   /* dL/dz of the sigmoid+BCE output */
+  for(var l=net.L-1;l>=0;l--){
+    var ly=net.layers[l], aPrev=fw.acts[l];
+    var gW=new Float64Array(ly.W.length), gb=new Float64Array(ly.nout);
+    for(var o=0;o<ly.nout;o++){
+      gb[o]=d[o];
+      for(var k=0;k<ly.nin;k++) gW[o*ly.nin+k]=d[o]*aPrev[k];
+    }
+    G[l]={gW:gW,gb:gb,delta:d};
+    if(l>0){
+      var dp=new Float64Array(ly.nin);
+      for(var k2=0;k2<ly.nin;k2++){
+        var acc=0;
+        for(var o2=0;o2<ly.nout;o2++) acc+=ly.W[o2*ly.nin+k2]*d[o2];
+        dp[k2]=acc*dact(fw.acts[l][k2],net.act);
+      }
+      d=dp;
+    }
+  }
+  return G;
+}
+function fullLoss(net){
+  var s=0;
+  for(var i=0;i<DATA.n;i++){
+    var f=forward(net,new Float64Array([DATA.X[2*i],DATA.X[2*i+1]]));
+    s+=lossOf(f.p,DATA.Y[i]);
+  }
+  return s/DATA.n;
+}
+function fullErr(net){
+  var bad=0;
+  for(var i=0;i<DATA.n;i++){
+    var f=forward(net,new Float64Array([DATA.X[2*i],DATA.X[2*i+1]]));
+    if(((f.p>0.5)?1:0)!==DATA.Y[i]) bad++;
+  }
+  return bad/DATA.n;
+}
+
+/* ==================================================================== state */
+var state={ hl:1, w:3, act:"tanh", lr:0.5, seed:1, ex:0, phase:0,
+            reveal:0, auto:false, speed:650, steps:0 };
+var net=null, fw=null, bw=null, lastG=null, lastW=null;
+var LHIST=[];                      /* [step, fullLoss] */
+var NROW=0, NFWD=0;                /* table rows: total and forward-only */
+
+function dims(){ var d=[2]; for(var i=0;i<state.hl;i++) d.push(state.w); d.push(1); return d; }
+function curEx(){ return ORDER[state.ex % ORDER.length]; }
+function exVec(){ var i=curEx(); return new Float64Array([DATA.X[2*i],DATA.X[2*i+1]]); }
+function exY(){ return DATA.Y[curEx()]; }
+
+function rebuildNet(){
+  ORDER=makeOrder(state.seed);
+  net=makeNet(dims(),state.act,state.seed);
+  state.ex=0; state.phase=0; state.steps=0; LHIST=[];
+  recompute();
+}
+function recompute(skipTable){
+  fw=forward(net,exVec());
+  bw=backward(net,fw,exY());
+  if(!skipTable) buildTable();
+}
+
+/* ================================================================== diagram */
+function layout(){
+  var d=net.dims, n=d.length;                    /* columns: input, hidden..., out */
+  var X0=116, X1=784;
+  var xs=[];
+  for(var i=0;i<n;i++) xs.push(X0+(X1-X0)*(n<=1?0:i/(n-1)));
+  var pos=[];
+  for(var c=0;c<n;c++){
+    var m=d[c], col=[];
+    var span=Math.min(258, m*86);
+    for(var j=0;j<m;j++){
+      var y=236+(m<=1?0:(j-(m-1)/2)*(span/Math.max(1,m-1)));
+      col.push({x:xs[c], y:y});
+    }
+    pos.push(col);
+  }
+  return pos;
+}
+/* colour for a signed gradient: positive red, negative blue, |g| -> alpha */
+function gcol(g,maxAbs){
+  var t = maxAbs>1e-12 ? Math.min(1,Math.abs(g)/maxAbs) : 0;
+  var a = 0.25+0.75*t;
+  return g>=0 ? "rgba(176,58,46,"+a.toFixed(2)+")" : "rgba(36,113,163,"+a.toFixed(2)+")";
+}
+function drawDia(){
+  var pos=layout(), L=net.L;
+  /* on a wide net the edge numbers collide; drop them and keep colour+thickness */
+  var nEdge=0;
+  for(var e=0;e<L;e++) nEdge+=net.layers[e].nout*net.layers[e].nin;
+  var showEdgeNums = (nEdge<=14);
+  var maxAbs=0;
+  if(state.phase>=2) for(var l=0;l<L;l++){ var g=bw[l].gW; for(var i=0;i<g.length;i++) maxAbs=Math.max(maxAbs,Math.abs(g[i])); }
+  var o=[];
+  o.push('<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+        +'<path d="M0,0 L10,5 L0,10 z" fill="#1a5276"/></marker>'
+        +'<marker id="arb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+        +'<path d="M0,0 L10,5 L0,10 z" fill="#b03a2e"/></marker></defs>');
+
+  /* ---- edges (drawn first, under the nodes) ---- */
+  var gap=26;
+  for(var l=0;l<L;l++){
+    var ly=net.layers[l], A=pos[l], B=pos[l+1];
+    for(var oi=0;oi<ly.nout;oi++) for(var ki=0;ki<ly.nin;ki++){
+      var w=ly.W[oi*ly.nin+ki], g=bw[l].gW[oi*ly.nin+ki];
+      var x1=A[ki].x, y1=A[ki].y, x2=B[oi].x, y2=B[oi].y;
+      var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+      var ux=dx/len, uy=dy/len;
+      var sx=x1+ux*gap, sy=y1+uy*gap, ex=x2-ux*gap, ey=y2-uy*gap;
+      var col="#d7dde3", wdt=1.5, lbl="", tip="";
+      if(state.phase===1){                              /* forward: weight only */
+        lbl=num(w,2); col="#9fb4c4"; wdt=1.6; tip="w = "+fx(w,4);
+      } else if(state.phase>=2){                        /* backward: show the gradient */
+        col=gcol(g,maxAbs); wdt=1.2+4.2*(maxAbs>1e-12?Math.min(1,Math.abs(g)/maxAbs):0);
+        lbl=(state.phase===2? num(g,2) : num(g,2));
+        tip="∂L/∂w = "+fx(g,4)+"      (w = "+fx(w,4)+")";
+      }
+      o.push('<g><title>'+tip+'</title><line x1="'+sx.toFixed(1)+'" y1="'+sy.toFixed(1)
+            +'" x2="'+ex.toFixed(1)+'" y2="'+ey.toFixed(1)+'" stroke="'+col
+            +'" stroke-width="'+wdt.toFixed(2)+'" stroke-linecap="round"/></g>');
+      if(lbl && state.phase>0 && showEdgeNums){
+        var mx=(sx+ex)/2 - uy*9, my=(sy+ey)/2 + ux*9;
+        o.push('<text class="edgelbl" x="'+mx.toFixed(1)+'" y="'+my.toFixed(1)+'" text-anchor="middle">'+lbl+'</text>');
+      }
+    }
+    /* the bias, drawn as a small stub below the column */
+    var bs=B[0]? B:pos[l];
+    (function(l,ly,B){
+      var bx=(pos[l][0].x+pos[l+1][0].x)/2;
+      o.push('<text class="layname" x="'+bx.toFixed(0)+'" y="428" text-anchor="middle">'
+            + '<tspan>b'+(l+1)+'</tspan> = '+(state.phase>=2? vec(bw[l].gb) : (state.phase===1? vec(ly.b) : "…"))
+            + '</text>');
+      if(state.phase>=2){
+        var bg=bw[l].gb, mx2=0; for(var q=0;q<bg.length;q++) mx2=Math.max(mx2,Math.abs(bg[q]));
+        o.push('<text class="layname" x="'+bx.toFixed(0)+'" y="444" text-anchor="middle" fill="#b03a2e">'
+              + '∂L/∂b'+(l+1)+' = '+vec(bg) + '</text>');
+      }
+    })(l,ly,B);
+  }
+
+  /* ---- nodes ---- */
+  var names=["input","h1","h2","out"];
+  for(var c=0;c<pos.length;c++){
+    var col2=pos[c], isIn=(c===0), isOut=(c===pos.length-1);
+    var showVal = state.phase>=1;
+    for(var j=0;j<col2.length;j++){
+      var x=col2[j].x, y=col2[j].y, val=null;
+      if(isIn)  val = exVec()[j];
+      else if(showVal) val = fw.acts[c][j];
+      var fill = isIn ? "#eef4f8" : (isOut ? "#f2f8fc" : "#ffffff");
+      if(state.phase>=2 && !isIn){
+        var dv=bw[c-1].delta[j], mx3=0;
+        for(var q3=0;q3<bw[c-1].delta.length;q3++) mx3=Math.max(mx3,Math.abs(bw[c-1].delta[q3]));
+        if(mx3>1e-12) fill = gcol(dv,mx3).replace(/[\d.]+\)$/,(0.18+0.5*Math.min(1,Math.abs(dv)/mx3)).toFixed(2)+")");
+      }
+      o.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="25" fill="'+fill
+            +'" stroke="'+(isIn?"#c8d4de":isOut?"#1a5276":"#c8d4de")+'" stroke-width="'+(isOut?2:1.4)+'"/>');
+      if(showVal) o.push('<text class="nodelbl" x="'+x.toFixed(1)+'" y="'+(y+0.5).toFixed(1)+'" fill="#111827">'
+                         + num(val,2)+'</text>');
+      else        o.push('<text class="nodelbl" x="'+x.toFixed(1)+'" y="'+(y+0.5).toFixed(1)+'" fill="#b6c1cb">?</text>');
+      o.push('<text class="uname" x="'+x.toFixed(1)+'" y="'+(y+38).toFixed(1)+'">'
+            + (isIn ? ("x"+(j+1)) : (isOut ? "p" : "a"+(c)+","+(j+1))) + '</text>');
+      if(state.phase>=1 && !isIn && !isOut)
+        o.push('<text class="uname" x="'+x.toFixed(1)+'" y="'+(y-30).toFixed(1)+'" fill="#9ca3af">z='
+              + num(fw.zs[c-1][j],2)+'</text>');
+    }
+    var lab = isIn ? "input" : (isOut ? "output  σ(z)" : ("hidden "+(c)));
+    o.push('<text class="layname" x="'+col2[0].x.toFixed(0)+'" y="58" text-anchor="middle">'+lab.toUpperCase()+'</text>');
+  }
+  /* ---- the loss node ---- */
+  var ox=pos[pos.length-1][0].x, oy=pos[pos.length-1][0].y;
+  var Lx=ox+150, Ly=oy;
+  var lcol = state.phase>=1 ? "#fdf6e3" : "#fbfcfd";
+  o.push('<line x1="'+(ox+27)+'" y1="'+oy+'" x2="'+(Lx-42)+'" y2="'+Ly+'" stroke="'+(state.phase>=1?"#b7791f":"#d7dde3")
+        +'" stroke-width="1.6"/>');
+  o.push('<rect x="'+(Lx-42)+'" y="'+(Ly-24)+'" width="84" height="48" rx="9" fill="'+lcol+'" stroke="#d9c9a3"/>');
+  o.push('<text class="nodelbl" x="'+Lx+'" y="'+(Ly+1)+'" fill="#B45309">'+(state.phase>=1?num(lossOf(fw.p,exY()),3):"?")+'</text>');
+  o.push('<text class="uname" x="'+Lx+'" y="'+(Ly+40)+'">L (BCE)</text>');
+  if(state.phase>=2){
+    var dLdp=(fw.p-exY())/(Math.max(fw.p,1e-9)*(1-Math.max(fw.p,1e-9)));
+    o.push('<text class="edgelbl" x="'+((ox+27+Lx-42)/2).toFixed(0)+'" y="'+(Ly-16)+'" text-anchor="middle" font-size="10">∂L/∂p='+num(dLdp,2)+'</text>');
+  }
+
+  /* ---- phase banner ---- */
+  var names2=["weights only","forward pass","backward pass","weights updated"];
+  var cols2=["#6b7280","#1a5276","#b03a2e","#1e8449"];
+  o.push('<rect x="0" y="0" width="980" height="4" fill="'+cols2[state.phase]+'"/>');
+  o.push('<text class="layname" x="22" y="30" style="text-anchor:start" fill="'+cols2[state.phase]+'" font-size="13">'
+        + names2[state.phase].toUpperCase()
+        + (state.phase===1 ? '  —  the number on each edge is its weight w'
+           : state.phase>=2 ? '  —  the number on each edge is ∂L/∂w for this example' : '')
+        + (state.phase>0 && !showEdgeNums ? '   (too many edges to print — hover any edge)' : '')
+        + '</text>');
+  if(state.phase>=1) o.push('<text class="layname" x="958" y="30" style="text-anchor:end" fill="#9ca3af">P = '
+        + num(fw.p,3) + '   ·   Y = ' + exY() + '</text>');
+  $("dia").innerHTML=o.join("");
+}
+
+/* ==================================================================== table */
+/* Read top to bottom: this IS backprop. Forward rows you already believe;
+   backward rows are the chain rule applied one node at a time, in reverse. */
+var TABLE=[], NFWD=0, NROW=0;
+function buildTable(){
+  var rows=[], L=net.L;
+  function R(cls,sym,expr,val){ rows.push({cls:cls,sym:sym,expr:expr,val:val}); }
+
+  R("grp","","<span>FORWARD PASS</span>","");
+  for(var l=0;l<L;l++){
+    var ly=net.layers[l], isOut=(l===L-1);
+    R("grp","", isOut ? "<span>output layer</span>" : "<span>hidden layer "+(l+1)+"</span>","");
+    for(var o=0;o<ly.nout;o++){
+      var asum=0; for(var k=0;k<ly.nin;k++) asum+=ly.W[o*ly.nin+k]*fw.acts[l][k];
+      R("fwd", isOut ? "z" : ("z"+(l+1)+","+(o+1)),
+        "Σ w·a + b  =  "+num(asum,3)+" + "+num(ly.b[o],3), fx(fw.zs[l][o],4));
+      R("fwd", isOut ? "p" : ("a"+(l+1)+","+(o+1)),
+        isOut ? "σ(z)" : ("φ(z) = "+state.act+"(z)"), fx(fw.acts[l+1][o],4));
+    }
+  }
+  R("fwd","L","−[ y·log p + (1−y)·log(1−p) ]   ( y = "+exY()+" )", fx(lossOf(fw.p,exY()),4));
+  NFWD=rows.length;
+
+  R("grp","","<span>BACKWARD PASS</span>","");
+  R("grp","","<span>at the loss and the output</span>","");
+  R("bwd","∂L/∂p","(p − y) / ( p(1−p) )", fx((fw.p-exY())/(Math.max(fw.p,1e-9)*(1-Math.max(fw.p,1e-9))),4));
+  R("bwd","δ<sup>out</sup> = ∂L/∂z","p − y  ← the sigmoid and the cross-entropy cancel", fx(bw[L-1].delta[0],4));
+
+  for(var l2=L-1;l2>=0;l2--){
+    var ly2=net.layers[l2];
+    R("grp","", "<span>layer "+(l2+1)+" — the same four lines as every other layer</span>","");
+    for(var o2=0;o2<ly2.nout;o2++){
+      var gvec=[]; for(var k2=0;k2<ly2.nin;k2++) gvec.push(bw[l2].gW[o2*ly2.nin+k2]);
+      R("bwd","∂L/∂W"+(l2+1)+"["+(o2+1)+", :]", "δ"+(l2+1)+","+(o2+1)+" · a<sup>l−1</sup>", vec(gvec,3));
+      R("bwd","∂L/∂b"+(l2+1)+"["+(o2+1)+"]", "δ"+(l2+1)+","+(o2+1), fx(bw[l2].gb[o2],4));
+    }
+    if(l2>0) for(var k3=0;k3<ly2.nin;k3++)
+      R("bwd","δ"+(l2)+","+(k3+1),
+        "( Σ<sub>o</sub> W"+(l2+1)+"[o,"+(k3+1)+"] · δ"+(l2+1)+",o ) · "+dactName(net.act),
+        fx(bw[l2-1].delta[k3],4));
+  }
+  TABLE=rows; NROW=rows.length;
+  renderTable();
+}
+function renderTable(){
+  var o=[];
+  for(var i=0;i<TABLE.length;i++){
+    var r=TABLE[i];
+    var hid = (i<state.reveal || r.cls==="grp") ? "" : " hid";
+    o.push('<tr class="'+r.cls+hid+'"><td class="sym">'+r.sym+'</td><td class="expr">'+r.expr
+           +'</td><td class="val">'+r.val+'</td></tr>');
+  }
+  $("ntb").innerHTML=o.join("");
+}
+
+/* =================================================================== charts */
+function setupCanvas(cv,h){
+  var dpr=window.devicePixelRatio||1, w=Math.max(200,cv.parentElement.clientWidth-40||320);
+  cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.height=h+"px";
+  var g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return {g:g,w:w,h:h};
+}
+var WX0=-1.5,WX1=1.5,WY0=-1.5,WY1=1.5;
+function drawScatter(){
+  var s=setupCanvas($("scChart"),230), g=s.g, W=s.w, H=s.h;
+  var m={l:12,r:12,t:12,b:12}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  g.clearRect(0,0,W,H);
+  var xr=WX1-WX0, yr=WY1-WY0;
+  var sc=Math.min(pw/xr, ph/yr);
+  var ox=m.l+(pw-sc*xr)/2, oy=m.t+(ph-sc*yr)/2;
+  function PX(x){ return ox+(x-WX0)*sc; }
+  function PY(y){ return oy+(WY1-y)*sc; }
+  g.fillStyle="#fff"; g.fillRect(0,0,W,H);
+  for(var i=0;i<DATA.n;i++){
+    var x=DATA.X[2*i], y=DATA.X[2*i+1], c=DATA.Y[i];
+    g.beginPath(); g.arc(PX(x),PY(y),3.6,0,6.2832);
+    g.fillStyle = c ? "#b03a2e" : "#1a5276"; g.fill();
+    if(i===curEx()){ g.lineWidth=2; g.strokeStyle="#111827"; g.beginPath(); g.arc(PX(x),PY(y),7.2,0,6.2832); g.stroke(); }
+  }
+  g.fillStyle="#8b98a5"; g.font="11px -apple-system,Arial"; g.textAlign="left";
+  g.fillText("class 0", 8, H-8); g.fillStyle="#b03a2e"; g.fillText("class 1", 56, H-8);
+}
+function drawLoss(){
+  var s=setupCanvas($("lsChart"),230), g=s.g, W=s.w, H=s.h;
+  var m={l:44,r:12,t:14,b:28}, ymax=0.75;
+  g.clearRect(0,0,W,H); g.font="11px -apple-system,Arial";
+  function X(st){ return m.l+(W-m.l-m.r)*(st/Math.max(1,state.steps)); }
+  function Y(v){ return m.t+(H-m.t-m.b)*(1-Math.min(v,ymax)/ymax); }
+  [0,0.25,0.5,0.75].forEach(function(v){
+    var y=Y(v); g.strokeStyle="#eef1f4"; g.beginPath(); g.moveTo(m.l,y); g.lineTo(W-m.r,y); g.stroke();
+    g.fillStyle="#8b98a5"; g.textAlign="right"; g.textBaseline="middle"; g.fillText(num(v,2),m.l-6,y);
+  });
+  var yl=Y(Math.LN2);
+  g.strokeStyle="#c9ccd1"; g.setLineDash([4,4]); g.beginPath(); g.moveTo(m.l,yl); g.lineTo(W-m.r,yl); g.stroke(); g.setLineDash([]);
+  g.fillStyle="#a9adb3"; g.textAlign="left"; g.fillText("log 2", m.l+5, yl-8);
+  if(LHIST.length>1){
+    g.strokeStyle="#1a5276"; g.lineWidth=2.2; g.beginPath();
+    for(var i=0;i<LHIST.length;i++){
+      var px=X(LHIST[i][0]), py=Y(LHIST[i][1]); i?g.lineTo(px,py):g.moveTo(px,py);
+    }
+    g.stroke();
+  }
+  g.strokeStyle="#cbd5dd"; g.beginPath(); g.moveTo(m.l,H-m.b); g.lineTo(W-m.r,H-m.b); g.stroke();
+  g.fillStyle="#8b98a5"; g.textAlign="center"; g.textBaseline="middle";
+  g.fillText("0", m.l, H-m.b+14); g.fillText(String(state.steps), W-m.r, H-m.b+14);
+  g.fillText("steps", m.l+(W-m.l-m.r)/2, H-8);
+}
+function drawBoundary(){
+  var s=setupCanvas($("bdChart"),230), g=s.g, W=s.w, H=s.h;
+  var m={l:12,r:12,t:12,b:12}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  var NX=46, NY=42, xr=WX1-WX0, yr=WY1-WY0;
+  var sc=Math.min(pw/xr, ph/yr);
+  var ox=m.l+(pw-sc*xr)/2, oy=m.t+(ph-sc*yr)/2;
+  g.clearRect(0,0,W,H); g.fillStyle="#fff"; g.fillRect(0,0,W,H);
+  var xv=new Float64Array(2);
+  for(var iy=0;iy<NY;iy++) for(var ix=0;ix<NX;ix++){
+    var xa=WX0+(ix+0.5)/NX*xr, xb=WY0+(iy+0.5)/NY*yr;
+    xv[0]=xa; xv[1]=xb;
+    var f=forward(net,xv), p=f.p;
+    var c1 = p>0.5?216:26;
+    g.fillStyle="rgb("+Math.round(c1+(255-c1)*0.10)+","+Math.round(c1+(255-c1)*0.55)+","+Math.round(c1+(255-c1)*0.45)+")";
+    g.fillRect(ox+(xa-WX0)*sc, oy+(WY1-xb)*sc, sc*xr/NX+0.7, sc*yr/NY+0.7);
+  }
+  for(var k=0;k<DATA.n;k++){
+    var px=ox+(DATA.X[2*k]-WX0)*sc, py=oy+(WY1-DATA.X[2*k+1])*sc;
+    g.beginPath(); g.arc(px,py,2.8,0,6.2832);
+    g.fillStyle = DATA.Y[k] ? "#ffffff" : "#111111"; g.fill();
+    g.lineWidth=1; g.strokeStyle = DATA.Y[k] ? "#7f1d1d" : "#9ca3af"; g.stroke();
+  }
+}
+function refreshSides(){ drawScatter(); drawLoss(); drawBoundary(); }
+
+/* ============================================================== phase machine */
+function setPhase(p){
+  state.phase=p;
+  if(p===0) state.reveal=0;
+  if(p===1) state.reveal=NFWD;
+  if(p>=2)  state.reveal=NROW;
+  renderTable();
+  drawDia();
+  if(p===3) refreshSides();
+  updateReadouts();
+  syncPhases();
+}
+function applyUpdate(bulk){
+  for(var l=0;l<net.L;l++){
+    var ly=net.layers[l];
+    for(var i=0;i<ly.W.length;i++){ ly.W[i]-=state.lr*bw[l].gW[i]; ly.b[i]-=state.lr*bw[l].gb[i]; }
+  }
+  state.steps++;
+  LHIST.push([state.steps, fullLoss(net)]);
+  state.ex=(state.ex+1)%DATA.n;
+  recompute(bulk);
+}
+function advance(){
+  if(state.phase<3) setPhase(state.phase+1);
+  else { applyUpdate(); setPhase(0); }
+  if(state.auto) autoTimer=setTimeout(function(){ advance(); }, state.speed);
+}
+function retreat(){
+  if(state.phase>0) setPhase(state.phase-1);
+}
+function syncPhases(){
+  $("ph1").classList.toggle("on", state.phase===1);
+  $("ph2").classList.toggle("on", state.phase===2);
+  $("ph3").classList.toggle("on", state.phase===3);
+  $("next").innerHTML = state.phase<3
+    ? '<span class="lang-en">▶ '+(state.phase===0?"forward":state.phase===1?"backward":"update")+'</span>'
+      +'<span class="lang-zh">▶ '+(state.phase===0?"前向":state.phase===1?"反向":"更新")+'</span>'
+    : '<span class="lang-en">▶ apply &amp; next example</span><span class="lang-zh">▶ 应用并换下一个样本</span>';
+  $("back").disabled = (state.phase===0);
+}
+function updateReadouts(){
+  var xv=exVec();
+  $("r-ex").textContent="#"+curEx();
+  $("r-x").textContent=num(xv[0],2)+", "+num(xv[1],2);
+  $("r-y").textContent=String(exY());
+  $("r-p").textContent = state.phase>=1 ? num(fw.p,4) : "—";
+  $("r-l").textContent = state.phase>=1 ? num(lossOf(fw.p,exY()),4) : "—";
+  $("r-steps").textContent=String(state.steps);
+}
+
+/* ==================================================================== wiring */
+$("hl").addEventListener("input",function(){ state.hl=parseInt(this.value,10); $("hlVal").textContent=state.hl; rebuildNet(); setPhase(0); });
+$("w").addEventListener("input",function(){ state.w=parseInt(this.value,10); $("wVal").textContent=state.w; rebuildNet(); setPhase(0); });
+$("act").addEventListener("change",function(){ state.act=this.value; rebuildNet(); setPhase(0); });
+$("lr").addEventListener("input",function(){ state.lr=Math.pow(10,parseFloat(this.value)); $("lrVal").textContent=num(state.lr,2); });
+$("next").addEventListener("click",function(){ if(!state.auto) advance(); });
+$("back").addEventListener("click",function(){ if(state.auto) stopAuto(); retreat(); });
+function stopAuto(){ state.auto=false; if(autoTimer) clearTimeout(autoTimer); autoTimer=null;
+  $("auto").classList.remove("primary"); $("auto").innerHTML='<span class="lang-en">Auto play</span><span class="lang-zh">自动播放</span>'; }
+var autoTimer=null;
+$("auto").addEventListener("click",function(){
+  state.auto=!state.auto;
+  if(state.auto){ this.classList.add("primary");
+    this.innerHTML='<span class="lang-en">Pause</span><span class="lang-zh">暂停</span>'; advance(); }
+  else stopAuto();
+});
+$("speed").addEventListener("change",function(){ state.speed=parseInt(this.value,10); });
+$("line").addEventListener("click",function(){ state.reveal=Math.min(NROW,state.reveal+1); renderTable(); });
+$("all").addEventListener("click",function(){ state.reveal=NROW; renderTable(); });
+$("none").addEventListener("click",function(){ state.reveal=0; renderTable(); });
+$("reset").addEventListener("click",function(){ stopAuto(); rebuildNet(); setPhase(0); refreshSides(); });
+$("run").addEventListener("click",function(){
+  stopAuto();
+  var n=0, want=400;
+  $("run").disabled=true; $("pause").disabled=false;
+  runTimer=setTimeout(function tick(){
+    for(var q=0;q<10 && n<want;q++){ applyUpdate(true); n++; }
+    drawLoss();
+    if(n<want && runTimer) runTimer=setTimeout(tick,35);
+    else {
+      $("run").disabled=false; $("pause").disabled=true; runTimer=null;
+      recompute(); setPhase(0); refreshSides();
+    }
+  },0);
+});
+var runTimer=null;
+$("pause").addEventListener("click",function(){
+  if(runTimer){ clearTimeout(runTimer); runTimer=null; }
+  $("run").disabled=false; $("pause").disabled=true;
+});
+$("scChart").addEventListener("click",function(e){
+  var r=this.getBoundingClientRect();
+  var px=(e.clientX-r.left)/r.width*this.width/(window.devicePixelRatio||1);
+  var py=(e.clientY-r.top)/r.height*this.height/(window.devicePixelRatio||1);
+  var s=this.__map; if(!s) return;
+  var best=-1,bd=1e9;
+  for(var i=0;i<DATA.n;i++){
+    var dx=s.PX(DATA.X[2*i])-px, dy=s.PY(DATA.X[2*i+1])-py, dd=dx*dx+dy*dy;
+    if(dd<bd){ bd=dd; best=i; }
+  }
+  if(best>=0 && bd<26*26){
+    for(var j=0;j<ORDER.length;j++) if(ORDER[j]===best){ state.ex=j; }
+    stopAuto(); recompute(); setPhase(0);
+  }
+});
+window.addEventListener("resize",function(){ drawDia(); refreshSides(); });
+
+/* --------------------------------------------------------- language toggle */
+$("langBtn").addEventListener("click",function(){
+  var zh=document.documentElement.getAttribute("data-lang")==="zh";
+  document.documentElement.setAttribute("data-lang",zh?"en":"zh");
+  this.textContent=zh?"中文":"English";
+});
+
+/* --------------------------------------------------------------- deep link */
+(function(){
+  var q=new URLSearchParams(location.search);
+  if(q.has("hl")){ var h=parseInt(q.get("hl"),10); if(h>=1&&h<=2) state.hl=h; }
+  if(q.has("w")){ var w=parseInt(q.get("w"),10); if(w>=1&&w<=4) state.w=w; }
+  if(q.has("act")&&["tanh","sigmoid","relu","linear"].indexOf(q.get("act"))>=0) state.act=q.get("act");
+  if(q.has("lr")){ var l=parseFloat(q.get("lr")); if(isFinite(l)) state.lr=Math.pow(10,Math.max(-1.3,Math.min(0.4,l))); }
+  if(q.has("seed")) state.seed=parseInt(q.get("seed"),10)||1;
+  $("hl").value=state.hl; $("hlVal").textContent=state.hl;
+  $("w").value=state.w;   $("wVal").textContent=state.w;
+  $("act").value=state.act;
+  $("lr").value=Math.log10(state.lr); $("lrVal").textContent=num(state.lr,2);
+  if(q.has("speed")){ state.speed=parseInt(q.get("speed"),10)||650; $("speed").value=String(state.speed); }
+  rebuildNet();
+  if(q.has("ex")){ var x=parseInt(q.get("ex"),10); if(x>=0&&x<DATA.n) state.ex=x; }
+  recompute();
+  var ph=q.has("phase")?parseInt(q.get("phase"),10):0;
+  var rv=q.has("reveal")?parseInt(q.get("reveal"),10):null;
+  setPhase(Math.max(0,Math.min(3,ph||0)));
+  if(rv!==null){ state.reveal=Math.max(0,Math.min(NROW,rv)); renderTable(); }
+  /* pre-train if asked, so a prepared link already shows a descent */
+  var pre=q.has("train")?parseInt(q.get("train"),10):0;
+  if(pre>0){ for(var t=0;t<pre;t++) applyUpdate(); setPhase(Math.max(0,Math.min(3,ph||0))); }
+  refreshSides();
+  state.auto = q.get("auto")==="1";
+  if(state.auto){ $("auto").classList.add("primary");
+    $("auto").innerHTML='<span class="lang-en">Pause</span><span class="lang-zh">暂停</span>';
+    autoTimer=setTimeout(function(){ advance(); }, state.speed); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Initialization Lab — ME2605 Week 2 Demo (Part 1)</title>
+<meta name="description" content="ME2605 interactive demo, part 1: choose the initialization of every layer yourself — 0/1, Gaussian or uniform, with your own mean and variance — and judge the result only by the training and test error.">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
+  --accent-soft:#eaf2f8; --border:#e2e2e2; --code-bg:#f6f8fa; --maxw:1180px;
+  --good:#1e8449; --low:#2471a3; --high:#b03a2e; --warn:#b7791f;
+  --pre:#b7791f; --post:#1a5276; --grad:#6b46c1; --ref:#95a5a6;
+  --panel:#fbfcfd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);line-height:1.6;font-size:15.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+
+header.site-header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:54px;gap:12px}
+.brand{font-weight:700;white-space:nowrap;color:var(--fg)}
+.brand .code{color:var(--accent)}
+.nav-links{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.nav-links a,.nav-links button{font-size:.9rem;padding:6px 11px;border-radius:6px;color:var(--fg);background:none;
+  border:1px solid transparent;cursor:pointer;font-family:inherit}
+.nav-links a:hover,.nav-links button:hover{background:var(--accent-soft);text-decoration:none}
+.nav-links a.next{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lang-toggle{border:1px solid var(--border)!important}
+main{max-width:var(--maxw);margin:0 auto;padding:26px 20px 70px}
+h1{font-size:1.7rem;line-height:1.3;margin-bottom:6px}
+h2{font-size:1.2rem;margin:0 0 4px}
+h3{font-size:1rem;margin:0 0 8px}
+p{margin-bottom:11px}
+ul{margin:0 0 12px 20px}
+li{margin-bottom:5px}
+.subtitle{color:var(--muted)}
+.lede{color:var(--muted);margin-bottom:18px;max-width:860px}
+.tag{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:20px;
+  padding:2px 12px;font-size:.8rem;margin-right:8px;font-weight:600}
+.callout{background:var(--accent-soft);border-left:4px solid var(--accent);padding:12px 16px;
+  border-radius:0 8px 8px 0;margin:14px 0;max-width:900px}
+.callout.warn{background:#fdf6e3;border-left-color:var(--warn)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.muted{color:var(--muted)}
+.small{font-size:.87rem}
+
+/* ---- panels ---- */
+.panel{margin-bottom:26px}
+.phead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.phead .step{font-size:.74rem;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent)}
+.grid-net{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.grid-run{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.86rem;font-weight:600;margin-bottom:4px}
+.ctrl label .val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);font-size:.95rem}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0;cursor:pointer}
+select{width:100%;font-family:inherit;font-size:.9rem;padding:6px 8px;border:1px solid var(--border);
+  border-radius:6px;background:#fff;cursor:pointer}
+.seedrow{display:flex;gap:6px;align-items:center}
+
+/* ---- layer stack ---- */
+.lstack{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.lhead,.lrow{display:grid;grid-template-columns:86px 122px 74px minmax(210px,1fr) 176px 96px;gap:10px;
+  align-items:center;padding:9px 14px}
+.lhead{background:var(--code-bg);font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--muted);font-weight:700;border-bottom:1px solid var(--border)}
+.lrow{border-bottom:1px solid #f1f3f5}
+.lrow:last-child{border-bottom:none}
+.lrow.outrow{background:#fdfcf7}
+.lname{font-weight:700;font-size:.92rem}
+.lname .fan{display:block;font-weight:500;font-size:.71rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.lprev{width:68px;height:68px;border:1px solid var(--border);border-radius:6px;background:#fff}
+.lp label{display:flex;justify-content:space-between;align-items:baseline;font-size:.75rem;font-weight:600;margin-bottom:0}
+.lp label .val{font-family:ui-monospace,Menlo,monospace;color:var(--accent)}
+.lp input[type=range]{margin:0 0 3px;height:16px}
+.lstats{font-family:ui-monospace,Menlo,monospace;font-size:.74rem;color:var(--muted);line-height:1.45}
+.lstats b{color:var(--fg);font-weight:700}
+.lbtns{display:flex;gap:5px;justify-content:flex-end}
+.btn{font-family:inherit;font-size:.9rem;font-weight:600;border:1px solid var(--border);background:#fff;
+  color:var(--fg);border-radius:7px;padding:7px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.12);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.sm{font-size:.78rem;padding:4px 9px;font-weight:600}
+
+/* ---- charts ---- */
+canvas{display:block;width:100%;background:#fff;border:1px solid var(--border);border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.82rem;margin:8px 0 4px}
+.legend span{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.swatch{width:16px;height:3px;border-radius:2px;display:inline-block;flex:0 0 auto}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:12px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 12px}
+.stat .k{font-size:.73rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-family:ui-monospace,Menlo,monospace;font-size:1.05rem;font-weight:700}
+.statusline{margin-top:10px;font-size:.88rem;color:var(--muted)}
+.footer-note{border-top:1px solid var(--border);margin-top:34px;padding-top:16px;color:var(--muted);font-size:.85rem}
+html[data-lang="zh"] .lang-en{display:none}
+html[data-lang="en"] .lang-zh{display:none}
+@media (max-width:980px){
+  .grid-net{grid-template-columns:1fr 1fr}
+  .grid-run{grid-template-columns:1fr}
+  .lhead,.lrow{grid-template-columns:70px 108px 68px 1fr 96px;gap:8px}
+  .lhead .cl-stats,.lrow .lstats{display:none}
+}
+@media (max-width:680px){
+  .grid-net{grid-template-columns:1fr}
+  .lhead,.lrow{grid-template-columns:64px 1fr;gap:8px}
+  .lhead .cl-prev,.lrow .lprev,.lhead .cl-params{display:none}
+  .lrow .lp{grid-column:1/-1}
+  .lrow .lbtns{grid-column:2;justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Part 1 · Initialization Lab</span><span class="lang-zh">第 1 部分 · 初始化实验室</span></a>
+    <nav class="nav-links">
+      <a href="../nn-signal-lab/" class="next"><span class="lang-en">Part 2 · Signal Propagation Lab →</span><span class="lang-zh">第 2 部分 · 信号传播实验室 →</span></a>
+      <a href="../../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
+      <button class="lang-toggle" id="langBtn" type="button">中文</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ 0. framing ============================ -->
+<section class="panel">
+  <h1><span class="lang-en">You choose the initialization</span><span class="lang-zh">初始化由你来选</span></h1>
+  <p class="lede">
+    <span class="lang-en">Build a small network, then decide <b>how every single layer is initialized</b> — a 0/1 matrix, a Gaussian matrix or a uniform matrix, each with your own mean and variance. Press Train and look at the error curves. Nothing on this page tells you which choice is right; finding that out is the experiment.</span>
+    <span class="lang-zh">先搭一个小网络，然后<b>逐层决定初始化方式</b>——0/1 矩阵、高斯矩阵或均匀分布矩阵，均值与方差都自己调。按下 Train，只误差曲线。这一页不会告诉你哪种选择是对的，把它试出来就是这次实验的目的。</span>
+  </p>
+  <div class="callout warn">
+    <span class="lang-en"><b>The only feedback is the error.</b> We deliberately do not plot anything about the signal inside the network — at this point we have not introduced it yet. Judge an initialization by whether training and test error come down.</span>
+    <span class="lang-zh"><b>唯一的反馈就是误差。</b>我们刻意不画网络内部的任何信号量——此时还没讲到它。判断一个初始化好不好，只看训练误差和测试误差有没有降下来。</span>
+  </div>
+</section>
+
+<!-- ============================ 1. network ============================ -->
+<section class="panel">
+  <div class="phead">
+    <h2><span class="step">1</span> &nbsp;<span class="lang-en">Build the network</span><span class="lang-zh">搭建网络</span></h2>
+  </div>
+  <div class="card">
+    <div class="grid-net">
+      <div class="ctrl">
+        <label><span class="lang-en">hidden layers L</span><span class="lang-zh">隐藏层层数 L</span><span class="val" id="LVal">6</span></label>
+        <input type="range" id="depth" min="1" max="8" step="1" value="6">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">width d</span><span class="lang-zh">宽度 d</span><span class="val" id="dVal">16</span></label>
+        <input type="range" id="width" min="8" max="32" step="2" value="16">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">activation φ</span><span class="lang-zh">激活函数 φ</span></label>
+        <select id="act">
+          <option value="relu" selected>ReLU</option>
+          <option value="tanh">tanh</option>
+          <option value="linear">linear</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">random seed</span><span class="lang-zh">随机种子</span></label>
+        <div class="seedrow">
+          <select id="seed" style="flex:1">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+          <button class="btn sm" id="reseed" type="button" title="draw new random matrices"><span class="lang-en">re-draw</span><span class="lang-zh">重抽</span></button>
+        </div>
+      </div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">
+      <span class="lang-en">A plain fully connected network for two-moon classification: no bias, no normalization, no skip connections, so that everything you see comes from the initialization. Layer 1 takes the 2-d input; every other layer takes a d-d vector.</span>
+      <span class="lang-zh">一个用于月牙二分类的普通全连接网络：无偏置、无归一化、无跳跃连接，因此你看到的一切都只来自初始化。第 1 层接收 2 维输入，其余每层接收 d 维向量。</span>
+    </p>
+  </div>
+</section>
+
+<!-- ============================ 2. initialization ============================ -->
+<section class="panel">
+  <div class="phead">
+    <h2><span class="step">2</span> &nbsp;<span class="lang-en">Choose the initialization of every layer</span><span class="lang-zh">逐层选择初始化</span></h2>
+    <div class="lbtns">
+      <button class="btn sm" id="naive" type="button"><span class="lang-en">reset to N(0, 1) everywhere</span><span class="lang-zh">重置为逐层 N(0, 1)</span></button>
+      <button class="btn sm" id="copyLink" type="button"><span class="lang-en">copy link</span><span class="lang-zh">复制链接</span></button>
+    </div>
+  </div>
+  <p class="small muted" style="margin-bottom:10px">
+    <span class="lang-en">Three families are available for each layer. <b>0/1</b>: every entry is 0 or 1, and you tune the fraction of ones. <b>N(μ, σ²)</b>: i.i.d. Gaussian entries with the mean and variance you set. <b>U(μ, σ²)</b>: i.i.d. uniform entries with the mean and variance you set. The last row is the output layer.</span>
+    <span class="lang-zh">每一层都有三类可选。<b>0/1</b>：每个元素取 0 或 1，你调 1 的比例。<b>N(μ, σ²)</b>：独立同分布高斯，均值与方差自己设。<b>U(μ, σ²)</b>：独立同分布均匀分布，均值与方差自己设。最后一行是输出层。</span>
+  </p>
+  <div class="lstack">
+    <div class="lhead">
+      <span><span class="lang-en">layer</span><span class="lang-zh">层</span></span>
+      <span><span class="lang-en">family</span><span class="lang-zh">分布</span></span>
+      <span class="cl-prev"><span class="lang-en">matrix</span><span class="lang-zh">矩阵</span></span>
+      <span class="cl-params"><span class="lang-en">parameters</span><span class="lang-zh">参数</span></span>
+      <span class="cl-stats"><span class="lang-en">as drawn</span><span class="lang-zh">实际抽样</span></span>
+      <span></span>
+    </div>
+    <div id="rows"></div>
+  </div>
+</section>
+
+<!-- ============================ 3. train ============================ -->
+<section class="panel">
+  <div class="phead">
+    <h2><span class="step">3</span> &nbsp;<span class="lang-en">Train it and look at the error</span><span class="lang-zh">训练它，看误差</span></h2>
+    <div class="lbtns">
+      <button class="btn primary" id="run" type="button"><span class="lang-en">Train</span><span class="lang-zh">开始训练</span></button>
+      <button class="btn" id="stop" type="button" disabled><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
+      <button class="btn" id="clear" type="button"><span class="lang-en">Clear history</span><span class="lang-zh">清空历史</span></button>
+    </div>
+  </div>
+  <div class="grid-run">
+    <div class="card">
+      <div class="legend" id="errLegend"></div>
+      <canvas id="errChart"></canvas>
+      <div class="readout">
+        <div class="stat"><div class="k"><span class="lang-en">train error</span><span class="lang-zh">训练误差</span></div><div class="v" id="r-tr">—</div></div>
+        <div class="stat"><div class="k"><span class="lang-en">test error</span><span class="lang-zh">测试误差</span></div><div class="v" id="r-te">—</div></div>
+        <div class="stat"><div class="k"><span class="lang-en">chance level</span><span class="lang-zh">瞎猜水平</span></div><div class="v">50.0%</div></div>
+        <div class="stat"><div class="k"><span class="lang-en">runs kept</span><span class="lang-zh">保留次数</span></div><div class="v" id="r-n">0</div></div>
+      </div>
+      <div class="statusline" id="trainStatus"></div>
+    </div>
+    <div class="card">
+      <h3><span class="lang-en">Decision boundary</span><span class="lang-zh">决策边界</span></h3>
+      <canvas id="bdChart"></canvas>
+      <p class="small muted" style="margin:10px 0 0">
+        <span class="lang-en">The most recent run. A well-initialized network usually shows a broad region of confident prediction, not a uniform grey.</span>
+        <span class="lang-zh">最近一次训练的结果。初始化得当的网络通常会出现大片置信度较高的区域，而不是一片均匀的灰色。</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ notes ============================ -->
+<div class="footer-note">
+  <p><span class="lang-en">Each run keeps its curve when you train again (up to five), so you can change one layer and compare directly. The curves show <b>error</b>, not loss: the fraction of misclassified points, which is what you can actually read off an axis.</span>
+     <span class="lang-zh">每次训练都会把曲线留在图上（最多保留五条），这样可以只改一层然后直接比较。图上画的是<b>误差</b>而不是损失：分错点的比例，这是真正能从坐标轴上读出来的量。</span></p>
+  <p style="margin-top:8px"><span class="lang-en">Two-moons data is generated in the page from the seed; 400 training and 400 test points. Optimizer: SGD with momentum at one fixed learning rate and <b>no gradient clipping</b>, so runs differ only because of the initialization — a scale that is far too large is allowed to blow up, and a run whose gradients turn non-finite is marked <i>diverged</i> and stopped. The curves are noisy on purpose: they are what a single run actually looks like.</span>
+     <span class="lang-zh">月牙数据由页面按种子实时生成，训练集与测试集各 400 点。优化器：带动量的 SGD，学习率固定，且<b>不做梯度裁剪</b>，因此各次运行的差别只来自初始化——尺度过大时就真的会炸，梯度出现非有限值的运行会被标记为 <i>diverged</i> 并中止。曲线有抖动是刻意的：单次训练实际就是这样。</span></p>
+</div>
+
+</main>
+
+<script>
+/* ==========================================================================
+   ME2605 · Initialization Lab  (Part 1)
+   Everything runs in the browser. No dependencies, no network.
+
+     x (2) --W1--> h1 --phi--> z1 --W2--> ... --WL--> hL --phi--> zL --Wo--> s
+     p = sigmoid(s), loss = BCE(p, y), error = misclassification rate.
+
+   The initialization of EVERY layer is chosen by the user:
+       0/1 Bernoulli with a tunable fraction of ones,
+       i.i.d. Gaussian  with a tunable mean and variance,
+       i.i.d. uniform   with a tunable mean and variance.
+   There is deliberately no per-layer signal readout on this page.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- utilities */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gaussFrom(rnd){var u=0,v=0;while(u===0)u=rnd();while(v===0)v=rnd();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function fmt(x){ if(!isFinite(x))return "∞";
+  var ax=Math.abs(x);
+  if(ax!==0&&(ax>=10000||ax<0.001))return x.toExponential(1);
+  if(ax>=100)return x.toFixed(0);
+  if(ax>=10)return x.toFixed(1);
+  if(ax>=1)return x.toFixed(2);
+  return x.toFixed(3);}
+function num(x,n){ return (Math.round(x*Math.pow(10,n))/Math.pow(10,n)).toFixed(n); }
+function $(id){ return document.getElementById(id); }
+
+/* ------------------------------------------------------------------- data */
+function makeMoons(n,noise,seed){
+  var rnd=mulberry32(seed), X=new Float32Array(n*2), Y=new Uint8Array(n);
+  var half=Math.floor(n/2);
+  for(var i=0;i<n;i++){
+    var c = i<half ? 0 : 1, t = rnd()*Math.PI, px, py;
+    if(c===0){ px=Math.cos(t); py=Math.sin(t); }
+    else { px=1-Math.cos(t); py=0.5-Math.sin(t); }
+    X[2*i]   = px + gaussFrom(rnd)*noise;
+    X[2*i+1] = py + gaussFrom(rnd)*noise;
+    Y[i]=c;
+  }
+  return {X:X,Y:Y,n:n};
+}
+var TRAIN = makeMoons(400,0.13,11);
+var TEST  = makeMoons(400,0.13,29);
+
+/* ============================================================ initializers */
+/* a spec is one of
+     {t:"b", p}          entries in {0,1} with P(1)=p
+     {t:"g", m, v}       i.i.d. N(m, v)
+     {t:"u", m, v}       i.i.d. uniform with mean m and variance v
+   "v" is always a VARIANCE, never a standard deviation.                    */
+function drawMatrix(W,spec,rnd){
+  var n=W.length,i;
+  if(spec.t==="b"){
+    for(i=0;i<n;i++) W[i] = (rnd()<spec.p) ? 1 : 0;
+  } else if(spec.t==="g"){
+    var sd=Math.sqrt(Math.max(spec.v,0));
+    for(i=0;i<n;i++) W[i] = spec.m + gaussFrom(rnd)*sd;
+  } else {
+    var sd2=Math.sqrt(Math.max(spec.v,0)), r=Math.sqrt(3)*sd2;   /* U(m-r, m+r) has variance r^2/3 */
+    for(i=0;i<n;i++) W[i] = spec.m + (rnd()*2-1)*r;
+  }
+}
+function matStats(W){
+  var n=W.length, s=0, s2=0, i;
+  for(i=0;i<n;i++){ s+=W[i]; s2+=W[i]*W[i]; }
+  var mean=s/n, v=Math.max(0, s2/n-mean*mean);
+  return {mean:mean, v:v, n:n};
+}
+function cloneSpec(sp){ return sp.t==="b" ? {t:"b",p:sp.p} : {t:sp.t,m:sp.m,v:sp.v}; }
+function specDesc(sp){
+  if(!sp) return "?";
+  if(sp.t==="b") return "0/1  P(1)="+num(sp.p,2);
+  if(sp.t==="g") return "N("+num(sp.m,2)+", "+num(sp.v,3)+")";
+  return "U("+num(sp.m,2)+", "+num(sp.v,3)+")";
+}
+
+/* ---------------------------------------------------------------- network */
+function makeNet(cfg){
+  var rnd=mulberry32((cfg.seed|0)*7919+13);
+  var d=cfg.d, L=cfg.L, din=cfg.din, Ws=[], nin=din, l;
+  for(l=0;l<L;l++){
+    var spec=cfg.inits[l]||cfg.inits[cfg.inits.length-1];
+    var W=new Float32Array(d*nin);
+    drawMatrix(W,spec,rnd);
+    Ws.push(W); nin=d;
+  }
+  var Wo=new Float32Array(nin);
+  drawMatrix(Wo,cfg.out,rnd);
+  return {din:din,d:d,L:L,act:cfg.act,seed:cfg.seed,Ws:Ws,Wo:Wo};
+}
+function act(x,k){ return k==="relu" ? (x>0?x:0) : k==="linear" ? x : Math.tanh(x); }
+function dactFromZ(z,k){ return k==="relu" ? (z>0?1:0) : k==="linear" ? 1 : (1-z*z); }
+function logit(z){ return z>0 ? 1/(1+Math.exp(-z)) : (function(){var e=Math.exp(z);return e/(1+e);})(); }
+
+function makeBuf(net){
+  var L=net.L,d=net.d,din=net.din, z=[],h=[],e=[], l;
+  for(l=0;l<=L;l++) z.push(new Float32Array(l===0?din:d));
+  for(l=0;l<L;l++){ h.push(new Float32Array(d)); e.push(new Float32Array(d)); }
+  return {z:z,h:h,e:e};
+}
+function newGrads(net){
+  return {W:net.Ws.map(function(W){return new Float32Array(W.length);}),
+          O:new Float32Array(net.Wo.length)};
+}
+function newVel(net){
+  return {W:net.Ws.map(function(W){return new Float32Array(W.length);}),
+          O:new Float32Array(net.Wo.length)};
+}
+/* one forward + backward pass over the samples in idx; grads may be null */
+function forwardBackward(net,data,idx,grads){
+  var L=net.L,d=net.d,din=net.din,k=net.act, buf=makeBuf(net);
+  var n=idx.length, loss=0, bad=0, ii, l, o, kk;
+  for(ii=0;ii<n;ii++){
+    var si=idx[ii];
+    buf.z[0][0]=data.X[2*si]; buf.z[0][1]=data.X[2*si+1];
+    for(l=1;l<=L;l++){
+      var W=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], hh=buf.h[l-1], zz=buf.z[l];
+      for(o=0;o<d;o++){ var s=0,b0=o*nin; for(kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; hh[o]=s; }
+      for(o=0;o<d;o++) zz[o]=act(hh[o],k);
+    }
+    var ztop=buf.z[L], sOut=0;
+    for(kk=0;kk<d;kk++) sOut+=net.Wo[kk]*ztop[kk];
+    var p=logit(sOut), y=data.Y[si];
+    loss += -(y?Math.log(Math.max(p,1e-12)):Math.log(Math.max(1-p,1e-12)));
+    if(((p>0.5)?1:0)!==y) bad++;
+    /* ---- backward */
+    var dOut=p-y, eN=buf.e[L-1], zL=buf.z[L];
+    for(o=0;o<d;o++) eN[o]=dOut*net.Wo[o]*dactFromZ(zL[o],k);
+    if(grads){
+      for(kk=0;kk<d;kk++) grads.O[kk]+=dOut*ztop[kk];
+      var ninL=(L===1?din:d), gWL=grads.W[L-1], zp=buf.z[L-1];
+      for(o=0;o<d;o++){ var ev=eN[o], b1=o*ninL;
+        for(kk=0;kk<ninL;kk++) gWL[b1+kk]+=ev*zp[kk]; }
+    }
+    for(var lb=L-1;lb>=1;lb--){
+      var eNext=buf.e[lb], ePrev=buf.e[lb-1], Wb=net.Ws[lb], zPost=buf.z[lb], zPrev=buf.z[lb-1];
+      for(kk=0;kk<d;kk++){
+        var acc=0; for(o=0;o<d;o++) acc+=Wb[o*d+kk]*eNext[o];
+        ePrev[kk]=acc*dactFromZ(zPost[kk],k);
+      }
+      if(grads){
+        var ninB=(lb===1?din:d), gWb=grads.W[lb-1];
+        for(o=0;o<d;o++){ var ev2=ePrev[o], b2=o*ninB;
+          for(kk=0;kk<ninB;kk++) gWb[b2+kk]+=ev2*zPrev[kk]; }
+      }
+    }
+  }
+  return {loss:loss/n, err:bad/n};
+}
+function applyGrads(net,grads,scale,mom,vel){
+  var l,j;
+  for(l=0;l<net.L;l++){
+    var W=net.Ws[l], G=grads.W[l], V=vel.W[l];
+    for(j=0;j<W.length;j++){ V[j]=mom*V[j]-scale*G[j]; W[j]+=V[j]; }
+  }
+  var O=net.Wo, GO=grads.O, VO=vel.O;
+  for(j=0;j<O.length;j++){ VO[j]=mom*VO[j]-scale*GO[j]; O[j]+=VO[j]; }
+}
+/* one SGD step with an optional global gradient clip.
+   The lab runs with clip = 0 ON PURPOSE: a badly scaled initialization is
+   allowed to actually blow up, and the run is then reported as diverged. A
+   clip would rescue the too-large scales and hide the effect we are studying. */
+function sgdStep(net,data,idx,lr,mom,vel,clip){
+  var g=newGrads(net);
+  forwardBackward(net,data,idx,g);
+  var tot=0,i,l;
+  for(l=0;l<g.W.length;l++){ var G=g.W[l]; for(i=0;i<G.length;i++) tot+=G[i]*G[i]; }
+  for(i=0;i<g.O.length;i++) tot+=g.O[i]*g.O[i];
+  var norm=Math.sqrt(tot);
+  if(!isFinite(norm)) return false;                       /* diverged */
+  if(clip>0 && norm>clip){ var sc=clip/norm;
+    for(l=0;l<g.W.length;l++){ var G2=g.W[l]; for(i=0;i<G2.length;i++) G2[i]*=sc; }
+    for(i=0;i<g.O.length;i++) g.O[i]*=sc;
+  }
+  applyGrads(net,g,lr/idx.length,mom,vel);
+  return true;
+}
+function errOf(net,data){
+  var buf=makeBuf(net),L=net.L,d=net.d,din=net.din,bad=0,i,l,o,kk;
+  for(i=0;i<data.n;i++){
+    buf.z[0][0]=data.X[2*i]; buf.z[0][1]=data.X[2*i+1];
+    for(l=1;l<=L;l++){
+      var W=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
+      for(o=0;o<d;o++){ var s=0,b0=o*nin; for(kk=0;kk<nin;kk++) s+=W[b0+kk]*prev[kk]; zz[o]=act(s,net.act); }
+    }
+    var so=0; for(kk=0;kk<d;kk++) so+=net.Wo[kk]*buf.z[L][kk];
+    if(((logit(so)>0.5)?1:0)!==data.Y[i]) bad++;
+  }
+  return bad/data.n;
+}
+function allIdx(d){ var a=new Array(d.n); for(var i=0;i<d.n;i++) a[i]=i; return a; }
+
+/* ------------------------------------------------------------------ charts */
+function setupCanvas(cv,h){
+  var dpr=window.devicePixelRatio||1, w=Math.max(240,cv.parentElement.clientWidth||640);
+  cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.height=h+"px";
+  var g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  return {g:g,w:w,h:h};
+}
+var ERRCOL=["#1a5276","#b7791f","#1e8449","#b03a2e","#6b46c1"];
+function drawErrChart(runs,steps){
+  var s=setupCanvas($("errChart"),270), g=s.g, W=s.w, H=s.h;
+  var m={l:52,r:16,t:16,b:40}, ymax=0.6;
+  g.clearRect(0,0,W,H); g.font="12px -apple-system,Arial"; g.textBaseline="middle";
+  function X(st){ return m.l+(W-m.l-m.r)*(steps<=1?0:st/(steps-1)); }
+  function Y(v){ return m.t+(H-m.t-m.b)*(1-Math.min(v,ymax)/ymax); }
+  [0,0.1,0.2,0.3,0.4,0.5,0.6].forEach(function(v){
+    var y=Y(v); g.strokeStyle=v===0?"#cbd5dd":"#eef1f4"; g.lineWidth=1; g.beginPath();
+    g.moveTo(m.l,y); g.lineTo(W-m.r,y); g.stroke();
+    g.fillStyle="#8b98a5"; g.textAlign="right"; g.fillText(Math.round(v*100)+"%", m.l-7, y);
+  });
+  /* chance level */
+  g.strokeStyle="#d8b4b4"; g.setLineDash([3,3]); g.beginPath();
+  g.moveTo(m.l,Y(0.5)); g.lineTo(W-m.r,Y(0.5)); g.stroke(); g.setLineDash([]);
+  g.textAlign="center"; g.fillStyle="#8b98a5";
+  g.fillText("SGD step", m.l+(W-m.l-m.r)/2, H-10);
+  [0,0.5,1].forEach(function(t){ g.fillText(Math.round(t*steps), X(t*steps), H-m.b+16); });
+  g.strokeStyle="#cbd5dd"; g.beginPath(); g.moveTo(m.l,H-m.b); g.lineTo(W-m.r,H-m.b); g.stroke();
+  if(!runs.length){
+    g.fillStyle="#b6c1cb"; g.textAlign="center"; g.textBaseline="middle";
+    g.fillText("press “Train” to plot training / test error", m.l+(W-m.l-m.r)/2, m.t+(H-m.t-m.b)/2);
+  }
+  var legend=[];
+  runs.forEach(function(r,k){
+    var col=ERRCOL[k%ERRCOL.length];
+    if(r.test.length>1){
+      g.strokeStyle=col; g.lineWidth=2.6; g.beginPath();
+      for(var i=0;i<r.test.length;i++){ var px=X(r.step[i]),py=Y(r.test[i]); i?g.lineTo(px,py):g.moveTo(px,py); }
+      g.stroke();
+    }
+    if(r.train.length>1){
+      g.strokeStyle=col; g.lineWidth=1.4; g.setLineDash([4,3]); g.beginPath();
+      for(var j=0;j<r.train.length;j++){ var qx=X(r.step[j]),qy=Y(r.train[j]); j?g.lineTo(qx,qy):g.moveTo(qx,qy); }
+      g.stroke(); g.setLineDash([]);
+    }
+    var last=r.test.length?r.test[r.test.length-1]:null;
+    var tail = r.diverged ? ' · diverged' :
+      (r.done&&last!==null ? (' · test '+(100*last).toFixed(1)+'%') : ' · running…');
+    legend.push('<span><i class="swatch" style="background:'+col+'"></i>'+r.label+tail+'</span>');
+  });
+  if(runs.length) legend.push('<span><i class="swatch" style="background:none;border-top:2px dashed #8b98a5"></i>solid = test · dashed = train</span>');
+  $("errLegend").innerHTML=legend.join("");
+  $("r-n").textContent=String(runs.length);
+}
+var GX0=-1.5,GX1=2.5,GY0=-1.3,GY1=1.8;
+function drawBoundary(cv,net,data){
+  var s=setupCanvas(cv,272), g=s.g, W=s.w, H=s.h;
+  var m={l:30,r:14,t:14,b:26}, pw=W-m.l-m.r, ph=H-m.t-m.b;
+  var NX=54, NY=46, buf=makeBuf(net), L=net.L, d=net.d, din=net.din, l, o, kk;
+  g.clearRect(0,0,W,H);
+  for(var iy=0;iy<NY;iy++) for(var ix=0;ix<NX;ix++){
+    var xa=GX0+(ix+0.5)/NX*(GX1-GX0), xb=GY0+(iy+0.5)/NY*(GY1-GY0);
+    buf.z[0][0]=xa; buf.z[0][1]=xb;
+    for(l=1;l<=L;l++){
+      var Wm=net.Ws[l-1], nin=(l===1?din:d), prev=buf.z[l-1], zz=buf.z[l];
+      for(o=0;o<d;o++){ var su=0,b0=o*nin; for(kk=0;kk<nin;kk++) su+=Wm[b0+kk]*prev[kk]; zz[o]=act(su,net.act); }
+    }
+    var so=0; for(kk=0;kk<d;kk++) so+=net.Wo[kk]*buf.z[L][kk];
+    var p=logit(so), c=p>0.5?216:26;
+    g.fillStyle="rgb("+Math.round(c+(255-c)*0.10)+","+Math.round(c+(255-c)*0.55)+","+Math.round(c+(255-c)*0.45)+")";
+    g.fillRect(m.l+ix*pw/NX, m.t+(NY-1-iy)*ph/NY, pw/NX+0.7, ph/NY+0.7);
+  }
+  g.strokeStyle="#cbd5dd"; g.strokeRect(m.l,m.t,pw,ph);
+  for(var i2=0;i2<data.n;i2++){
+    var cx=m.l+(data.X[2*i2]-GX0)/(GX1-GX0)*pw, cy=m.t+(GY1-data.X[2*i2+1])/(GY1-GY0)*ph;
+    if(cx<m.l||cx>m.l+pw||cy<m.t||cy>m.t+ph) continue;
+    g.beginPath(); g.arc(cx,cy,2.1,0,6.2832);
+    g.fillStyle = data.Y[i2] ? "#ffffff" : "#111111";
+    g.fill(); g.lineWidth=1; g.strokeStyle = data.Y[i2] ? "#7f1d1d" : "#9ca3af"; g.stroke();
+  }
+  g.fillStyle="#8b98a5"; g.font="11px -apple-system,Arial"; g.textAlign="left";
+  /* swatches drawn with the same colours as the markers themselves */
+  var ly=m.t+ph+16;
+  g.beginPath(); g.arc(m.l+5,ly,4,0,6.2832); g.fillStyle="#111111"; g.fill();
+  g.fillText("class A", m.l+14, ly);
+  g.beginPath(); g.arc(m.l+74,ly,4,0,6.2832); g.fillStyle="#ffffff"; g.fill();
+  g.strokeStyle="#7f1d1d"; g.lineWidth=1; g.stroke();
+  g.fillStyle="#8b98a5"; g.fillText("class B", m.l+83, ly);
+}
+/* 12x12 heat-map of the top-left corner of a weight matrix */
+function drawPreview(cv,W,rows,cols){
+  var dpr=window.devicePixelRatio||1;
+  cv.width=68*dpr; cv.height=68*dpr;
+  var g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,68,68); g.fillStyle="#fff"; g.fillRect(0,0,68,68);
+  var NR=Math.min(rows,12), NC=Math.min(cols,12);
+  var mx=0,i;
+  for(i=0;i<W.length;i++){ var a=Math.abs(W[i]); if(a>mx) mx=a; }
+  if(mx<=0) mx=1;
+  var cw=68/NC, ch=68/NR;
+  for(var r=0;r<NR;r++) for(var c=0;c<NC;c++){
+    var v=W[r*cols+c];
+    var t=Math.min(1,Math.abs(v)/mx);
+    if(v>=0) g.fillStyle="rgba(26,82,118,"+(0.06+0.94*t)+")";
+    else     g.fillStyle="rgba(176,58,46,"+(0.06+0.94*t)+")";
+    g.fillRect(c*cw, r*ch, cw-0.6, ch-0.6);
+  }
+  g.strokeStyle="#e2e2e2"; g.strokeRect(0.5,0.5,67,67);
+}
+
+/* ==================================================================== state */
+var DEF = {t:"g", m:0, v:1};
+var state={ d:16, L:6, act:"relu", seed:1,
+            inits:[], out:cloneSpec(DEF) };
+for(var _i=0;_i<state.L;_i++) state.inits.push(cloneSpec(DEF));
+var net=null, RUNS=[], running=null;
+
+/* ------------------------------------------------------ layer row rendering */
+function fanInOf(i){ return i===0 ? 2 : state.d; }
+function rowsHost(){ return $("rows"); }
+
+function buildRows(){
+  var host=rowsHost(); host.innerHTML="";
+  var rowSpecs=[];
+  for(var l=0;l<state.L;l++) rowSpecs.push({i:l,label:"L"+(l+1),spec:state.inits[l],out:false});
+  rowSpecs.push({i:state.L,label:"output",spec:state.out,out:true});
+  rowSpecs.forEach(function(rs){
+    var el=document.createElement("div");
+    el.className="lrow"+(rs.out?" outrow":"");
+    el.innerHTML =
+      '<div class="lname">'+ (rs.out?'<span class="lang-en">output</span><span class="lang-zh">输出层</span>':rs.label)
+      + '<span class="fan">'+(rs.out?state.d:"")+'</span></div>'
+      + '<select class="ltype">'
+      +   '<option value="b">0 / 1</option>'
+      +   '<option value="g">N(μ, σ²)</option>'
+      +   '<option value="u">U(μ, σ²)</option>'
+      + '</select>'
+      + '<canvas class="lprev"></canvas>'
+      + '<div class="lp"></div>'
+      + '<div class="lstats"></div>'
+      + '<div class="lbtns"><button class="btn sm lall" type="button"><span class="lang-en">→ all</span><span class="lang-zh">→ 全部</span></button></div>';
+    host.appendChild(el);
+    rs.el=el;
+    var sel=el.querySelector(".ltype");
+    sel.value=rs.spec.t;
+    /* keep the fan-in label in sync: layer 1 is 2 -> d, the rest d -> d */
+    var fan=el.querySelector(".fan");
+    fan.textContent = rs.out ? (state.d+" → 1")
+                    : (state.d+"×"+fanInOf(rs.i));
+    sel.addEventListener("change",function(){
+      var t=sel.value;
+      if(t==="b") rs.spec={t:"b", p:(rs.spec.t==="b"?rs.spec.p:0.5)};
+      else rs.spec={t:t, m:(rs.spec.m!==undefined?rs.spec.m:0),
+                    v:(rs.spec.v!==undefined?rs.spec.v:1)};
+      renderParams(rs); refreshAll();
+    });
+    el.querySelector(".lall").addEventListener("click",function(){
+      var cp=cloneSpec(rs.spec);
+      for(var k=0;k<state.L;k++) state.inits[k]=cloneSpec(cp);
+      state.out=cloneSpec(cp);
+      buildRows(); refreshAll();
+    });
+    renderParams(rs);
+  });
+}
+function renderParams(rs){
+  var host=rs.el.querySelector(".lp");
+  host.innerHTML="";
+  function slider(key,lab,min,max,step,val,fmtf){
+    var wrap=document.createElement("div");
+    wrap.innerHTML='<label>'+lab+'<span class="val">'+fmtf(val)+'</span></label>'
+      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'">';
+    var inp=wrap.querySelector("input"), out=wrap.querySelector(".val");
+    inp.addEventListener("input",function(){
+      var v=parseFloat(inp.value);
+      if(key==="p") rs.spec.p=v;
+      else if(key==="m") rs.spec.m=v;
+      else rs.spec.v=Math.pow(10,v);
+      out.textContent=fmtf(key==="v"?Math.pow(10,v):v);
+      refreshAll();
+    });
+    host.appendChild(wrap);
+  }
+  if(rs.spec.t==="b"){
+    slider("p",'<span class="lang-en">P(1) · fraction of ones</span><span class="lang-zh">P(1) · 取 1 的比例</span>',
+           0,1,0.01,rs.spec.p,function(v){return num(v,2);});
+  } else {
+    slider("m",'<span class="lang-en">mean μ</span><span class="lang-zh">均值 μ</span>',
+           -2,2,0.01,rs.spec.m,function(v){return num(v,2);});
+    var lgv=Math.log10(Math.max(rs.spec.v,1e-6));
+    slider("v",'<span class="lang-en">variance σ²</span><span class="lang-zh">方差 σ²</span>',
+           -4,2,0.01,lgv,function(v){return num(Math.pow(10,v),4);});
+  }
+}
+/* re-draw every preview + realized-statistics cell from the current net */
+function refreshRows(){
+  var rowsEls=rowsHost().children, l;
+  if(!net) return;
+  for(l=0;l<state.L;l++){
+    var W=net.Ws[l], el=rowsEls[l];
+    if(!el) continue;
+    drawPreview(el.querySelector(".lprev"), W, state.d, fanInOf(l));
+    var st=matStats(W);
+    el.querySelector(".lstats").innerHTML =
+      "μ <b>"+num(st.mean,3)+"</b><br>σ² <b>"+num(st.v,4)+"</b>";
+  }
+  var eo=rowsEls[state.L];
+  if(eo){
+    drawPreview(eo.querySelector(".lprev"), net.Wo, 1, state.d);
+    var so=matStats(net.Wo);
+    eo.querySelector(".lstats").innerHTML =
+      "μ <b>"+num(so.mean,3)+"</b><br>σ² <b>"+num(so.v,4)+"</b>";
+  }
+}
+function refreshAll(){
+  net=makeNet({din:2,d:state.d,L:state.L,act:state.act,seed:state.seed,
+               inits:state.inits,out:state.out});
+  refreshRows();
+}
+
+/* ------------------------------------------------------------ training loop */
+/* Small enough to finish in about a second even at the largest settings, so a
+   lecture can run several trials back to back. Learning rate and batch size are
+   FIXED and there is NO gradient clipping, so that the only thing that differs
+   between runs is the initialization. */
+var TSTEPS=600, BS=32, LR=0.05, MOM=0.9, CLIP=0, ERR_EVERY=10, MAXRUNS=5;
+
+function runLabel(){
+  var all=state.inits.concat([state.out]), first=JSON.stringify(all[0]);
+  for(var i=1;i<all.length;i++) if(JSON.stringify(all[i])!==first) return "mixed";
+  return specDesc(all[0]);
+}
+function startTraining(){
+  if(running) running.cancelled=true;
+  var n=makeNet({din:2,d:state.d,L:state.L,act:state.act,seed:state.seed,
+                 inits:state.inits,out:state.out});
+  var r={label:runLabel(),net:n,vel:newVel(n),step:[],train:[],test:[],
+         done:false,diverged:false};
+  RUNS.push(r);
+  while(RUNS.length>MAXRUNS) RUNS.shift();
+  var rnd=mulberry32(state.seed*31+5), done=0;
+  running={cancelled:false};
+  $("run").disabled=true; $("stop").disabled=false;
+  $("trainStatus").textContent="";
+  function batchIdx(){ var a=[]; for(var i=0;i<BS;i++) a.push(Math.floor(rnd()*TRAIN.n)); return a; }
+  function tick(){
+    if(!running||running.cancelled){ finish(); return; }
+    var t0=performance.now();
+    while(performance.now()-t0<24){
+      if(!sgdStep(r.net,TRAIN,batchIdx(),LR,MOM,r.vel,CLIP)){
+        r.done=true; r.diverged=true; finish(); return;
+      }
+      done++;
+      if(done%ERR_EVERY===0){ r.step.push(done); r.train.push(errOf(r.net,TRAIN)); r.test.push(errOf(r.net,TEST)); }
+      if(done>=TSTEPS){ r.done=true; finish(); return; }
+    }
+    drawErrChart(RUNS,TSTEPS);
+    $("trainStatus").textContent=Math.round(100*done/TSTEPS)+"%";
+    /* setTimeout rather than requestAnimationFrame: rAF is paused in a hidden
+       tab and does not fire under headless virtual time, so a scheduled demo
+       link would silently never run. Chunks of ~24 ms keep the page responsive. */
+    setTimeout(tick,8);
+  }
+  function finish(){
+    running=null;
+    drawErrChart(RUNS,TSTEPS);
+    $("run").disabled=false; $("stop").disabled=true;
+    var lastT=r.train.length?r.train[r.train.length-1]:null;
+    var lastE=r.test.length?r.test[r.test.length-1]:null;
+    $("r-tr").textContent = r.diverged ? "—" : (lastT===null?"—":(100*lastT).toFixed(1)+"%");
+    $("r-te").textContent = r.diverged ? "—" : (lastE===null?"—":(100*lastE).toFixed(1)+"%");
+    drawBoundary($("bdChart"),r.net,TRAIN);
+    var note = r.diverged
+      ? ' <span class="lang-en">— the gradients became non-finite, so the run was stopped.</span><span class="lang-zh">—— 梯度出现非有限值，该次运行已中止。</span>'
+      : "";
+    $("trainStatus").innerHTML='<span class="lang-en">last run: '+r.label+note+'</span>'
+      +'<span class="lang-zh">最近一次：'+r.label+note+'</span>';
+  }
+  setTimeout(tick,0);
+}
+
+/* ------------------------------------------------------------------ wiring */
+$("depth").addEventListener("input",function(){
+  var L=parseInt(this.value,10);
+  while(state.inits.length<L) state.inits.push(cloneSpec(state.inits[state.inits.length-1]||DEF));
+  state.inits.length=L;
+  state.L=L; $("LVal").textContent=L;
+  buildRows(); refreshAll();
+});
+$("width").addEventListener("input",function(){
+  state.d=parseInt(this.value,10); $("dVal").textContent=state.d;
+  buildRows(); refreshAll();
+});
+$("act").addEventListener("change",function(){ state.act=this.value; refreshAll(); });
+$("seed").addEventListener("change",function(){ state.seed=parseInt(this.value,10); refreshAll(); });
+$("reseed").addEventListener("click",function(){
+  state.seed=state.seed+1;
+  var sel=$("seed"); if([].some.call(sel.options,function(o){return +o.value===state.seed;})) sel.value=String(state.seed);
+  refreshAll();
+});
+$("naive").addEventListener("click",function(){
+  for(var k=0;k<state.L;k++) state.inits[k]=cloneSpec(DEF);
+  state.out=cloneSpec(DEF);
+  buildRows(); refreshAll();
+});
+$("run").addEventListener("click",function(){ startTraining(); });
+$("stop").addEventListener("click",function(){ if(running) running.cancelled=true; });
+$("clear").addEventListener("click",function(){
+  if(running) running.cancelled=true;
+  RUNS=[]; drawErrChart(RUNS,TSTEPS);
+  $("r-tr").textContent="—"; $("r-te").textContent="—";
+  $("trainStatus").textContent="";
+});
+$("copyLink").addEventListener("click",function(){
+  var u=location.origin+location.pathname+encodeState();
+  var b=this;
+  function done(){ var o=b.innerHTML; b.innerHTML='<span class="lang-en">copied</span><span class="lang-zh">已复制</span>';
+    setTimeout(function(){ b.innerHTML=o; },1400); }
+  if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(u).then(done,function(){ window.prompt("copy:",u); });
+  else window.prompt("copy:",u);
+});
+window.addEventListener("resize",function(){ if(net) drawBoundary($("bdChart"),net,TRAIN); });
+
+/* --------------------------------------------------------- language toggle */
+$("langBtn").addEventListener("click",function(){
+  var zh=document.documentElement.getAttribute("data-lang")==="zh";
+  document.documentElement.setAttribute("data-lang",zh?"en":"zh");
+  this.textContent=zh?"中文":"English";
+});
+
+/* --------------------------------------------------------------- deep link */
+/* ?d=16&L=6&act=relu&seed=1&init=g:0.00:-0.00|b:0.50|...&out=g:0.00:-0.00
+   g/u encode the mean and log10(variance); b encodes the fraction of ones.  */
+function encodeSpec(sp){
+  if(sp.t==="b") return "b:"+sp.p.toFixed(2);
+  return sp.t+":"+sp.m.toFixed(2)+":"+Math.log10(Math.max(sp.v,1e-6)).toFixed(2);
+}
+function encodeState(){
+  return "?d="+state.d+"&L="+state.L+"&act="+state.act+"&seed="+state.seed
+    +"&init="+state.inits.map(encodeSpec).join("|")+"&out="+encodeSpec(state.out);
+}
+function decodeSpec(s){
+  var a=s.split(":");
+  if(a[0]==="b") return {t:"b", p:Math.max(0,Math.min(1,parseFloat(a[1])))};
+  if(a[0]==="g"||a[0]==="u")
+    return {t:a[0], m:Math.max(-2,Math.min(2,parseFloat(a[1]))),
+            v:Math.pow(10,Math.max(-4,Math.min(2,parseFloat(a[2]))))};
+  return null;
+}
+(function(){
+  var q=new URLSearchParams(location.search);
+  if(q.has("d")){ var d=parseInt(q.get("d"),10); if(d>=8&&d<=32) state.d=d; }
+  if(q.has("L")){ var L=parseInt(q.get("L"),10); if(L>=1&&L<=8) state.L=L; }
+  if(q.has("act")&&["linear","tanh","relu"].indexOf(q.get("act"))>=0) state.act=q.get("act");
+  if(q.has("seed")){ var sd=parseInt(q.get("seed"),10); if(sd>=1&&sd<=5) state.seed=sd; }
+  state.inits=[];
+  if(q.has("init")){
+    q.get("init").split("|").forEach(function(t){ var s=decodeSpec(t); if(s) state.inits.push(s); });
+  }
+  while(state.inits.length<state.L) state.inits.push(cloneSpec(state.inits[state.inits.length-1]||DEF));
+  state.inits.length=state.L;
+  if(q.has("out")){ var o=decodeSpec(q.get("out")); if(o) state.out=o; }
+  $("depth").value=state.L; $("LVal").textContent=state.L;
+  $("width").value=state.d; $("dVal").textContent=state.d;
+  $("act").value=state.act; $("seed").value=String(state.seed);
+  buildRows(); refreshAll();
+  drawErrChart(RUNS,TSTEPS);
+  drawBoundary($("bdChart"),net,TRAIN);
+  if(q.get("run")==="1") startTraining();   /* handy for a prepared lecture link */
+})();
+</script>
+</body>
+</html>

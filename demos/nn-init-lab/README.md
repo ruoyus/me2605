@@ -46,13 +46,16 @@ which is what makes the finding the student's own rather than a checklist item.
 
 The page opens on `N(0, 1e-4)`, i.e. the familiar "randn times 0.01". That is a
 real choice a beginner makes, not a straw man: measured on this exact code it
-leaves **every** scenario at 50 %, the chance level for this data set (verified
-for S1, S3 and S6). The variance slider starts at the bottom of its range, so the
-first move has to be to raise it.
+leaves **all six** scenarios at exactly 50 %, the chance level for this data set.
+The variance slider starts at the bottom of its range, so the first move has to
+be to raise it.
 
-The scenario targets were not guessed. They come from a sweep of the
-initialization scale against the learning rate on this exact code, with a working
-setting landing at a few percent.
+The scenario targets were not guessed. Sweeping the initialization variance
+against the learning rate on this exact code, every target is comfortably
+reachable — the best setting found for each scenario lands between **0.0 % and
+1.0 %** training error, well inside its target. The targets are deliberately
+generous so that the exercise is *find something that works*, not *find the
+optimum*.
 
 ## Data and model
 

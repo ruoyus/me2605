@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Initialization Lab — ME2605 Week 2 Demo (Part 1)</title>
-<meta name="description" content="ME2605 interactive demo, part 1: choose the initialization of every layer yourself — 0/1, Gaussian or uniform, with your own mean and variance — and judge the result only by the training and test error.">
+<meta name="description" content="ME2605 interactive demo, part 2: six fixed scenarios. In each one, find the initialization and the learning rate that make the network train — judged only by the training and test error.">
 <style>
 :root{
   --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
@@ -97,7 +97,7 @@ canvas{display:block;width:100%;background:#fff;border:1px solid var(--border);b
 .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.82rem;margin:8px 0 4px}
 .legend span{display:flex;align-items:center;gap:6px;color:var(--muted)}
 .swatch{width:16px;height:3px;border-radius:2px;display:inline-block;flex:0 0 auto}
-.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:12px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin-top:12px}
 .stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 12px}
 .stat .k{font-size:.73rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .stat .v{font-family:ui-monospace,Menlo,monospace;font-size:1.05rem;font-weight:700}
@@ -105,6 +105,44 @@ canvas{display:block;width:100%;background:#fff;border:1px solid var(--border);b
 .footer-note{border-top:1px solid var(--border);margin-top:34px;padding-top:16px;color:var(--muted);font-size:.85rem}
 html[data-lang="zh"] .lang-en{display:none}
 html[data-lang="en"] .lang-zh{display:none}
+/* ---- buttons ---- */
+.btn{font-family:inherit;font-size:.86rem;padding:6px 13px;border:1px solid var(--border);
+  border-radius:7px;background:#fff;color:var(--fg);cursor:pointer;font-weight:600}
+.btn:hover{background:var(--accent-soft);border-color:#9fc3dd}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#154360;border-color:#154360}
+.btn.sm{font-size:.79rem;padding:4px 9px}
+
+/* ---- scenario picker ---- */
+.scenrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.scen{position:relative;text-align:left;border:1px solid var(--border);background:#fff;border-radius:9px;
+  padding:9px 12px;cursor:pointer;font-family:inherit;line-height:1.35;transition:.12s}
+.scen:hover{border-color:#9fc3dd;background:#f7fbfe}
+.scen.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.scen .sid{display:block;font-weight:800;font-size:.86rem;color:var(--accent)}
+.scen .sd{display:block;font-size:.75rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
+.scen .st{display:block;font-size:.75rem;font-weight:600;color:var(--fg);margin-top:2px}
+.scen .ok{position:absolute;top:6px;right:10px;color:var(--good);font-weight:800;font-size:1.05rem}
+.progress{margin-top:12px;font-size:.9rem;color:var(--muted)}
+.progress b{color:var(--accent);font-size:1rem}
+.win{display:none;margin-top:12px;background:#eafaf0;border:1px solid #a9dfc1;border-left:4px solid var(--good);
+  border-radius:0 8px 8px 0;padding:12px 16px;font-weight:700;color:#14512d}
+.win.show{display:block}
+
+/* ---- the single initialization control ---- */
+.initrow{display:grid;grid-template-columns:120px minmax(0,1fr) 215px;gap:18px;align-items:start}
+.iparams{display:flex;flex-direction:column;gap:6px}
+.iparams .lpg{max-width:none}
+.iparams .lpg .val{min-width:70px}
+.drawn{font-family:ui-monospace,Menlo,monospace;font-size:.76rem;color:var(--muted);
+  line-height:1.55;text-align:right;padding-top:4px}
+.drawn b{color:var(--fg)}
+@media (max-width:900px){
+  .scenrow{grid-template-columns:repeat(2,1fr)}
+  .initrow{grid-template-columns:1fr}
+  .drawn{text-align:left}
+}
 @media (max-width:980px){
   .grid-net{grid-template-columns:1fr 1fr}
   .grid-run{grid-template-columns:1fr}
@@ -126,7 +164,8 @@ html[data-lang="en"] .lang-zh{display:none}
   <div class="nav-inner">
     <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Lec 2 · Part 2 — Initialization Lab</span><span class="lang-zh">第 2 讲 · 第 2 部分 — 初始化实验室</span></a>
     <nav class="nav-links">
-      <a href="../backprop-lab/"><span class="lang-en">← Lec 2 · Part 1 · Backprop Lab</span><span class="lang-zh">← 第 2 讲 · 第 1 部分 · 反向传播实验室</span></a>
+      <a href="../gd1d-lab/"><span class="lang-en">← Step-Size Lab</span><span class="lang-zh">← 步长实验室</span></a>
+      <a href="../backprop-lab/"><span class="lang-en">← Part 1 · Backprop Lab</span><span class="lang-zh">← 第 1 部分 · 反向传播</span></a>
       <a href="../nn-signal-lab/" class="next"><span class="lang-en">Lec 2 · Part 3 · Next experiment →</span><span class="lang-zh">第 2 讲 · 第 3 部分 · 下一个实验 →</span></a>
       <a href="../../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
       <button class="lang-toggle" id="langBtn" type="button">中文</button>
@@ -136,30 +175,31 @@ html[data-lang="en"] .lang-zh{display:none}
 
 <main>
 
-<h1><span class="lang-en">Find settings that make the network train</span><span class="lang-zh">调出一组能 work 的网络设置</span></h1>
+<h1><span class="lang-en">Find settings that make the network train</span><span class="lang-zh">调出一组能让网络训练起来的设置</span></h1>
 <p class="lede">
-  <span class="lang-en">Build the network, then set <b>how every single layer is initialized</b> — a constant, a 0/1 matrix, Gaussian or uniform — and pick the learning rate. Press Train and look at the error. Nothing on this page tells you which choice is right; finding that out is the experiment.</span>
-  <span class="lang-zh">先搭好网络，然后逐层设置<b>初始化方式</b>——常数、0/1 矩阵、高斯或均匀分布——再选学习率。按下 Train，看误差。这一页不会告诉你哪种选择是对的，把它试出来就是这次实验的目的。</span>
+  <span class="lang-en">Six fixed scenarios. In every one of them you get a network that does <b>not</b> train with the settings it opens with — your job is to find settings that fix it. The only feedback on this page is the training and test error, so those two curves are your whole instrument.</span>
+  <span class="lang-zh">六个固定场景。每一个场景里的网络，用它开局的设置都<b>训练不起来</b>——把它调好就是你的任务。这一页只给你训练误差和测试误差，所以这两条曲线就是你全部的仪器。</span>
 </p>
 <div class="callout warn">
-  <span class="lang-en"><b>An error of 50% means the network learned nothing at all</b> — that is the chance level for this data set. Judge a configuration only by whether the two curves come down and stay down.</span>
-  <span class="lang-zh"><b>误差 50% 意味着网络什么都没学到</b>——这正是这份数据集的瞎猜水平。判断一组配置好不好，只看两条曲线有没有降下来并稳住。</span>
+  <span class="lang-en"><b>An error of 50% means the network learned nothing at all</b> — that is the chance level for this data set. A scenario is cleared once the training error reaches that scenario's target.</span>
+  <span class="lang-zh"><b>误差 50% 意味着网络什么都没学到</b>——这正是在这份数据集上的瞎猜水平。当训练误差降到该场景的目标以下，这个场景就算通关。</span>
 </div>
 
-<section class="card">
+<section class="card panel">
 
   <div class="sect">
-    <div class="shead"><h4><span class="lang-en">1 · Network</span><span class="lang-zh">1 · 网络</span></h4>
-      <span class="hint"><span class="lang-en">no bias in the initialization — biases start at zero and are learned</span><span class="lang-zh">初始化不涉及偏置——偏置从 0 开始自己学</span></span></div>
-    <div class="cols4">
-      <div class="ctrl">
-        <label><span class="lang-en">hidden layers L</span><span class="lang-zh">隐藏层层数 L</span><span class="val" id="LVal">6</span></label>
-        <input type="range" id="depth" min="1" max="8" step="1" value="6">
+    <div class="shead">
+      <h4><span class="lang-en">1 · Scenario</span><span class="lang-zh">1 · 场景</span>
+        <span class="hint"><span class="lang-en">depth and width are fixed by the scenario</span><span class="lang-zh">深度与宽度由场景固定</span></span></h4>
+      <div class="lbtns">
+        <button class="btn sm" id="resetProg" type="button"><span class="lang-en">reset progress</span><span class="lang-zh">清空进度</span></button>
+        <button class="btn sm" id="copyLink" type="button"><span class="lang-en">copy link</span><span class="lang-zh">复制链接</span></button>
       </div>
-      <div class="ctrl">
-        <label><span class="lang-en">width d</span><span class="lang-zh">宽度 d</span><span class="val" id="dVal">24</span></label>
-        <input type="range" id="width" min="8" max="32" step="2" value="24">
-      </div>
+    </div>
+    <div class="scenrow" id="scenrow"></div>
+    <div class="progress" id="progress"></div>
+    <div class="win" id="win"></div>
+    <div class="cols4" style="margin-top:16px">
       <div class="ctrl">
         <label><span class="lang-en">activation φ</span><span class="lang-zh">激活函数 φ</span></label>
         <select id="act">
@@ -178,33 +218,47 @@ html[data-lang="en"] .lang-zh{display:none}
           <button class="btn sm" id="reseed" type="button"><span class="lang-en">re-draw</span><span class="lang-zh">重抽</span></button>
         </div>
       </div>
+      <div class="ctrl">
+        <label><span class="lang-en">bias</span><span class="lang-zh">偏置</span></label>
+        <div class="fixed"><span class="lang-en">starts at 0 and is learned — the initialization below only concerns the weights</span><span class="lang-zh">从 0 开始，自己学——下面的初始化只涉及权重</span></div>
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">data</span><span class="lang-zh">数据</span></label>
+        <div class="fixed"><span class="lang-en">two interleaved spirals, 400 train / 400 test points, generated in the page</span><span class="lang-zh">两条互相缠绕的螺旋，训练/测试各 400 点，页面内实时生成</span></div>
+      </div>
     </div>
   </div>
 
   <div class="sect">
     <div class="shead">
-      <h4><span class="lang-en">2 · Initialization of every layer</span><span class="lang-zh">2 · 逐层设置初始化</span>
-        <span class="hint"><span class="lang-en">four families per layer; the last row is the output layer</span><span class="lang-zh">每层四选一；最后一行是输出层</span></span></h4>
+      <h4><span class="lang-en">2 · Initialization</span><span class="lang-zh">2 · 初始化</span>
+        <span class="hint"><span class="lang-en">one setting, applied to every layer<sup>1</sup></span><span class="lang-zh">只设一处，作用于所有层<sup>1</sup></span></h4>
       <div class="lbtns">
-        <button class="btn sm" id="naive" type="button"><span class="lang-en">reset all to N(0, 1)</span><span class="lang-zh">全部重置为 N(0, 1)</span></button>
-        <button class="btn sm" id="copyLink" type="button"><span class="lang-en">copy link</span><span class="lang-zh">复制链接</span></button>
+        <button class="btn sm" id="resetInit" type="button"><span class="lang-en">back to the default</span><span class="lang-zh">恢复默认</span></button>
       </div>
     </div>
-    <div class="lstack">
-      <div class="lhead">
-        <span><span class="lang-en">layer</span><span class="lang-zh">层</span></span>
-        <span><span class="lang-en">family</span><span class="lang-zh">分布</span></span>
-        <span><span class="lang-en">matrix</span><span class="lang-zh">矩阵</span></span>
-        <span><span class="lang-en">parameters</span><span class="lang-zh">参数</span></span>
-        <span><span class="lang-en">as drawn</span><span class="lang-zh">实际抽样</span></span>
-        <span></span>
+    <div class="initrow">
+      <div class="ctrl irow1">
+        <label><span class="lang-en">family</span><span class="lang-zh">分布族</span></label>
+        <select id="itype">
+          <option value="c">constant</option>
+          <option value="b">0 / 1</option>
+          <option value="g">N(&mu;, &sigma;&sup2;)</option>
+          <option value="u">U(&mu;, &sigma;&sup2;)</option>
+        </select>
       </div>
-      <div id="rows"></div>
+      <div class="iparams" id="iparams"></div>
+      <div class="drawn" id="idrawn"></div>
     </div>
+    <p class="small muted" style="margin:10px 0 0">
+      <span class="lang-en"><sup>1</sup>Every hidden layer and the output layer use the same setting, so there is exactly one place to tune. The readout on the right is the value actually drawn, not the value you asked for.</span>
+      <span class="lang-zh"><sup>1</sup>每一隐藏层和输出层都用同一个设置，所以只有一处要调。右侧显示的是<b>实际抽到</b>的数值，而不是你设定的名义值。</span>
+    </p>
   </div>
 
   <div class="sect">
-    <div class="shead"><h4><span class="lang-en">3 · Training</span><span class="lang-zh">3 · 训练</span></h4></div>
+    <div class="shead"><h4><span class="lang-en">3 · Training</span><span class="lang-zh">3 · 训练</span>
+      <span class="hint"><span class="lang-en">fixed: batch 32, 900 steps, no gradient clipping</span><span class="lang-zh">固定：批大小 32、900 步、不做梯度裁剪</span></h4></div>
     <div class="cols4">
       <div class="ctrl">
         <label><span class="lang-en">learning rate</span><span class="lang-zh">学习率</span><span class="val" id="lrVal">0.050</span></label>
@@ -215,8 +269,8 @@ html[data-lang="en"] .lang-zh{display:none}
         <input type="range" id="mom" min="0" max="0.99" step="0.01" value="0.90">
       </div>
       <div class="ctrl">
-        <label><span class="lang-en">batch / steps</span><span class="lang-zh">批大小 / 步数</span><span class="val">32 / 900</span></label>
-        <div class="fixed"><span class="lang-en">fixed · no gradient clipping</span><span class="lang-zh">固定 · 不做梯度裁剪</span></div>
+        <label><span class="lang-en">steps</span><span class="lang-zh">步数</span></label>
+        <div class="fixed"><span class="lang-en">900 SGD steps per run; each run keeps its curve, so you can change one thing and compare</span><span class="lang-zh">每次运行 900 步；曲线会留在图上，所以可以只改一处然后直接比较</span></div>
       </div>
       <div class="ctrl">
         <label>&nbsp;</label>
@@ -236,6 +290,8 @@ html[data-lang="en"] .lang-zh{display:none}
     <div class="legend" id="errLegend"></div>
     <canvas id="errChart"></canvas>
     <div class="readout">
+      <div class="stat"><div class="k"><span class="lang-en">scenario</span><span class="lang-zh">场景</span></div><div class="v" id="r-sc">S1</div></div>
+      <div class="stat"><div class="k"><span class="lang-en">target</span><span class="lang-zh">目标</span></div><div class="v" id="r-tgt">15%</div></div>
       <div class="stat"><div class="k"><span class="lang-en">train error</span><span class="lang-zh">训练误差</span></div><div class="v" id="r-tr">—</div></div>
       <div class="stat"><div class="k"><span class="lang-en">test error</span><span class="lang-zh">测试误差</span></div><div class="v" id="r-te">—</div></div>
       <div class="stat"><div class="k"><span class="lang-en">chance level</span><span class="lang-zh">瞎猜水平</span></div><div class="v">50.0%</div></div>
@@ -254,28 +310,35 @@ html[data-lang="en"] .lang-zh{display:none}
 </section>
 
 <div class="footer-note">
-  <p><span class="lang-en">Each run keeps its curve when you train again (up to five), so you can change one thing and compare directly. The curves show <b>error</b>, not loss: the fraction of misclassified points, which is what you can actually read off an axis.</span>
-     <span class="lang-zh">每次训练都会把曲线留在图上（最多保留五条），这样可以只改一处然后直接比较。图上画的是<b>误差</b>而不是损失：分错点的比例，这是真正能从坐标轴上读出来的量。</span></p>
-  <p style="margin-top:8px"><span class="lang-en">400 training and 400 test points, generated in the page from the seed. SGD with momentum, a fixed number of steps and <b>no gradient clipping</b>, so that a scale which is far too large is allowed to blow up; a run whose gradients turn non-finite is marked <i>diverged</i> and stopped. The curves are noisy on purpose — that is what a single run actually looks like.</span>
-     <span class="lang-zh">训练集与测试集各 400 点，由页面按种子实时生成。带动量的 SGD，步数固定，且<b>不做梯度裁剪</b>，因此尺度过大时就真的会炸；梯度出现非有限值的运行会被标记为 <i>diverged</i> 并中止。曲线有抖动是刻意的——单次训练实际就是这样。</span></p>
+  <p><span class="lang-en">Six scenarios, and one initialization setting shared by every layer. The targets were not guessed: the initialization scale and the learning rate were swept against this exact code, and a working setting lands at a few percent while the setting the page opens with sits at the chance level (50%) on all six.</span>
+     <span class="lang-zh">六个场景，所有层共用一处初始化设置。目标不是拍脑袋定的：初始化尺度与学习率都在这段代码上扫过一遍，能 work 的设置能到几个百分点，而页面开局那个设置在六个场景上都停在瞎猜水平（50%）。</span></p>
+  <p style="margin-top:8px"><span class="lang-en">Each run keeps its curve when you train again (up to five), so you can change one thing and compare directly. The curves show <b>error</b>, not loss: the fraction of misclassified points, which is what you can actually read off an axis. 900 SGD steps per run, batch 32, and <b>no gradient clipping</b> — a scale that is far too large is allowed to blow up, and a run whose gradients turn non-finite is marked <i>diverged</i> and stopped.</span>
+     <span class="lang-zh">每次训练都会把曲线留在图上（最多保留五条），这样可以只改一处然后直接比较。图上画的是<b>误差</b>而不是损失：分错点的比例，这是真正能从坐标轴上读出来的量。每次运行 900 步 SGD、批大小 32、<b>不做梯度裁剪</b>——尺度过大时就真的会炸；梯度出现非有限值的运行会被标记为 <i>diverged</i> 并中止。</span></p>
+  <p style="margin-top:8px"><span class="lang-en">Training and test sets are 400 points each, generated in the page from a fixed seed. Progress is remembered in this browser only — the “reset progress” button clears it.</span>
+     <span class="lang-zh">训练集与测试集各 400 点，由页面按固定种子生成。通关进度只记在这个浏览器里，按「清空进度」即可重置。</span></p>
 </div>
 
 </main>
 
 <script>
 /* ==========================================================================
-   ME2605 · Initialization Lab  (Part 1)
+   ME2605 · Initialization Lab  (Part 2 — the exploration)
    Everything runs in the browser. No dependencies, no network.
 
      x (2) --W1--> h1 --phi--> z1 --W2--> ... --WL--> hL --phi--> zL --Wo--> s
      p = sigmoid(s), loss = BCE(p, y), error = misclassification rate.
 
-   The initialization of EVERY layer is chosen by the user:
-       0/1 Bernoulli with a tunable fraction of ones,
-       i.i.d. Gaussian  with a tunable mean and variance,
-       i.i.d. uniform   with a tunable mean and variance.
+   ONE initialization setting, applied to every hidden layer and to the output
+   layer, so there is exactly one hyper-parameter to tune:
+       a constant, a 0/1 Bernoulli draw, i.i.d. Gaussian, or i.i.d. uniform,
+       with a tunable mean and variance.
+   Six fixed scenarios (depth x width) each carry a target on the training
+   error; clearing all six is the exercise.  The page opens on a setting that
+   does NOT work, on purpose.
+
    The error curves are the ONLY feedback: nothing about the network's internals
-   is displayed here, on purpose.
+   is displayed here, and nothing on the page says what the setting *ought* to
+   be — finding that out is the point.
    ========================================================================== */
 
 /* ---------------------------------------------------------------- utilities */
@@ -333,12 +396,6 @@ function drawMatrix(W,spec,rnd){
     for(i=0;i<n;i++) W[i] = spec.m + (rnd()*2-1)*r;
   }
 }
-function matStats(W){
-  var n=W.length, s=0, s2=0, i;
-  for(i=0;i<n;i++){ s+=W[i]; s2+=W[i]*W[i]; }
-  var mean=s/n, v=Math.max(0, s2/n-mean*mean);
-  return {mean:mean, v:v, n:n};
-}
 function cloneSpec(sp){
   if(sp.t==="b") return {t:"b",p:sp.p};
   if(sp.t==="c") return {t:"c",k:sp.k};
@@ -348,24 +405,25 @@ function specDesc(sp){
   if(!sp) return "?";
   if(sp.t==="c") return "all entries = "+num(sp.k,2);
   if(sp.t==="b") return "0/1  P(1)="+num(sp.p,2);
-  if(sp.t==="g") return "N("+num(sp.m,2)+", "+num(sp.v,3)+")";
-  return "U("+num(sp.m,2)+", "+num(sp.v,3)+")";
+  if(sp.t==="g") return "N("+fmt(sp.m)+", "+fmt(sp.v)+")";
+  return "U("+fmt(sp.m)+", "+fmt(sp.v)+")";
 }
 
 /* ---------------------------------------------------------------- network */
 /* Only the weights are under study here, so every bias starts at zero — the
    usual convention — and is learned. */
+/* ONE initialization setting, drawn independently for every layer including
+   the output layer, so there is exactly one hyper-parameter to tune. */
 function makeNet(cfg){
   var rnd=mulberry32((cfg.seed|0)*7919+13);
   var d=cfg.d, L=cfg.L, din=cfg.din, Ws=[], bs=[], nin=din, l;
   for(l=0;l<L;l++){
-    var spec=cfg.inits[l]||cfg.inits[cfg.inits.length-1];
     var W=new Float32Array(d*nin);
-    drawMatrix(W,spec,rnd);
+    drawMatrix(W,cfg.init,rnd);
     Ws.push(W); bs.push(new Float32Array(d)); nin=d;
   }
   var Wo=new Float32Array(nin);
-  drawMatrix(Wo,cfg.out,rnd);
+  drawMatrix(Wo,cfg.init,rnd);
   return {din:din,d:d,L:L,act:cfg.act,seed:cfg.seed,Ws:Ws,Wo:Wo,bs:bs,bo:0};
 }
 function act(x,k){ return k==="relu" ? (x>0?x:0) : k==="linear" ? x : Math.tanh(x); }
@@ -567,134 +625,121 @@ function drawBoundary(cv,net,data){
   g.strokeStyle="#7f1d1d"; g.lineWidth=1; g.stroke();
   g.fillStyle="#8b98a5"; g.fillText("class B", m.l+83, ly);
 }
-/* 12x12 heat-map of the top-left corner of a weight matrix */
-function drawPreview(cv,W,rows,cols){
-  var dpr=window.devicePixelRatio||1;
-  cv.width=68*dpr; cv.height=68*dpr;
-  var g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
-  g.clearRect(0,0,68,68); g.fillStyle="#fff"; g.fillRect(0,0,68,68);
-  var NR=Math.min(rows,12), NC=Math.min(cols,12);
-  var mx=0,i;
-  for(i=0;i<W.length;i++){ var a=Math.abs(W[i]); if(a>mx) mx=a; }
-  if(mx<=0) mx=1;
-  var cw=68/NC, ch=68/NR;
-  for(var r=0;r<NR;r++) for(var c=0;c<NC;c++){
-    var v=W[r*cols+c];
-    var t=Math.min(1,Math.abs(v)/mx);
-    if(v>=0) g.fillStyle="rgba(26,82,118,"+(0.06+0.94*t)+")";
-    else     g.fillStyle="rgba(176,58,46,"+(0.06+0.94*t)+")";
-    g.fillRect(c*cw, r*ch, cw-0.6, ch-0.6);
-  }
-  g.strokeStyle="#e2e2e2"; g.strokeRect(0.5,0.5,67,67);
-}
-
 /* ==================================================================== state */
-var DEF = {t:"g", m:0, v:1};
-var state={ d:24, L:6, act:"relu", seed:1, lr:0.05, mom:0.9,
-            inits:[], out:cloneSpec(DEF) };
-for(var _i=0;_i<state.L;_i++) state.inits.push(cloneSpec(DEF));
+/* Six fixed scenarios.  Each is a (depth, width) pair plus a target on the
+   TRAINING error.  The targets were not guessed: they come from a sweep of the
+   initialization scale and the learning rate run against this exact code, with
+   the working setting landing at a few percent and the shipped default sitting
+   at the chance level (50%) on all six.  See the footer note. */
+var SCEN=[
+  {id:"S1", L:2, d:10, tgt:0.15},
+  {id:"S2", L:4, d:10, tgt:0.12},
+  {id:"S3", L:6, d:10, tgt:0.12},
+  {id:"S4", L:4, d:16, tgt:0.10},
+  {id:"S5", L:6, d:16, tgt:0.12},
+  {id:"S6", L:8, d:16, tgt:0.20}
+];
+/* The page opens on a setting that does NOT work: the familiar "randn times
+   0.01" initialization, i.e. a standard deviation of 0.01.  It is a real
+   choice a beginner would make, and measured on this code it leaves every
+   scenario at 50% — the network learns nothing, and finding out why is the
+   exercise.  The variance slider starts at the bottom of its range, so the
+   first move has to be to raise it. */
+var DEF={t:"g", m:0, v:1e-4};
+var CLEARED={};                 /* scenario id -> true, remembered in the browser */
+var state={ sc:0, act:"relu", seed:1, lr:0.05, mom:0.9, init:cloneSpec(DEF) };
 var net=null, RUNS=[], running=null;
 
-/* ------------------------------------------------------ layer row rendering */
-function fanInOf(i){ return i===0 ? 2 : state.d; }
-function rowsHost(){ return $("rows"); }
+function curScen(){ return SCEN[state.sc]; }
+/* the page is bilingual: every string that goes into the DOM carries both */
+function BL(en,zh){ return '<span class="lang-en">'+en+'</span><span class="lang-zh">'+zh+'</span>'; }
 
-function buildRows(){
-  var host=rowsHost(); host.innerHTML="";
-  var rowSpecs=[];
-  for(var l=0;l<state.L;l++) rowSpecs.push({i:l,label:"L"+(l+1),spec:state.inits[l],out:false});
-  rowSpecs.push({i:state.L,label:"out",spec:state.out,out:true});
-  rowSpecs.forEach(function(rs){
-    var el=document.createElement("div");
-    el.className="lrow"+(rs.out?" outrow":"");
-    el.innerHTML =
-      '<div class="lname">'+rs.label+'<span class="fan"></span></div>'
-      + '<select class="ltype">'
-      +   '<option value="c">constant</option>'
-      +   '<option value="b">0 / 1</option>'
-      +   '<option value="g">N(&mu;, &sigma;&sup2;)</option>'
-      +   '<option value="u">U(&mu;, &sigma;&sup2;)</option>'
-      + '</select>'
-      + '<canvas class="lprev"></canvas>'
-      + '<div class="lp"></div>'
-      + '<div class="lstats"></div>'
-      + '<div class="lbtns"><button class="btn sm lall" type="button" title="apply this layer to every layer">&rarr;</button></div>';
-    host.appendChild(el);
-    rs.el=el;
-    var sel=el.querySelector(".ltype");
-    sel.value=rs.spec.t;
-    el.querySelector(".fan").textContent = rs.out ? (state.d+"\u21921") : (state.d+"\u00d7"+fanInOf(rs.i));
-    sel.addEventListener("change",function(){
-      var t=sel.value;
-      if(t==="b")      rs.spec={t:"b", p:(rs.spec.t==="b"?rs.spec.p:0.5)};
-      else if(t==="c") rs.spec={t:"c", k:(rs.spec.t==="c"?rs.spec.k:1)};
-      else             rs.spec={t:t, m:(rs.spec.m!==undefined?rs.spec.m:0),
-                                v:(rs.spec.v!==undefined?rs.spec.v:1)};
-      renderParams(rs); refreshAll();
-    });
-    el.querySelector(".lall").addEventListener("click",function(){
-      var cp=cloneSpec(rs.spec);
-      for(var k=0;k<state.L;k++) state.inits[k]=cloneSpec(cp);
-      state.out=cloneSpec(cp);
-      buildRows(); refreshAll();
-    });
-    renderParams(rs);
+var LSKEY="me2605-initlab-cleared";
+function saveCleared(){ try{ localStorage.setItem(LSKEY, JSON.stringify(CLEARED)); }catch(e){} }
+function loadCleared(){
+  try{ var q=localStorage.getItem(LSKEY); if(q) CLEARED=JSON.parse(q)||{}; }catch(e){ CLEARED={}; }
+}
+
+/* ------------------------------------------------------- scenario picker */
+function renderScen(){
+  var h=[], i, s;
+  for(i=0;i<SCEN.length;i++){
+    s=SCEN[i];
+    h.push('<button class="scen'+(i===state.sc?' on':'')+'" type="button" data-i="'+i+'">'
+      + (CLEARED[s.id] ? '<span class="ok">\u2713</span>' : '')
+      + '<span class="sid">'+s.id+'</span>'
+      + '<span class="sd">'+s.L+' \u00d7 '+s.d+'</span>'
+      + '<span class="st">'+BL('train error &lt; '+(100*s.tgt).toFixed(0)+'%',
+                              '\u8bad\u7ec3\u8bef\u5dee &lt; '+(100*s.tgt).toFixed(0)+'%')+'</span>'
+      + '</button>');
+  }
+  $("scenrow").innerHTML=h.join("");
+  var n=0; for(i=0;i<SCEN.length;i++) if(CLEARED[SCEN[i].id]) n++;
+  $("progress").innerHTML = BL('cleared <b>'+n+' / '+SCEN.length+'</b>',
+                              '\u5df2\u901a\u5173 <b>'+n+' / '+SCEN.length+'</b>');
+  if(n===SCEN.length){
+    $("win").className="win show";
+    $("win").innerHTML = BL('All six cleared. Now compare the settings that worked \u2014 what do they have in common?',
+                            '\u516d\u4e2a\u573a\u666f\u5168\u90e8\u901a\u5173\uff01\u73b0\u5728\u6bd4\u4e00\u6bd4\u90a3\u4e9b\u80fd work \u7684\u8bbe\u7f6e\u2014\u2014\u5b83\u4eec\u6709\u4ec0\u4e48\u5171\u540c\u70b9\uff1f');
+  } else { $("win").className="win"; }
+}
+/* switching scenario changes the depth, the width and the run history */
+function applyScen(){
+  if(running) running.cancelled=true;
+  RUNS=[]; drawErrChart(RUNS,TSTEPS);
+  $("r-tr").textContent="\u2014"; $("r-te").textContent="\u2014";
+  $("trainStatus").textContent="";
+  $("r-sc").textContent=curScen().id;
+  $("r-tgt").textContent=(100*curScen().tgt).toFixed(0)+"%";
+  renderScen(); rebuild();
+}
+
+/* ------------------------------------------------ initialization control */
+/* one compact inline slider: label | range | current value */
+function grp(host,lab,min,max,step,val,show,apply){
+  var d=document.createElement("div"); d.className="lpg";
+  d.innerHTML='<span class="lbl">'+lab+'</span>'
+    +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'">'
+    +'<span class="val">'+show(val)+'</span>';
+  var inp=d.querySelector("input"), out=d.querySelector(".val");
+  inp.addEventListener("input",function(){
+    var v=parseFloat(inp.value); apply(v); out.textContent=show(v); rebuild();
   });
+  host.appendChild(d);
 }
-function renderParams(rs){
-  var host=rs.el.querySelector(".lp");
+function renderInit(){
+  var host=$("iparams"), sp=state.init;
   host.innerHTML="";
-  /* one compact inline slider: label | range | current value */
-  function grp(lab,min,max,step,val,show,apply){
-    var d=document.createElement("div"); d.className="lpg";
-    d.innerHTML='<span class="lbl">'+lab+'</span>'
-      +'<input type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+val+'">'
-      +'<span class="val">'+show(val)+'</span>';
-    var inp=d.querySelector("input"), out=d.querySelector(".val");
-    inp.addEventListener("input",function(){
-      var v=parseFloat(inp.value); apply(v); out.textContent=show(v); refreshAll();
-    });
-    host.appendChild(d);
-  }
-  var sp=rs.spec;
+  $("itype").value=sp.t;
   if(sp.t==="c"){
-    grp("value", -1, 1, 0.01, sp.k,
-        function(v){return num(v,2);}, function(v){ sp.k=v; });
+    grp(host, "value", -1, 1, 0.01, sp.k,
+        function(v){ return num(v,2); }, function(v){ sp.k=v; });
   } else if(sp.t==="b"){
-    grp("P(1)", 0, 1, 0.01, sp.p,
-        function(v){return num(v,2);}, function(v){ sp.p=v; });
+    grp(host, "P(1)", 0, 1, 0.01, sp.p,
+        function(v){ return num(v,2); }, function(v){ sp.p=v; });
   } else {
-    grp("&mu;", -2, 2, 0.01, sp.m,
-        function(v){return num(v,2);}, function(v){ sp.m=v; });
-    var lg=Math.log10(Math.max(sp.v,1e-6));
-    grp("&sigma;&sup2;", -4, 2, 0.01, lg,
-        function(v){return num(Math.pow(10,v),4);}, function(v){ sp.v=Math.pow(10,v); });
+    grp(host, "&mu;", -2, 2, 0.01, sp.m,
+        function(v){ return num(v,2); }, function(v){ sp.m=v; });
+    grp(host, "&sigma;&sup2;", -4, 2, 0.01, Math.log10(Math.max(sp.v,1e-6)),
+        function(v){ return fmt(Math.pow(10,v)); }, function(v){ sp.v=Math.pow(10,v); });
   }
 }
-/* re-draw every preview + realized-statistics cell from the current net */
-function refreshRows(){
-  var rowsEls=rowsHost().children, l;
-  if(!net) return;
-  for(l=0;l<state.L;l++){
-    var W=net.Ws[l], el=rowsEls[l];
-    if(!el) continue;
-    drawPreview(el.querySelector(".lprev"), W, state.d, fanInOf(l));
-    var st=matStats(W);
-    el.querySelector(".lstats").innerHTML =
-      "μ <b>"+num(st.mean,3)+"</b><br>σ² <b>"+num(st.v,4)+"</b>";
-  }
-  var eo=rowsEls[state.L];
-  if(eo){
-    drawPreview(eo.querySelector(".lprev"), net.Wo, 1, state.d);
-    var so=matStats(net.Wo);
-    eo.querySelector(".lstats").innerHTML =
-      "μ <b>"+num(so.mean,3)+"</b><br>σ² <b>"+num(so.v,4)+"</b>";
-  }
+/* pooled mean and variance of every weight in the net, as actually drawn */
+function pooledStats(nn){
+  var s=0, s2=0, n=0, l, i, W;
+  function acc(M){ for(i=0;i<M.length;i++){ s+=M[i]; s2+=M[i]*M[i]; n++; } }
+  for(l=0;l<nn.L;l++) acc(nn.Ws[l]);
+  acc(nn.Wo);
+  var mean=s/n;
+  return {mean:mean, v:Math.max(0, s2/n-mean*mean), n:n};
 }
-function refreshAll(){
-  net=makeNet({din:2,d:state.d,L:state.L,act:state.act,seed:state.seed,
-               inits:state.inits,out:state.out});
-  refreshRows();
+function rebuild(){
+  var c=curScen();
+  net=makeNet({din:2, d:c.d, L:c.L, act:state.act, seed:state.seed, init:state.init});
+  var st=pooledStats(net);
+  $("idrawn").innerHTML = BL('as drawn \u00b7 \u03bc <b>'+fmt(st.mean)+'</b> \u00b7 \u03c3\u00b2 <b>'+fmt(st.v)+'</b>',
+                             '\u5b9e\u9645\u62bd\u6837 \u00b7 \u03bc <b>'+fmt(st.mean)+'</b> \u00b7 \u03c3\u00b2 <b>'+fmt(st.v)+'</b>');
+  redrawBoundary();
 }
 /* which net the decision-boundary panel shows: the last trained one if there is
    one, otherwise the current draft. Redrawing a *draft* net over a finished
@@ -705,25 +750,26 @@ function boundaryNet(){
 function redrawBoundary(){ if(boundaryNet()) drawBoundary($("bdChart"),boundaryNet(),TRAIN); }
 
 /* ------------------------------------------------------------ training loop */
-/* Fixed budget so a run finishes in about a second even at the largest settings
+/* Fixed budget so a run finishes in about a second even at the largest scenario
    and several trials fit into a lecture. Batch size and step count are fixed;
-   there is NO gradient clipping, so a too-large scale is allowed to blow up. */
+   there is NO gradient clipping, so a scale that is far too large is allowed to
+   blow up — the clip would rescue exactly the settings we want to see fail. */
 var TSTEPS=900, BS=32, CLIP=0, ERR_EVERY=15, MAXRUNS=5;
 
 function runLabel(){
-  var all=state.inits.concat([state.out]), first=JSON.stringify(all[0]), txt="mixed";
-  var same=true;
-  for(var i=1;i<all.length;i++) if(JSON.stringify(all[i])!==first){ same=false; break; }
-  if(same) txt=specDesc(all[0]);
+  var txt=specDesc(state.init);
   if(state.act!=="relu") txt+=" \u00b7 "+state.act;
   return txt+" \u00b7 lr "+num(state.lr,3);
 }
 function startTraining(){
   if(running) running.cancelled=true;
-  var n=makeNet({din:2,d:state.d,L:state.L,act:state.act,seed:state.seed,
-                 inits:state.inits,out:state.out});
-  var r={label:runLabel(),net:n,vel:newVel(n),step:[],train:[],test:[],
-         done:false,diverged:false};
+  var c=curScen();
+  var n=makeNet({din:2, d:c.d, L:c.L, act:state.act, seed:state.seed, init:state.init});
+  /* the scenario and its target are recorded with the run, so a pass is judged
+     against the scenario the run was started under even if the page is switched
+     while it is still going */
+  var r={label:runLabel(), scId:c.id, tgt:c.tgt, net:n, vel:newVel(n),
+         step:[], train:[], test:[], done:false, diverged:false};
   RUNS.push(r);
   while(RUNS.length>MAXRUNS) RUNS.shift();
   var rnd=mulberry32(state.seed*31+5), done=0;
@@ -757,59 +803,62 @@ function startTraining(){
     $("run").disabled=false; $("stop").disabled=true;
     var lastT=r.train.length?r.train[r.train.length-1]:null;
     var lastE=r.test.length?r.test[r.test.length-1]:null;
-    var dead = r.diverged ? "diverged" : null;
-    $("r-tr").textContent = dead || (lastT===null?"—":(100*lastT).toFixed(1)+"%");
-    $("r-te").textContent = dead || (lastE===null?"—":(100*lastE).toFixed(1)+"%");
+    $("r-tr").textContent = r.diverged ? "diverged" : (lastT===null?"\u2014":(100*lastT).toFixed(1)+"%");
+    $("r-te").textContent = r.diverged ? "diverged" : (lastE===null?"\u2014":(100*lastE).toFixed(1)+"%");
     redrawBoundary();
+    var passed = !r.diverged && lastT!==null && lastT<=r.tgt;
+    if(passed && !CLEARED[r.scId]){ CLEARED[r.scId]=true; saveCleared(); renderScen(); }
     var note = r.diverged
-      ? ' <span class="lang-en">— the gradients became non-finite, so the run was stopped.</span><span class="lang-zh">—— 梯度出现非有限值，该次运行已中止。</span>'
-      : "";
-    $("trainStatus").innerHTML='<span class="lang-en">last run: '+r.label+note+'</span>'
-      +'<span class="lang-zh">最近一次：'+r.label+note+'</span>';
+      ? BL(' \u2014 the gradients became non-finite, so the run was stopped.',
+           '\u2014\u2014 \u68af\u5ea6\u51fa\u73b0\u975e\u6709\u9650\u503c\uff0c\u8be5\u6b21\u8fd0\u884c\u5df2\u4e2d\u6b62\u3002')
+      : (passed
+        ? BL(' \u2014 cleared '+r.scId+' \u2713', '\u2014\u2014 \u5df2\u901a\u5173 '+r.scId+' \u2713')
+        : (lastT===null ? '' : BL(' \u2014 '+r.scId+' needs training error \u2264 '+(100*r.tgt).toFixed(0)+'%',
+                                  '\u2014\u2014 '+r.scId+' \u9700\u8981\u8bad\u7ec3\u8bef\u5dee \u2264 '+(100*r.tgt).toFixed(0)+'%')));
+    $("trainStatus").innerHTML=BL('last run: '+r.label, '\u6700\u8fd1\u4e00\u6b21\uff1a'+r.label)+note;
   }
   setTimeout(tick,0);
 }
 
 /* ------------------------------------------------------------------ wiring */
-$("depth").addEventListener("input",function(){
-  var L=parseInt(this.value,10);
-  while(state.inits.length<L) state.inits.push(cloneSpec(state.inits[state.inits.length-1]||DEF));
-  state.inits.length=L;
-  state.L=L; $("LVal").textContent=L;
-  buildRows(); refreshAll();
+$("scenrow").addEventListener("click",function(e){
+  var b=(e.target&&e.target.closest)?e.target.closest(".scen"):null;
+  if(!b) return;
+  var i=parseInt(b.getAttribute("data-i"),10);
+  if(isFinite(i)&&i!==state.sc){ state.sc=i; applyScen(); }
 });
-$("width").addEventListener("input",function(){
-  state.d=parseInt(this.value,10); $("dVal").textContent=state.d;
-  buildRows(); refreshAll();
+$("itype").addEventListener("change",function(){
+  var t=this.value, sp=state.init;
+  if(t==="c")      state.init={t:"c", k:(sp.t==="c"?sp.k:0.01)};
+  else if(t==="b") state.init={t:"b", p:(sp.t==="b"?sp.p:0.5)};
+  else             state.init={t:t, m:(sp.m!==undefined?sp.m:0), v:(sp.v!==undefined?sp.v:0.01)};
+  renderInit(); rebuild();
 });
-$("act").addEventListener("change",function(){ state.act=this.value; refreshAll(); });
+$("act").addEventListener("change",function(){ state.act=this.value; rebuild(); });
+$("seed").addEventListener("change",function(){ state.seed=parseInt(this.value,10); rebuild(); });
+$("reseed").addEventListener("click",function(){
+  state.seed=state.seed%5+1; $("seed").value=String(state.seed); rebuild();
+});
 $("lr").addEventListener("input",function(){
   state.lr=Math.pow(10,parseFloat(this.value)); $("lrVal").textContent=num(state.lr,3); });
 $("mom").addEventListener("input",function(){
   state.mom=parseFloat(this.value); $("momVal").textContent=num(state.mom,2); });
-$("seed").addEventListener("change",function(){ state.seed=parseInt(this.value,10); refreshAll(); });
-$("reseed").addEventListener("click",function(){
-  state.seed=state.seed+1;
-  var sel=$("seed"); if([].some.call(sel.options,function(o){return +o.value===state.seed;})) sel.value=String(state.seed);
-  refreshAll();
-});
-$("naive").addEventListener("click",function(){
-  for(var k=0;k<state.L;k++) state.inits[k]=cloneSpec(DEF);
-  state.out=cloneSpec(DEF);
-  buildRows(); refreshAll();
-});
+$("resetInit").addEventListener("click",function(){
+  state.init=cloneSpec(DEF); renderInit(); rebuild(); });
+$("resetProg").addEventListener("click",function(){
+  CLEARED={}; saveCleared(); renderScen(); });
 $("run").addEventListener("click",function(){ startTraining(); });
 $("stop").addEventListener("click",function(){ if(running) running.cancelled=true; });
 $("clear").addEventListener("click",function(){
   if(running) running.cancelled=true;
   RUNS=[]; drawErrChart(RUNS,TSTEPS);
-  $("r-tr").textContent="—"; $("r-te").textContent="—";
+  $("r-tr").textContent="\u2014"; $("r-te").textContent="\u2014";
   $("trainStatus").textContent="";
 });
 $("copyLink").addEventListener("click",function(){
   var u=location.origin+location.pathname+encodeState();
   var b=this;
-  function done(){ var o=b.innerHTML; b.innerHTML='<span class="lang-en">copied</span><span class="lang-zh">已复制</span>';
+  function done(){ var o=b.innerHTML; b.innerHTML='<span class="lang-en">copied</span><span class="lang-zh">\u5df2\u590d\u5236</span>';
     setTimeout(function(){ b.innerHTML=o; },1400); }
   if(navigator.clipboard&&navigator.clipboard.writeText)
     navigator.clipboard.writeText(u).then(done,function(){ window.prompt("copy:",u); });
@@ -825,22 +874,25 @@ $("langBtn").addEventListener("click",function(){
 });
 
 /* --------------------------------------------------------------- deep link */
-/* ?d=16&L=6&act=relu&seed=1&init=g:0.00:-0.00|b:0.50|...&out=g:0.00:-0.00
-   g/u encode the mean and log10(variance); b encodes the fraction of ones.  */
+/* ?sc=1..6&act=relu&seed=1&lr=-1.30&mom=0.90&init=g:0.00:-4.00&run=1
+   g/u encode the mean and log10(variance), b the fraction of ones, c the
+   constant.  `sc` is 1-based so the link reads like the page.  `run=1` starts
+   the first training run immediately, which is useful for a prepared lecture
+   link and is the only way to screenshot a finished chart. */
 function encodeSpec(sp){
   if(sp.t==="c") return "c:"+sp.k.toFixed(2);
   if(sp.t==="b") return "b:"+sp.p.toFixed(2);
   return sp.t+":"+sp.m.toFixed(2)+":"+Math.log10(Math.max(sp.v,1e-6)).toFixed(2);
 }
 function encodeState(){
-  return "?d="+state.d+"&L="+state.L+"&act="+state.act+"&seed="+state.seed
+  return "?sc="+(state.sc+1)+"&act="+state.act+"&seed="+state.seed
     +"&lr="+Math.log10(state.lr).toFixed(2)+"&mom="+state.mom.toFixed(2)
-    +"&init="+state.inits.map(encodeSpec).join("|")+"&out="+encodeSpec(state.out);
+    +"&init="+encodeSpec(state.init);
 }
 function decodeSpec(s){
   var a=s.split(":");
   if(a[0]==="c") return {t:"c", k:Math.max(-1,Math.min(1,parseFloat(a[1])))};   /* c = constant */
-  if(a[0]==="b") return {t:"b", p:Math.max(0,Math.min(1,parseFloat(a[1])))};
+  if(a[0]==="b") return {t:"b", p:Math.max(0,Math.min(1,parseFloat(a[1])))};   /* b = 0/1 Bern. */
   if(a[0]==="g"||a[0]==="u")
     return {t:a[0], m:Math.max(-2,Math.min(2,parseFloat(a[1]))),
             v:Math.pow(10,Math.max(-4,Math.min(2,parseFloat(a[2]))))};
@@ -848,28 +900,18 @@ function decodeSpec(s){
 }
 (function(){
   var q=new URLSearchParams(location.search);
-  if(q.has("d")){ var d=parseInt(q.get("d"),10); if(d>=8&&d<=32) state.d=d; }
-  if(q.has("L")){ var L=parseInt(q.get("L"),10); if(L>=1&&L<=8) state.L=L; }
+  loadCleared();
+  if(q.has("sc")){ var v=parseInt(q.get("sc"),10); if(v>=1&&v<=SCEN.length) state.sc=v-1; }
   if(q.has("act")&&["linear","tanh","relu"].indexOf(q.get("act"))>=0) state.act=q.get("act");
   if(q.has("seed")){ var sd=parseInt(q.get("seed"),10); if(sd>=1&&sd<=5) state.seed=sd; }
   if(q.has("lr")){ var ql=parseFloat(q.get("lr")); if(isFinite(ql)) state.lr=Math.pow(10,Math.max(-2.3,Math.min(-0.3,ql))); }
   if(q.has("mom")){ var qm=parseFloat(q.get("mom")); if(isFinite(qm)) state.mom=Math.max(0,Math.min(0.99,qm)); }
-  state.inits=[];
-  if(q.has("init")){
-    q.get("init").split("|").forEach(function(t){ var s=decodeSpec(t); if(s) state.inits.push(s); });
-  }
-  while(state.inits.length<state.L) state.inits.push(cloneSpec(state.inits[state.inits.length-1]||DEF));
-  state.inits.length=state.L;
-  if(q.has("out")){ var o=decodeSpec(q.get("out")); if(o) state.out=o; }
-  $("depth").value=state.L; $("LVal").textContent=state.L;
-  $("width").value=state.d; $("dVal").textContent=state.d;
+  if(q.has("init")){ var sp=decodeSpec(q.get("init")); if(sp) state.init=sp; }
   $("act").value=state.act; $("seed").value=String(state.seed);
   $("lr").value=Math.log10(state.lr); $("lrVal").textContent=num(state.lr,3);
   $("mom").value=state.mom;           $("momVal").textContent=num(state.mom,2);
-  buildRows(); refreshAll();
-  drawErrChart(RUNS,TSTEPS);
-  redrawBoundary();
-  if(q.get("run")==="1") startTraining();   /* handy for a prepared lecture link */
+  renderInit(); applyScen();
+  if(q.get("run")==="1") startTraining();
 })();
 </script>
 </body>

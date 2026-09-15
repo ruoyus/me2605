@@ -1,35 +1,87 @@
-# Demo 1 - Initialization Lab
+# Demo — Initialization Lab (Lec 2 · Part 2)
 
-Part 1 of the ME2605 / DDA6204 Week 3 demos. Used *before* the theory is
-introduced: nothing on the page mentions what the subject of Part 2 is. The
-student picks the initialization of **every layer**, plus the learning rate, and
-the only feedback is the training / test error.
+Part 2 of the ME2605 / DDA6204 Week 3 demos, and the **exploration before the
+answer**: nothing on the page names the principle, the hyper-parameter that
+decides it, or the classical initializations. Finding a setting that works is the
+exercise.
 
-- up to 8 hidden layers + the output layer, each configured independently
-- four families per layer:
-  - **constant** -- every entry equal to one tunable number
-  - **0/1** -- every entry 0 or 1, tunable fraction of ones
-  - **N(mu, sigma^2)** -- i.i.d. Gaussian, tunable mean and variance
-  - **U(mu, sigma^2)** -- i.i.d. uniform, tunable mean and variance
-- the learning rate (and momentum) sit in the same panel, so the initialization
-  is tuned together with the rest of the training setup
-- a 12x12 heat map plus the realized mean and variance of each layer's matrix
-- data: **two interleaved spirals**, 400 train / 400 test, generated in the page
-- train in the browser; the last five runs are kept so one change can be compared
-- biases are initialized to zero and learned (the initialization is about weights only)
+## What the student does
 
-Part 2 is at `../nn-signal-lab/`.
+Six scenarios, each fixing the depth and the width. Every one of them opens on a
+setting that **does not train**, and the job is to get the **training error**
+below that scenario's target:
 
-Deep links:
-`?d=24&L=6&act=relu&seed=1&lr=-1.30&mom=0.90&init=g:0.00:-1.20|...&out=g:0.00:-1.38&run=1`
-(`g`/`u` encode mean and log10-variance, `b` the fraction of ones, `c` the constant.)
+| scenario | hidden layers | width | target training error |
+|---|---|---|---|
+| S1 | 2 | 10 | < 15 % |
+| S2 | 4 | 10 | < 12 % |
+| S3 | 6 | 10 | < 12 % |
+| S4 | 4 | 16 | < 10 % |
+| S5 | 6 | 16 | < 12 % |
+| S6 | 8 | 16 | < 20 % |
 
-Measured on the shipped defaults (d=24, L=6, ReLU, lr=0.05, 900 steps, 5 seeds),
-mean test error, all layers sharing one Gaussian variance:
+Clearing all six puts a congratulation banner on the page, at which point the
+class raises hands. Progress is remembered in the browser (`localStorage`); the
+**reset progress** button clears it.
 
-| variance | <=0.01 | 0.02 | 0.031 | 0.042 | 0.0625 | 0.09 | 0.125 | 0.25 | >=0.5 |
-|---|---|---|---|---|---|---|---|---|---|
-| test error | 50% | 31% | 6.5% | 1.4% | 1.5% | 1.3% | 1.4% | 23% | 50% / diverged |
+## What is tunable, and what is not
 
-The naive `N(0, 1)` default diverges on every seed; the 0/1 and constant families
-cannot work at this width at all (variance capped at 0.25, and both are rank-1).
+The page is deliberately a **two-instrument** search.
+
+- **One initialization for the whole network** — a family
+  (`N(μ, σ²)`, `U(μ, σ²)`, constant, 0/1) plus a mean and a **variance** on one
+  logarithmic slider. Every hidden layer *and* the output layer share it, so
+  there is exactly one place to tune. This is the dial that decides whether
+  training works, and it is also the answer the page is hiding.
+- the learning rate and the momentum, on the same panel.
+
+Fixed: batch 32, 900 SGD steps, no gradient clipping. The activation, the random
+seed and the weight draw are switchable, but they are not the point.
+
+The **only feedback is the training error and the test error** — no per-layer
+readout, no histogram, no spectrum. Those two curves are the whole instrument,
+which is what makes the finding the student's own rather than a checklist item.
+
+## The shipped default does not work — on purpose
+
+The page opens on `N(0, 1e-4)`, i.e. the familiar "randn times 0.01". That is a
+real choice a beginner makes, not a straw man: measured on this exact code it
+leaves **every** scenario at 50 %, the chance level for this data set (verified
+for S1, S3 and S6). The variance slider starts at the bottom of its range, so the
+first move has to be to raise it.
+
+The scenario targets were not guessed. They come from a sweep of the
+initialization scale against the learning rate on this exact code, with a working
+setting landing at a few percent.
+
+## Data and model
+
+- two interleaved spirals, 400 train / 400 test, generated in the page from a
+  fixed seed — nothing is downloaded
+- ReLU by default; `tanh` and `linear` also selectable
+- biases start at 0 and are learned; the initialization concerns weights only
+- training runs in the browser; the last five runs keep their curves, so one
+  change can be compared directly
+- the decision boundary is drawn for the most recent run
+
+## Deep links
+
+```
+?sc=1..6&act=relu|tanh|linear&seed=1..5&lr=-1.30&mom=0.9&init=g:mu:log10var&run=1
+```
+
+- **`sc` is 1–6** — the scenario *number*, not an index.
+- **`lr` is a log10 exponent**, not a learning rate: it is clamped to
+  `[-2.3, -0.3]` and fed through `10^`, matching the slider. The default
+  `lr=-1.30` is `0.05`.
+- `init` takes `g` / `u` (Gaussian / uniform: mean, then log10 variance), `c`
+  (a constant value), or `b` (0/1 with probability `p`). The shipped default is
+  `g:0:-4`, i.e. `N(0, 10⁻⁴)`.
+- `run=1` starts training immediately — useful in a lecture where the page is
+  opened six times in a row.
+
+## Neighbours
+
+- `../gd1d-lab/` — the one-dimensional step-size warm-up that comes first
+- `../backprop-lab/` — Part 1
+- `../nn-signal-lab/` — Part 3, which *answers* the question this page asks

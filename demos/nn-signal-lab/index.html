@@ -144,12 +144,12 @@ html[data-lang="en"] .lang-zh{display:none}
           <span class="lang-zh">全连接网络 = 一串仿射变换 + 激活函数</span></h2>
       <p><span class="lang-en">A standard <b>L</b>-layer fully connected network (FCN, a.k.a. MLP) is</span>
          <span class="lang-zh">一个标准的 <b>L</b> 层全连接网络（FCN，也叫 MLP）写作</span></p>
-      <div class="eq">f<sub>θ</sub>(x) = W<sup>L</sup> φ( ⋯ φ(W<sup>2</sup> φ(W<sup>1</sup>x + b<sup>1</sup>) + b<sup>2</sup>) ⋯ ) + b<sup>L</sup></div>
+      <div class="eq">f<sub>θ</sub>(x) = W<sub>L</sub> φ( ⋯ φ(W<sub>2</sub> φ(W<sub>1</sub>x + b<sub>1</sub>) + b<sub>2</sub>) ⋯ ) + b<sub>L</sub></div>
       <p><span class="lang-en">or, with a clean recursion,</span><span class="lang-zh">或者写成更清爽的递推形式：</span></p>
-      <div class="eq">z<sup>0</sup> = x &nbsp;&nbsp;·&nbsp;&nbsp; z<sup>l</sup> = φ(W<sup>l</sup> z<sup>l−1</sup> + b<sup>l</sup>) &nbsp;&nbsp;·&nbsp;&nbsp; f<sub>θ</sub>(x) = W<sup>L</sup> z<sup>L−1</sup> + b<sup>L</sup></div>
+      <div class="eq">z<sub>0</sub> = x &nbsp;&nbsp;·&nbsp;&nbsp; z<sub>l</sub> = φ(W<sub>l</sub> z<sub>l−1</sub> + b<sub>l</sub>) &nbsp;&nbsp;·&nbsp;&nbsp; f<sub>θ</sub>(x) = W<sub>L</sub> z<sub>L−1</sub> + b<sub>L</sub></div>
       <ul class="small">
-        <li><span class="lang-en">φ is the activation, applied element-wise; W<sup>l</sup> has dimension d<sub>l</sub> × d<sub>l−1</sub>; the parameters are θ = {W<sup>l</sup>, b<sup>l</sup>}.</span>
-            <span class="lang-zh">φ 是逐元素作用的激活函数；W<sup>l</sup> 的维度是 d<sub>l</sub> × d<sub>l−1</sub>；参数为 θ = {W<sup>l</sup>, b<sup>l</sup>}。</span></li>
+        <li><span class="lang-en">φ is the activation, applied element-wise; W<sub>l</sub> has dimension d<sub>l</sub> × d<sub>l−1</sub>; the parameters are θ = {W<sub>l</sub>, b<sub>l</sub>}.</span>
+            <span class="lang-zh">φ 是逐元素作用的激活函数；W<sub>l</sub> 的维度是 d<sub>l</sub> × d<sub>l−1</sub>；参数为 θ = {W<sub>l</sub>, b<sub>l</sub>}。</span></li>
         <li><span class="lang-en">d<sub>0</sub> = d<sub>x</sub> (input dimension) and d<sub>L</sub> = d<sub>y</sub> (output dimension).</span>
             <span class="lang-zh">d<sub>0</sub> = d<sub>x</sub>（输入维度），d<sub>L</sub> = d<sub>y</sub>（输出维度）。</span></li>
         <li><span class="lang-en">Slide content follows the course book, <i>Optimization for Deep Learning</i>, §2.1.</span>
@@ -191,12 +191,12 @@ html[data-lang="en"] .lang-zh{display:none}
       <p><span class="lang-en">Each layer's operation splits into two stages — an affine transformation, then a non-linear activation:</span>
          <span class="lang-zh">每层的运算分成两步——先做仿射变换，再做非线性激活：</span></p>
       <div class="eq">
-        pre-activation:&nbsp; h<sup>l</sup> = W<sup>l</sup> z<sup>l−1</sup> + b<sup>l</sup>, &nbsp; l = 1, …, L<br>
-        post-activation:&nbsp; z<sup>l</sup> = φ(h<sup>l</sup>), &nbsp; l = 1, …, L−1
-        <span class="tag">The last layer is usually taken without activation: f<sub>θ</sub>(x) = h<sup>L</sup>.</span>
+        pre-activation:&nbsp; h<sub>l</sub> = W<sub>l</sub> z<sub>l−1</sub> + b<sub>l</sub>, &nbsp; l = 1, …, L<br>
+        post-activation:&nbsp; z<sub>l</sub> = φ(h<sub>l</sub>), &nbsp; l = 1, …, L−1
+        <span class="tag">The last layer is usually taken without activation: f<sub>θ</sub>(x) = h<sub>L</sub>.</span>
       </div>
-      <p><span class="lang-en">This lab's dashboard tracks <b>both</b> of them, layer by layer. That is the whole point: the size of h<sup>l</sup> tells you what the weights did, and the size of z<sup>l</sup> tells you what survives into the next layer.</span>
-         <span class="lang-zh">本实验台的看板会<b>同时</b>跟踪这两个量。这正是关键：h<sup>l</sup> 的大小反映了权重做了什么，z<sup>l</sup> 的大小则决定了有多少信号能传到下一层。</span></p>
+      <p><span class="lang-en">This lab's dashboard tracks <b>both</b> of them, layer by layer. That is the whole point: the size of h<sub>l</sub> tells you what the weights did, and the size of z<sub>l</sub> tells you what survives into the next layer.</span>
+         <span class="lang-zh">本实验台的看板会<b>同时</b>跟踪这两个量。这正是关键：h<sub>l</sub> 的大小反映了权重做了什么，z<sub>l</sub> 的大小则决定了有多少信号能传到下一层。</span></p>
       <svg viewBox="0 0 700 150" style="width:100%;max-width:700px;height:auto;margin:6px auto 0;display:block">
         <g font-family="-apple-system,Arial" font-size="13" text-anchor="middle">
           <rect x="18" y="46" width="96" height="52" rx="9" fill="#eaf2f8" stroke="#1a5276" stroke-width="1.4"/>
@@ -218,8 +218,8 @@ html[data-lang="en"] .lang-zh{display:none}
             <path d="M0 0 L7 3.5 L0 7 z" fill="#95a5a6"/></marker></defs>
         </g>
       </svg>
-      <p class="small muted" style="margin-top:8px"><span class="lang-en">The same decomposition is what backpropagation uses: it needs the derivative φ′(h<sup>l</sup>) at the pre-activation.</span>
-      <span class="lang-zh">反向传播用的也是同一套分解——它需要 pre-activation 处的导数 φ′(h<sup>l</sup>)。</span></p>
+      <p class="small muted" style="margin-top:8px"><span class="lang-en">The same decomposition is what backpropagation uses: it needs the derivative φ′(h<sub>l</sub>) at the pre-activation.</span>
+      <span class="lang-zh">反向传播用的也是同一套分解——它需要 pre-activation 处的导数 φ′(h<sub>l</sub>)。</span></p>
     </div>
 
     <!-- 3 -->
@@ -227,13 +227,13 @@ html[data-lang="en"] .lang-zh{display:none}
       <div class="num">3 / 5</div>
       <h2><span class="lang-en">Signal propagation: what happens to the scale as depth grows?</span>
           <span class="lang-zh">信号传播：层数变深时，信号的大小会怎样？</span></h2>
-      <p><span class="lang-en">Depth is a product of matrices: z<sup>L</sup> = W<sup>L</sup> W<sup>L−1</sup> ⋯ W<sup>1</sup> x (for a linear network). If each step multiplies the norm by a number slightly different from 1, the effect compounds exponentially.</span>
-         <span class="lang-zh">深度本质上是一串矩阵相乘：对线性网络，z<sup>L</sup> = W<sup>L</sup> W<sup>L−1</sup> ⋯ W<sup>1</sup> x。只要每一步把范数乘上一个略偏离 1 的因子，累积起来就是指数级的效果。</span></p>
-      <div class="eq">‖z<sup>L</sup>‖ ≈ ‖x‖ · c<sup>L</sup>
+      <p><span class="lang-en">Depth is a product of matrices: z<sub>L</sub> = W<sub>L</sub> W<sub>L−1</sub> ⋯ W<sub>1</sub> x (for a linear network). If each step multiplies the norm by a number slightly different from 1, the effect compounds exponentially.</span>
+         <span class="lang-zh">深度本质上是一串矩阵相乘：对线性网络，z<sub>L</sub> = W<sub>L</sub> W<sub>L−1</sub> ⋯ W<sub>1</sub> x。只要每一步把范数乘上一个略偏离 1 的因子，累积起来就是指数级的效果。</span></p>
+      <div class="eq">‖z<sub>L</sub>‖ ≈ ‖x‖ · c<sup>L</sup>
         <span class="tag">c &lt; 1 → vanishing &nbsp;·&nbsp; c ≈ 1 → preserved &nbsp;·&nbsp; c &gt; 1 → exploding</span></div>
       <p><span class="lang-en">We want the "energy" of the output to be comparable to the input — the <b>energy-preserving principle</b>:</span>
          <span class="lang-zh">我们希望输出的"能量"与输入相当，也就是<b>能量守恒原则</b>：</span></p>
-      <div class="eq">E‖ W<sup>L</sup> ⋯ W<sup>1</sup> x ‖² / d<sub>L</sub> &nbsp;=&nbsp; ‖x‖² / d<sub>0</sub></div>
+      <div class="eq">E‖ W<sub>L</sub> ⋯ W<sub>1</sub> x ‖² / d<sub>L</sub> &nbsp;=&nbsp; ‖x‖² / d<sub>0</sub></div>
       <p class="small"><span class="lang-en">That is why the lab plots the <b>per-unit RMS</b> (‖·‖² divided by the width) — on that scale the target is a flat horizontal line at the input value, for every depth.</span>
          <span class="lang-zh">所以实验台画的是<b>单位维度 RMS</b>（‖·‖² 除以宽度）——在这个尺度下，理想情况就是从输入到输出的一条水平线，与深度无关。</span></p>
     </div>
@@ -245,7 +245,7 @@ html[data-lang="en"] .lang-zh{display:none}
           <span class="lang-zh">初始化尺度就是控制 c 的那个旋钮</span></h2>
       <p><span class="lang-en">Draw the weights i.i.d. from a Gaussian whose variance is scaled by the fan-in, with a tunable <b>gain g</b>:</span>
          <span class="lang-zh">让权重独立地取自高斯分布，方差按 fan-in 缩放，并留一个可调的<b>增益 g</b>：</span></p>
-      <div class="eq">W<sup>l</sup><sub>ij</sub> ~ N( 0 , g² / d<sub>l−1</sub> )
+      <div class="eq">W<sub>l</sub><sub>ij</sub> ~ N( 0 , g² / d<sub>l−1</sub> )
         <span class="tag">g = 1 → Bottou–LeCun (var = 1/fan-in) &nbsp;·&nbsp; g = √2 → He / Kaiming (for ReLU)</span></div>
       <p><span class="lang-en">Both classical recipes are the same formula at a different gain. Set the gain too low and the signal decays to nothing; too high and it blows up. Somewhere in between, the network sits at the critical point where the signal neither vanishes nor explodes.</span>
          <span class="lang-zh">两个经典方案其实是同一个公式、不同的增益。增益太小信号会衰减到零，太大则会爆炸；而在中间某个位置，网络处于临界点——信号既不消失也不爆炸。</span></p>
@@ -334,9 +334,9 @@ html[data-lang="en"] .lang-zh{display:none}
       </div>
 
       <label class="chk"><input type="checkbox" id="showPre" checked>
-        <span class="lang-en">show pre-activation h<sup>l</sup></span><span class="lang-zh">显示 pre-activation h<sup>l</sup></span></label>
+        <span class="lang-en">show pre-activation h<sub>l</sub></span><span class="lang-zh">显示 pre-activation h<sub>l</sub></span></label>
       <label class="chk"><input type="checkbox" id="showPost" checked>
-        <span class="lang-en">show post-activation z<sup>l</sup></span><span class="lang-zh">显示 post-activation z<sup>l</sup></span></label>
+        <span class="lang-en">show post-activation z<sub>l</sub></span><span class="lang-zh">显示 post-activation z<sub>l</sub></span></label>
       <label class="chk"><input type="checkbox" id="showGrad" checked>
         <span class="lang-en">show back-propagated error</span><span class="lang-zh">显示反传误差</span></label>
       <label class="chk"><input type="checkbox" id="useLog" checked>
@@ -362,8 +362,8 @@ html[data-lang="en"] .lang-zh{display:none}
       <div class="card" style="margin-bottom:16px">
         <h3><span class="lang-en">Dashboard A — magnitude through the layers</span>
             <span class="lang-zh">看板 A — 各层信号大小</span></h3>
-        <p class="small muted"><span class="lang-en">Per-unit RMS of each layer's pre-activation h<sup>l</sup>, post-activation z<sup>l</sup>, and back-propagated error ∂ℓ/∂z<sup>l</sup>. The dashed line is the input scale — a healthy network stays near it. Increase the width d and the curves smooth out: “the expected signal is preserved” is an infinite-width statement, so a narrow net only fluctuates around it.</span>
-           <span class="lang-zh">每一层 pre-activation h<sup>l</sup>、post-activation z<sup>l</sup> 和反传误差 ∂ℓ/∂z<sup>l</sup> 的单位维度 RMS。虚线是输入的尺度——健康的网络应当贴近它。把宽度 d 调大，曲线会变光滑：「期望信号守恒」是一个无穷宽度的结论，窄网络只是在它附近波动。</span></p>
+        <p class="small muted"><span class="lang-en">Per-unit RMS of each layer's pre-activation h<sub>l</sub>, post-activation z<sub>l</sub>, and back-propagated error ∂ℓ/∂z<sub>l</sub>. The dashed line is the input scale — a healthy network stays near it. Increase the width d and the curves smooth out: “the expected signal is preserved” is an infinite-width statement, so a narrow net only fluctuates around it.</span>
+           <span class="lang-zh">每一层 pre-activation h<sub>l</sub>、post-activation z<sub>l</sub> 和反传误差 ∂ℓ/∂z<sub>l</sub> 的单位维度 RMS。虚线是输入的尺度——健康的网络应当贴近它。把宽度 d 调大，曲线会变光滑：「期望信号守恒」是一个无穷宽度的结论，窄网络只是在它附近波动。</span></p>
         <div class="chart-wrap"><canvas id="sigChart" height="300"></canvas></div>
         <div class="legend">
           <span><i class="swatch" style="background:var(--pre)"></i><span class="lang-en">pre-activation</span><span class="lang-zh">pre-activation</span></span>

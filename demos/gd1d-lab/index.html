@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Step-Size Lab — ME2605 Week 2 Demo (Part 2)</title>
+<meta name="description" content="ME2605 interactive demo: minimise F(w) = (w^7 - 1)^2 by gradient descent with a constant step size. You choose the starting point and the step size.">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
+  --accent-soft:#eaf2f8; --border:#e2e2e2; --code-bg:#f6f8fa; --maxw:1180px;
+  --good:#1e8449; --low:#2471a3; --high:#b03a2e; --warn:#b7791f;
+  --panel:#fbfcfd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);line-height:1.6;font-size:15.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+header.site-header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:54px;gap:12px}
+.brand{font-weight:700;white-space:nowrap;color:var(--fg)}
+.brand .code{color:var(--accent)}
+.nav-links{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.nav-links a,.nav-links button{font-size:.9rem;padding:6px 11px;border-radius:6px;color:var(--fg);background:none;
+  border:1px solid transparent;cursor:pointer;font-family:inherit}
+.nav-links a:hover,.nav-links button:hover{background:var(--accent-soft);text-decoration:none}
+.nav-links a.next{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lang-toggle{border:1px solid var(--border)!important}
+main{max-width:var(--maxw);margin:0 auto;padding:26px 20px 70px}
+h1{font-size:1.7rem;line-height:1.3;margin-bottom:6px}
+h4{margin:0}
+p{margin-bottom:11px}
+.lede{color:var(--muted);margin-bottom:18px;max-width:880px}
+.tag{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:20px;
+  padding:2px 12px;font-size:.8rem;margin-right:8px;font-weight:600}
+.callout{background:var(--accent-soft);border-left:4px solid var(--accent);padding:12px 16px;
+  border-radius:0 8px 8px 0;margin:14px 0;max-width:900px}
+.callout.warn{background:#fdf6e3;border-left-color:var(--warn)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px}
+.muted{color:var(--muted)}
+.small{font-size:.87rem}
+.grid-run{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.shead h4{font-size:.74rem;letter-spacing:1.3px;text-transform:uppercase;color:var(--accent);font-weight:800}
+.ctrl{margin-bottom:14px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:.84rem;font-weight:600;margin-bottom:4px}
+.ctrl label .val{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent);font-size:.95rem}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0;cursor:pointer}
+.btn{font-family:inherit;font-size:.9rem;font-weight:600;padding:8px 16px;border-radius:7px;
+  border:1px solid var(--border);background:#fff;color:var(--fg);cursor:pointer}
+.btn:hover{background:var(--accent-soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#14425f}
+.btn.sm{font-size:.82rem;padding:5px 11px;font-weight:500}
+.btnrow{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.banner{border-radius:8px;padding:12px 16px;font-weight:600;margin-bottom:14px;border-left:5px solid}
+.banner.ok{background:#eafaf1;border-left-color:var(--good);color:#14532d}
+.banner.no{background:#fdecea;border-left-color:var(--high);color:#7f1d1d}
+.banner.slow{background:#fdf6e3;border-left-color:var(--warn);color:#713f12}
+.banner small{display:block;font-weight:400;margin-top:3px;color:inherit;opacity:.85;font-size:.85rem}
+.chartbox{border:1px solid var(--border);border-radius:9px;background:#fff;padding:8px 6px 4px}
+canvas{display:block;width:100%}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(134px,1fr));gap:10px;margin-top:12px}
+.ro{background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 11px}
+.ro span{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+.ro b{font-family:ui-monospace,Menlo,monospace;font-size:1rem;font-weight:700}
+table.logtbl{width:100%;border-collapse:collapse;font-size:.87rem}
+table.logtbl th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--muted);font-weight:700;padding:4px 8px;border-bottom:1px solid var(--border)}
+table.logtbl td{padding:5px 8px;border-bottom:1px solid #f1f3f5;font-family:ui-monospace,Menlo,monospace}
+table.logtbl td.v{font-family:inherit;font-weight:600}
+table.logtbl tr:last-child td{border-bottom:none}
+td.g{color:var(--good)} td.r{color:var(--high)} td.y{color:var(--warn)}
+.eqline{font-family:ui-monospace,Menlo,monospace;background:var(--code-bg);border-radius:7px;
+  padding:9px 14px;display:inline-block;margin:2px 0 10px;font-size:1.02rem}
+footer.foot{max-width:var(--maxw);margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:.85rem}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="zh"] .lang-en{display:none}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Lec 2 · Part 2 — Step-Size Lab</span><span class="lang-zh">第 2 讲 · 第 2 部分 — 步长实验室</span></a>
+    <nav class="nav-links">
+      <a href="../backprop-lab/"><span class="lang-en">← Part 1 · Backprop Lab</span><span class="lang-zh">← 第 1 部分 · 反向传播</span></a>
+      <a href="../nn-init-lab/" class="next"><span class="lang-en">Initialization Lab →</span><span class="lang-zh">初始化实验室 →</span></a>
+      <a href="../../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
+      <button class="lang-toggle" id="langBtn" type="button">中文</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<h1><span class="lang-en">Make gradient descent work — pick where to start, and how far to step</span><span class="lang-zh">让梯度下降跑起来——自己选起点，自己选步长</span></h1>
+<p class="lede">
+  <span class="lang-en">One function, one rule, and two things that are yours to choose: the starting point <code>w&#8320;</code> and the step size <code>&#951;</code>. A run counts as working if the iterates reach <code>w &#8776; 1</code>, where the function is zero.</span>
+  <span class="lang-zh">一个函数、一条迭代规则，只有两件事由你决定：起点 <code>w&#8320;</code> 和步长 <code>&#951;</code>。什么时候算成功？迭代能走到 <code>w &#8776; 1</code>，那里函数值为 0。</span>
+</p>
+
+<div class="callout">
+  <span class="lang-en"><b>The problem.</b> Minimise <span class="eqline">F(w) = (w<sup>7</sup> − 1)<sup>2</sup></span> by gradient descent with a <b>constant</b> step size: <code>w &#8592; w − &#951; F&#8242;(w)</code>.</span>
+  <span class="lang-zh"><b>问题。</b> 用<b>固定</b>步长的梯度下降最小化 <span class="eqline">F(w) = (w<sup>7</sup> − 1)<sup>2</sup></span>： <code>w &#8592; w − &#951; F&#8242;(w)</code>。</span>
+</div>
+
+<section class="card">
+  <div class="shead">
+    <h4><span class="lang-en">1 · Your two choices</span><span class="lang-zh">1 · 你只控制这两件事</span></h4>
+    <div class="btnrow" style="margin:0">
+      <button class="btn sm" id="rerun" type="button"><span class="lang-en">re-run</span><span class="lang-zh">重跑</span></button>
+      <button class="btn sm" id="clearLog" type="button"><span class="lang-en">clear record</span><span class="lang-zh">清空记录</span></button>
+    </div>
+  </div>
+  <div class="grid-run">
+    <div>
+      <div class="ctrl">
+        <label><span class="lang-en">starting point w&#8320;</span><span class="lang-zh">初始点 w&#8320;</span><span class="val" id="w0Val">2</span></label>
+        <input type="range" id="w0" min="-1.5" max="2.5" step="0.01" value="2">
+      </div>
+      <div class="ctrl">
+        <label><span class="lang-en">step size &#951;</span><span class="lang-zh">步长 &#951;</span><span class="val" id="etaVal">0.01</span></label>
+        <input type="range" id="eta" min="-5" max="-1.30103" step="0.001" value="-2">
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="go" type="button"><span class="lang-en">Run gradient descent</span><span class="lang-zh">跑一次梯度下降</span></button>
+        <span class="small muted"><span class="lang-en">up to 20 000 iterations</span><span class="lang-zh">最多 20 000 步</span></span>
+      </div>
+    </div>
+    <div class="small muted">
+      <p><span class="lang-en">Change <b>one</b> of the two at a time, and write down what happened. A record is built up below as you go.</span>
+        <span class="lang-zh">每次只改<b>一个</b>，并记下结果。下面会自动累积一份尝试记录。</span></p>
+      <p><span class="lang-en">There is no picture of the function on this page. Where the iterates end up is your only instrument.</span>
+        <span class="lang-zh">这一页不画函数的图像。迭代最终走到哪里，就是你唯一的仪器。</span></p>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="shead">
+    <h4><span class="lang-en">2 · The run</span><span class="lang-zh">2 · 这一次的结果</span></h4>
+    <span class="small muted" id="runLabel"></span>
+  </div>
+  <div class="banner" id="banner"><span class="lang-en">Press Run.</span><span class="lang-zh">点“跑一次梯度下降”。</span></div>
+  <div class="chartbox"><canvas id="chart" height="268"></canvas></div>
+  <div class="readout">
+    <div class="ro"><span>w&#8320;</span><b id="rW0">—</b></div>
+    <div class="ro"><span><span class="lang-en">F at start</span><span class="lang-zh">起点的 F</span></span><b id="rF0">—</b></div>
+    <div class="ro"><span><span class="lang-en">end w</span><span class="lang-zh">终点的 w</span></span><b id="rW">—</b></div>
+    <div class="ro"><span><span class="lang-en">F at end</span><span class="lang-zh">终点的 F</span></span><b id="rF">—</b></div>
+    <div class="ro"><span><span class="lang-en">iterations</span><span class="lang-zh">迭代步数</span></span><b id="rIt">—</b></div>
+    <div class="ro"><span><span class="lang-en">distance to 1</span><span class="lang-zh">离 w = 1 的距离</span></span><b id="rD">—</b></div>
+  </div>
+  <div id="revealWrap" style="display:none;margin-top:14px">
+    <div class="small muted" style="margin-bottom:6px">reveal &middot; the same run drawn on the function</div>
+    <div class="chartbox"><canvas id="lchart" height="248"></canvas></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="shead">
+    <h4><span class="lang-en">3 · What you have tried</span><span class="lang-zh">3 · 你已经试过的</span></h4>
+    <span class="small muted" id="logCount"></span>
+  </div>
+  <table class="logtbl" id="logtbl">
+    <thead><tr>
+      <th>#</th><th>w&#8320;</th><th>&#951;</th>
+      <th><span class="lang-en">end w</span><span class="lang-zh">终点 w</span></th>
+      <th><span class="lang-en">iterations</span><span class="lang-zh">步数</span></th>
+      <th><span class="lang-en">verdict</span><span class="lang-zh">结果</span></th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  <p class="small muted" style="margin:10px 0 0"><span class="lang-en">The record is kept in this browser. Nothing is sent anywhere.</span><span class="lang-zh">记录只存在本机浏览器里，不会发到任何地方。</span></p>
+</section>
+
+</main>
+
+<footer class="foot">
+  <span class="lang-en">ME2605 &middot; Neural Net Training &middot; Week 2. Part of the exploration in the second hour: only two dials, and only one thing to read off.</span>
+  <span class="lang-zh">ME2605 · 神经网络训练 · 第 2 周。第二小时的探索环节：只有两个旋钮，只有一个读数。</span>
+</footer>
+
+<script>
+/* ==================================================================== maths
+   The whole problem. Kept small and pure so it can be lifted out and checked
+   in Node without a browser.                                              */
+var MAXIT = 20000;
+var WCAP  = 1e6;          /* beyond this the run has plainly diverged */
+var TOL   = 1e-8;         /* close enough to the minimum to stop      */
+
+function Fof(w){ var a = Math.pow(w, 7); return (a - 1) * (a - 1); }
+function dFof(w){ return 14 * Math.pow(w, 6) * (Math.pow(w, 7) - 1); }
+
+/* one run of gradient descent with a constant step size.
+   returns TRAJ (every iterate, including the start), the iteration count that
+   was actually used, where it stopped, and a verdict.                     */
+function descend(w0, eta){
+  var TRAJ = [w0], w = w0, it = 0, verdict = "slow";
+  if (Math.abs(w0 - 1) < TOL) return { TRAJ: TRAJ, it: 0, w: w, verdict: "atmin" };
+  for (it = 1; it <= MAXIT; it++){
+    var nw = w - eta * dFof(w);
+    if (!isFinite(nw) || Math.abs(nw) > WCAP){
+      TRAJ.push(nw);
+      return { TRAJ: TRAJ, it: it, w: nw, verdict: "diverged" };
+    }
+    w = nw; TRAJ.push(w);
+    if (Math.abs(w - 1) < TOL) return { TRAJ: TRAJ, it: it, w: w, verdict: "reached" };
+  }
+  /* the loop leaves `it` at MAXIT + 1; the run used exactly MAXIT steps */
+  return { TRAJ: TRAJ, it: MAXIT, w: w, verdict: "slow" };
+}
+
+/* ==================================================================== format */
+function fmt(x){
+  if (x === null || x === undefined) return "—";
+  if (typeof x !== "number") return "—";
+  if (x === Infinity) return "∞";
+  if (x === -Infinity) return "−∞";
+  if (isNaN(x)) return "—";
+  if (x === 0) return "0";
+  var a = Math.abs(x);
+  if (a < 1e-3 || a >= 1e5){
+    var e = Math.floor(Math.log10(a));
+    return (x / Math.pow(10, e)).toFixed(2) + "e" + e;
+  }
+  if (a < 1) return x.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+  return x.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+function fmtEta(x){
+  var a = Math.abs(x);
+  if (a < 1e-3){
+    var e = Math.floor(Math.log10(a));
+    return (x / Math.pow(10, e)).toFixed(1) + "e" + e;
+  }
+  return x.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+/* ==================================================================== state */
+var ST = { w0: 2, etaDecade: -2, run: null, LOG: [] };
+
+/* ==================================================================== charts */
+function subsample(TRAJ, cap){
+  var n = TRAJ.length, step = Math.max(1, Math.ceil(n / cap));
+  var pts = [];
+  for (var i = 0; i < n; i += step) pts.push([i, TRAJ[i]]);
+  if (pts[pts.length - 1][0] !== n - 1) pts.push([n - 1, TRAJ[n - 1]]);
+  return pts;
+}
+
+function drawTraj(cv, TRAJ){
+  var dpr = window.devicePixelRatio || 1;
+  var W = cv.clientWidth || 860, H = 268;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cv.style.height = H + "px";
+  var g = cv.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+
+  var L = 62, R = 16, T = 16, B = 34;
+  var pw = W - L - R, ph = H - T - B;
+  var pts = subsample(TRAJ, 700);
+
+  var ymin = Infinity, ymax = -Infinity;
+  for (var k = 0; k < pts.length; k++){
+    if (pts[k][1] < ymin) ymin = pts[k][1];
+    if (pts[k][1] > ymax) ymax = pts[k][1];
+  }
+  if (ymin > 1) ymin = 1;
+  if (ymax < 1) ymax = 1;
+  var pad = (ymax - ymin) * 0.10 || 0.15;
+  ymin -= pad; ymax += pad;
+
+  var xmax = Math.max(1, pts[pts.length - 1][0]);
+  function X(i){ return L + pw * (i / xmax); }
+  function Y(v){ return T + ph * (1 - (v - ymin) / (ymax - ymin)); }
+
+  /* grid on w */
+  g.strokeStyle = "#eef1f4"; g.lineWidth = 1;
+  var ticksW = niceTicks(ymin, ymax, 4);
+  g.fillStyle = "#7b8794"; g.font = "11px ui-monospace, Menlo, monospace"; g.textAlign = "right";
+  for (k = 0; k < ticksW.length; k++){
+    var yy = Y(ticksW[k]);
+    if (yy < T - 1 || yy > T + ph + 1) continue;
+    g.beginPath(); g.moveTo(L, yy); g.lineTo(L + pw, yy); g.stroke();
+    g.fillText(fmt(ticksW[k]), L - 8, yy + 4);
+  }
+  /* the target */
+  if (1 >= ymin && 1 <= ymax){
+    g.save();
+    g.setLineDash([5, 4]); g.strokeStyle = "#1e8449"; g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(L, Y(1)); g.lineTo(L + pw, Y(1)); g.stroke();
+    g.restore();
+    g.fillStyle = "#1e8449"; g.textAlign = "left";
+    g.fillText("w = 1", L + 6, Y(1) - 5);
+  }
+  /* axes */
+  g.strokeStyle = "#cfd6dd"; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+
+  /* the trajectory */
+  g.strokeStyle = "#1a5276"; g.lineWidth = 2.2; g.lineJoin = "round";
+  g.beginPath();
+  for (k = 0; k < pts.length; k++){
+    var xx = X(pts[k][0]), yy2 = Y(pts[k][1]);
+    if (yy2 < T - 40) yy2 = T - 40;
+    if (yy2 > T + ph + 40) yy2 = T + ph + 40;
+    if (k === 0) g.moveTo(xx, yy2); else g.lineTo(xx, yy2);
+  }
+  g.stroke();
+  /* the start marker */
+  g.fillStyle = "#b03a2e";
+  g.beginPath(); g.arc(X(0), clampY(Y(pts[0][1]), T, ph), 4.2, 0, 6.2832); g.fill();
+
+  /* x labels */
+  g.fillStyle = "#7b8794"; g.textAlign = "center";
+  g.fillText("0", L, T + ph + 18);
+  var mid = Math.round(xmax / 2);
+  if (xmax > 4) g.fillText(String(mid), X(mid), T + ph + 18);
+  g.fillText(String(xmax), L + pw, T + ph + 18);
+  g.fillText("iteration", L + pw / 2, T + ph + 32);
+  g.textAlign = "left"; g.fillText("w", L + 7, T + 13);
+}
+function clampY(y, T, ph){ return Math.max(T, Math.min(T + ph, y)); }
+function niceTicks(lo, hi, want){
+  var span = hi - lo, raw = span / want;
+  var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  var mult = raw / mag, step = mag;
+  if (mult > 5) step = 10 * mag; else if (mult > 2) step = 2 * mag; else step = mag;
+  var out = [], v = Math.ceil(lo / step) * step;
+  for (; v <= hi + 1e-9; v += step) out.push(Math.abs(v) < 1e-12 ? 0 : v);
+  return out;
+}
+
+/* the reveal panel: the function itself, with the iterates marked on it */
+function drawLandscape(cv, TRAJ){
+  var dpr = window.devicePixelRatio || 1;
+  var W = cv.clientWidth || 860, H = 248;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cv.style.height = H + "px";
+  var g = cv.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+
+  var L = 62, R = 16, T = 16, B = 34;
+  var pw = W - L - R, ph = H - T - B;
+  var wlo = -1.5, whi = 1.5, flo = 0, fhi = 16;
+  function X(w){ return L + pw * (w - wlo) / (whi - wlo); }
+  function Y(f){ return T + ph * (1 - (Math.min(f, fhi) - flo) / (fhi - flo)); }
+
+  g.strokeStyle = "#eef1f4"; g.lineWidth = 1;
+  g.fillStyle = "#7b8794"; g.font = "11px ui-monospace, Menlo, monospace"; g.textAlign = "right";
+  var tw = niceTicks(0, fhi, 4);
+  for (var k = 0; k < tw.length; k++){
+    var yy = Y(tw[k]);
+    g.beginPath(); g.moveTo(L, yy); g.lineTo(L + pw, yy); g.stroke();
+    g.fillText(fmt(tw[k]), L - 8, yy + 4);
+  }
+  g.strokeStyle = "#cfd6dd";
+  g.beginPath(); g.moveTo(L, T); g.lineTo(L, T + ph); g.lineTo(L + pw, T + ph); g.stroke();
+
+  g.strokeStyle = "#1a5276"; g.lineWidth = 2.2;
+  g.beginPath();
+  var first = true;
+  for (var i = 0; i <= 600; i++){
+    var w = wlo + (whi - wlo) * i / 600, f = Fof(w);
+    if (f > fhi){ first = true; continue; }
+    if (first){ g.moveTo(X(w), Y(f)); first = false; } else g.lineTo(X(w), Y(f));
+  }
+  g.stroke();
+
+  var pts = subsample(TRAJ, 140);
+  g.fillStyle = "#b03a2e";
+  for (k = 0; k < pts.length; k++){
+    var ww = pts[k][1];
+    if (ww < wlo || ww > whi) continue;
+    g.beginPath(); g.arc(X(ww), Y(Fof(ww)), 3.0, 0, 6.2832); g.fill();
+  }
+  g.fillStyle = "#7b8794"; g.textAlign = "center";
+  for (k = -1; k <= 1; k++) g.fillText(String(k), X(k), T + ph + 18);
+  g.fillText("w", L + pw / 2, T + ph + 32);
+}
+
+/* ==================================================================== render */
+function $(id){ return document.getElementById(id); }
+
+function verdictText(v, r){
+  if (v === "reached") return {
+    en: 'Reached w = 1 in ' + r.it + ' steps.',
+    zh: '用 ' + r.it + ' 步走到了 w = 1。',
+    cls: "ok"
+  };
+  if (v === "atmin") return {
+    en: 'You started exactly at the minimum, so there was nothing to do.',
+    zh: '起点正好就是最小值，没什么可做的。', cls: "ok"
+  };
+  if (v === "diverged") return {
+    en: 'Diverged after ' + r.it + ' steps — the iterate flew off to ' + fmt(r.w) + '.',
+    zh: '第 ' + r.it + ' 步就发散了——迭代跑到了 ' + fmt(r.w) + '。', cls: "no"
+  };
+  var d = Math.abs(r.w - 1);
+  return {
+    en: 'Did not work. After ' + MAXIT.toLocaleString() + ' steps w is still ' + fmt(d) + ' away from 1.',
+    zh: '没跑通。' + MAXIT.toLocaleString() + ' 步之后，w 离 1 还差 ' + fmt(d) + '。',
+    cls: "slow"
+  };
+}
+
+function render(){
+  var r = ST.run, b = $("banner");
+  if (!r){
+    b.className = "banner";
+    b.innerHTML = '<span class="lang-en">Press Run.</span><span class="lang-zh">点“跑一次梯度下降”。</span>';
+    $("runLabel").innerHTML = "";
+    drawTraj($("chart"), [ST.w0]);
+    if ($("revealWrap").style.display !== "none") drawLandscape($("lchart"), [ST.w0]);
+    return;
+  }
+  var vt = verdictText(r.verdict, r);
+  b.className = "banner " + vt.cls;
+  b.innerHTML = '<span class="lang-en">' + vt.en + '</span><span class="lang-zh">' + vt.zh + '</span>' +
+    '<small><span class="lang-en">w&#8320; = ' + fmt(r.w0) + ', &#951; = ' + fmtEta(r.eta) + '</span>' +
+    '<span class="lang-zh">w&#8320; = ' + fmt(r.w0) + '，&#951; = ' + fmtEta(r.eta) + '</span></small>';
+
+  $("runLabel").innerHTML = '<span class="lang-en">started at w&#8320; = ' + fmt(r.w0) +
+    ' with step size &#951; = ' + fmtEta(r.eta) + '</span><span class="lang-zh">起点 w&#8320; = ' +
+    fmt(r.w0) + '，步长 &#951; = ' + fmtEta(r.eta) + '</span>';
+
+  $("rW0").textContent = fmt(r.w0);
+  $("rF0").textContent = fmt(r.F0);
+  $("rW").textContent = fmt(r.w);
+  $("rF").textContent = fmt(r.Fend);
+  $("rIt").textContent = r.it.toLocaleString();
+  $("rD").textContent = fmt(Math.abs(r.w - 1));
+
+  drawTraj($("chart"), r.TRAJ);
+  var rw = $("revealWrap");
+  if (rw.style.display !== "none") drawLandscape($("lchart"), r.TRAJ);
+}
+
+function renderLog(){
+  var tb = $("logtbl").querySelector("tbody"), h = [];
+  for (var i = ST.LOG.length - 1; i >= 0; i--){
+    var e = ST.LOG[i];
+    var cls = e.verdict === "reached" || e.verdict === "atmin" ? "g"
+            : e.verdict === "diverged" ? "r" : "y";
+    var word = e.verdict === "reached" ? "ok"
+             : e.verdict === "atmin" ? "at the min"
+             : e.verdict === "diverged" ? "diverged" : "not there";
+    h.push('<tr><td>' + (i + 1) + '</td><td>' + fmt(e.w0) + '</td><td>' + fmtEta(e.eta) +
+           '</td><td>' + fmt(e.w) + '</td><td>' + e.it.toLocaleString() +
+           '</td><td class="v ' + cls + '">' + word + '</td></tr>');
+  }
+  tb.innerHTML = h.join("") || '<tr><td colspan="6" class="muted">—</td></tr>';
+  $("logCount").innerHTML = '<span class="lang-en">' + ST.LOG.length + ' run' +
+    (ST.LOG.length === 1 ? '' : 's') + ' recorded</span><span class="lang-zh">已记 ' +
+    ST.LOG.length + ' 次</span>';
+}
+
+function doRun(push){
+  var r = descend(ST.w0, Math.pow(10, ST.etaDecade));
+  r.w0 = ST.w0; r.eta = Math.pow(10, ST.etaDecade);
+  r.F0 = Fof(r.w0);
+  r.Fend = isFinite(r.w) ? Fof(r.w) : Infinity;
+  ST.run = r;
+  if (push !== false) ST.LOG.push({ w0: r.w0, eta: r.eta, w: r.w, it: r.it, verdict: r.verdict });
+  persist();
+  render(); renderLog();
+}
+
+/* ==================================================================== storage */
+var LSK = "me2605.gd1d.log";
+function persist(){
+  try { localStorage.setItem(LSK, JSON.stringify(ST.LOG)); } catch (e) {}
+}
+function restore(){
+  try {
+    var s = localStorage.getItem(LSK);
+    if (s) ST.LOG = JSON.parse(s) || [];
+  } catch (e) { ST.LOG = []; }
+}
+
+/* ==================================================================== wiring */
+function setW0(v){
+  ST.w0 = Math.round(v * 100) / 100;
+  $("w0").value = String(ST.w0);
+  $("w0Val").textContent = fmt(ST.w0);
+}
+var ESTEP = 0.001, EMIN = -5.0, EMAX = -1.30103;
+function setEta(d){
+  d = EMIN + Math.round((d - EMIN) / ESTEP) * ESTEP;   /* land on the slider's grid */
+  d = Math.max(EMIN, Math.min(EMAX, d));
+  ST.etaDecade = d;
+  $("eta").value = String(d);
+  $("etaVal").textContent = fmtEta(Math.pow(10, d));
+}
+$("w0").addEventListener("input", function(){ setW0(parseFloat(this.value)); });
+$("eta").addEventListener("input", function(){ setEta(parseFloat(this.value)); });
+$("go").addEventListener("click", function(){ doRun(true); });
+$("rerun").addEventListener("click", function(){ doRun(true); });
+$("clearLog").addEventListener("click", function(){ ST.LOG = []; persist(); renderLog(); });
+$("langBtn").addEventListener("click", function(){
+  var zh = document.documentElement.getAttribute("data-lang") === "zh";
+  document.documentElement.setAttribute("data-lang", zh ? "en" : "zh");
+  this.textContent = zh ? "中文" : "English";
+  render(); renderLog();
+});
+window.addEventListener("resize", function(){ if (ST.run) render(); });
+
+/* deep links: ?w0=2&eta=0.01&run=0&reveal=1 */
+(function(){
+  var q = new URLSearchParams(location.search);
+  if (q.has("w0")){ var v = parseFloat(q.get("w0")); if (isFinite(v)) setW0(Math.max(-1.5, Math.min(2.5, v))); }
+  else setW0(ST.w0);
+  if (q.has("eta")){ var e = parseFloat(q.get("eta")); if (e > 0) setEta(Math.max(-5, Math.min(-1.30103, Math.log10(e)))); }
+  else setEta(ST.etaDecade);
+  if (q.get("reveal") === "1") $("revealWrap").style.display = "";
+  restore(); renderLog();
+  if (q.get("run") !== "0") doRun(true);
+  else render();
+})();
+</script>
+</body>
+</html>

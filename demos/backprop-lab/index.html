@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Backprop Lab — ME2605 · Lec 2 · Part 1</title>
-<meta name="description" content="ME2605 demo: backpropagation in three steps — forward, backward, and the weight update done one layer at a time. Round weights and two-decimal numbers, so every line can be checked by hand.">
+<meta name="description" content="ME2605 demo: backpropagation on the computation graph, one layer per step. Forward computes z, backward computes e, and each weight is updated as soon as its layer is reached. Round weights and two-decimal numbers, so every line can be checked by hand.">
 <style>
 :root{
   --bg:#fff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276; --accent-soft:#eaf2f8;
-  --border:#e4e4e4; --code-bg:#f6f8fa; --maxw:1180px; --panel:#fbfcfd;
+  --border:#e4e4e4; --code-bg:#f6f8fa; --maxw:1240px; --panel:#fbfcfd;
   --fwd:#1a5276; --bwd:#b03a2e; --upd:#1e8449;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -31,7 +31,7 @@ header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px s
 .lang-toggle{border:1px solid var(--border)!important}
 main{max-width:var(--maxw);margin:0 auto;padding:20px 20px 60px}
 h1{font-size:1.55rem;margin-bottom:4px}
-.lede{color:var(--muted);font-size:.93rem;margin-bottom:14px;max-width:820px}
+.lede{color:var(--muted);font-size:.93rem;margin-bottom:14px;max-width:860px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px}
 .muted{color:var(--muted)}
 .small{font-size:.85rem}
@@ -59,13 +59,13 @@ input[type=range]{width:130px;accent-color:var(--accent);cursor:pointer;vertical
 .exbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 
 /* formula strip */
-.strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.strip div{background:var(--accent-soft);border-radius:7px;padding:5px 12px;font-size:.88rem;
+.stripx{display:none}
+.stripx div{background:var(--accent-soft);border-radius:7px;padding:5px 12px;font-size:.88rem;
   font-family:ui-monospace,Menlo,monospace;color:#14405c}
 
 /* phases */
 .phases{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.phase{flex:1 1 140px;border:1px solid var(--border);border-radius:8px;padding:6px 11px;background:#fff;font-size:.86rem;font-weight:700;color:var(--muted)}
+.phase{flex:1 1 150px;border:1px solid var(--border);border-radius:8px;padding:6px 11px;background:#fff;font-size:.86rem;font-weight:700;color:var(--muted)}
 .phase .s{display:block;font-size:.72rem;font-weight:600;color:var(--muted)}
 .phase.on{border-color:transparent;box-shadow:0 0 0 2px currentColor}
 .phase.on.p1{color:var(--fwd);background:#f2f8fc}
@@ -73,46 +73,52 @@ input[type=range]{width:130px;accent-color:var(--accent);cursor:pointer;vertical
 .phase.on.p3{color:var(--upd);background:#f1faf4}
 .phase.on .s{color:currentColor}
 
-/* diagram */
+/* the chain diagram */
 .diawrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
 svg.dia{display:block;width:100%;height:auto}
-.edgelbl{font:600 11px ui-monospace,Menlo,monospace;fill:#374151;text-anchor:middle;
+.cblk{font:700 13px ui-monospace,Menlo,monospace;text-anchor:middle;dominant-baseline:middle}
+.cblkl{font:700 12.5px -apple-system,Arial;text-anchor:middle}
+.clab{font:700 12px ui-monospace,Menlo,monospace;text-anchor:middle;
   stroke:#fff;stroke-width:3px;paint-order:stroke}
-.edgelbl.new{fill:var(--upd);font-weight:700}
-.nodelbl{font:700 11.5px ui-monospace,Menlo,monospace;text-anchor:middle;dominant-baseline:middle;
+.bandlbl{font:700 12.5px ui-monospace,Menlo,monospace;text-anchor:middle}
+.chip{font:600 10.5px ui-monospace,Menlo,monospace;text-anchor:middle;
+  stroke:#fff;stroke-width:2.6px;paint-order:stroke}
+.anno{font:700 11px ui-monospace,Menlo,monospace;text-anchor:middle;
   stroke:#fff;stroke-width:3.2px;paint-order:stroke}
-.uname{font:700 10.5px -apple-system,Arial;text-anchor:middle;fill:#6b7280}
-.layname{font:700 11px -apple-system,Arial;text-anchor:middle;fill:#9ca3af;letter-spacing:.4px}
-.banner{font:700 12.5px ui-monospace,Menlo,monospace}
 
 /* readouts */
-.readout{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.readout{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
 .stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:5px 12px;min-width:96px}
 .stat .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .stat .v{font-family:ui-monospace,Menlo,monospace;font-size:.98rem;font-weight:700}
 
-/* equation / update panel */
-.eqpanel{border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 14px;margin-top:10px}
-.eqline{font-size:.9rem;font-family:ui-monospace,Menlo,monospace;margin-bottom:8px;line-height:1.8}
-.urow{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;margin:10px 0}
-.urow + .urow{border-top:1px dashed var(--border);padding-top:10px}
-.usec h5{margin:0 0 4px;font-size:.72rem;font-weight:700;color:var(--muted)}
-.uop{font-weight:800;color:var(--muted);font-size:1.05rem;padding-top:20px}
+/* the step panel */
+.eqpanel{border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 14px;margin-top:12px}
+.stephead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.stephead .tag{font-size:.74rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  border-radius:999px;padding:2px 10px;border:1px solid}
+.stephead .tag.p1{color:var(--fwd);background:#f2f8fc;border-color:#bcd6e6}
+.stephead .tag.p2{color:var(--bwd);background:#fdf3f2;border-color:#e8c9c4}
+.stephead .tag.p3{color:var(--upd);background:#f1faf4;border-color:#bfe0ca}
+.stephead h3{font-size:1rem;margin:0;font-family:ui-monospace,Menlo,monospace}
+.eqline{font-size:.92rem;font-family:ui-monospace,Menlo,monospace;line-height:1.9}
+.secline{margin-top:12px}
+.secline:first-child{margin-top:0}
+.secline > .lhs{font-family:ui-monospace,Menlo,monospace;font-size:.92rem;font-weight:700;color:#14405c;margin-bottom:4px}
+.mrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-family:ui-monospace,Menlo,monospace;font-size:.85rem}
+.uop{font-weight:800;color:var(--muted);font-size:1.02rem}
 .uarith{font-family:ui-monospace,Menlo,monospace;font-size:.83rem;background:#f8fafc;border:1px solid var(--border);
-  border-radius:7px;padding:8px 11px;margin-top:8px;line-height:1.8}
+  border-radius:7px;padding:8px 11px;margin-top:8px;line-height:1.85}
 .uarith b{color:var(--upd)}
-.uchips{margin:8px 0 2px}
-.uchip{display:inline-block;font-size:.76rem;font-weight:700;border-radius:999px;padding:2px 11px;margin:0 6px 5px 0;
-  border:1px solid var(--border);background:#fff;color:var(--muted);font-family:ui-monospace,Menlo,monospace}
-.uchip.done{background:#f1faf4;border-color:#a7d8b8;color:var(--upd)}
-.uchip.now{background:#eef6ff;border-color:#a9c8ea;color:var(--accent)}
 .scrollx{overflow-x:auto}
 
 /* matrices */
 .mwrap{display:inline-block;border-left:2px solid #94a3b8;border-right:2px solid #94a3b8;padding:1px 2px;vertical-align:middle}
-table.mg{border-collapse:collapse;font-family:ui-monospace,Menlo,monospace;font-size:.8rem}
-table.mg td{padding:0 7px;text-align:right;line-height:1.5;white-space:nowrap}
-table.mg.wide td{padding:0 5px;font-size:.76rem}
+table.mg{border-collapse:collapse;font-family:ui-monospace,Menlo,monospace;font-size:.82rem}
+table.mg td{padding:0 8px;text-align:right;line-height:1.55;white-space:nowrap}
+table.mg.wide td{padding:0 6px;font-size:.78rem}
+.mtag{font-size:.72rem;color:var(--muted);font-family:ui-monospace,Menlo,monospace;text-align:center;margin-top:2px}
+.mcol{display:flex;flex-direction:column;align-items:center}
 
 /* small tables */
 table.vt{width:100%;border-collapse:collapse;font-size:.82rem}
@@ -128,7 +134,7 @@ details.ledger summary::-webkit-details-marker{display:none}
 details.ledger summary:before{content:"▸ ";color:var(--accent)}
 details.ledger[open] summary:before{content:"▾ "}
 details.ledger .body{padding:0 16px 14px}
-.tblwrap{max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px}
+.tblwrap{max-height:440px;overflow:auto;border:1px solid var(--border);border-radius:8px}
 table.nt{width:100%;border-collapse:collapse;font-size:.79rem}
 table.nt th{position:sticky;top:0;background:var(--code-bg);text-align:left;font-size:.66rem;letter-spacing:.5px;
   text-transform:uppercase;color:var(--muted);padding:5px 10px;border-bottom:1px solid var(--border);z-index:2}
@@ -163,24 +169,16 @@ html[data-lang="en"] .lang-zh{display:none}
 
 <main>
 
-<h1><span class="lang-en">Backprop in three steps</span><span class="lang-zh">反向传播，三步</span></h1>
-<p class="lede"><span class="lang-en">One small network, one example. Step through <b>forward</b>, <b>backward</b>, then the <b>update</b> — one layer at a time. Round weights, two decimals, nothing precomputed.</span>
-<span class="lang-zh">一个小网络、一个样本，逐步走 <b>前向</b> → <b>反向</b> → <b>更新</b>（一层一层来）。权重是整数分数，数字最多两位小数，没有任何预录。</span></p>
-
-<div class="strip">
-  <div>h = Wz + b</div>
-  <div>z = φ(h)</div>
-  <div>e = (W<sup>T</sup>e) ⊙ φ′(h)</div>
-  <div>∂L/∂W = e z<sup>T</sup></div>
-  <div>W ← W − η ∂L/∂W</div>
-</div>
+<h1><span class="lang-en">Backprop on the computation graph — one layer per step</span><span class="lang-zh">在计算图上做反向传播 —— 每次走一层</span></h1>
+<p class="lede"><span class="lang-en">Each click advances <b>exactly one layer</b>: forward computes <b>z</b>, backward computes <b>e</b>, then that layer's weights are updated.</span>
+<span class="lang-zh">每次点击只走<b>一层</b>：前向算 <b>z</b>，反向算 <b>e</b>，然后更新该层权重。</span></p>
 
 <!-- ============ A · network + example ============ -->
 <div class="card">
   <div class="shead"><h2><span class="lang-en">Network &amp; example</span><span class="lang-zh">网络与样本</span></h2>
     <span class="hint"><span class="lang-en">weights ∈ {±0.5, ±1} · biases start at 0</span><span class="lang-zh">权重 ∈ {±0.5, ±1} · 偏置从 0 开始</span></span></div>
   <div class="row">
-    <div class="ctl"><label><span class="lang-en">layers</span><span class="lang-zh">层数</span> <b id="hlVal">2</b></label>
+    <div class="ctl"><label><span class="lang-en">hidden layers</span><span class="lang-zh">隐藏层数</span> <b id="hlVal">2</b></label>
       <input type="range" id="hl" min="1" max="3" step="1" value="2"></div>
     <div class="ctl"><label><span class="lang-en">width</span><span class="lang-zh">宽度</span> <b id="wVal">2</b></label>
       <input type="range" id="w" min="2" max="4" step="1" value="2"></div>
@@ -199,9 +197,9 @@ html[data-lang="en"] .lang-zh{display:none}
   </div>
 </div>
 
-<!-- ============ B · steps ============ -->
+<!-- ============ B · the graph ============ -->
 <div class="card">
-  <div class="shead"><h2><span class="lang-en">Steps</span><span class="lang-zh">三步</span></h2>
+  <div class="shead"><h2><span class="lang-en">The computation graph</span><span class="lang-zh">计算图</span></h2>
     <div class="row" style="gap:6px">
       <button class="btn" id="back" type="button">◀ <span class="lang-en">back</span><span class="lang-zh">上一步</span></button>
       <button class="btn primary" id="next" type="button"><span class="lang-en">▶ next</span><span class="lang-zh">▶ 下一步</span></button>
@@ -211,19 +209,22 @@ html[data-lang="en"] .lang-zh{display:none}
   </div>
 
   <div class="phases">
-    <div class="phase p1" id="ph1"><span class="lang-en">1 · forward</span><span class="lang-zh">1 · 前向</span></div>
-    <div class="phase p2" id="ph2"><span class="lang-en">2 · backward</span><span class="lang-zh">2 · 反向</span></div>
-    <div class="phase p3" id="ph3"><span class="lang-en">3 · update</span><span class="lang-zh">3 · 更新</span><span class="s" id="ph3sub"></span></div>
+    <div class="phase p1" id="ph1"><span class="lang-en">1 · forward</span><span class="lang-zh">1 · 前向</span><span class="s">h = Wz + b,&nbsp; z = φ(h)</span></div>
+    <div class="phase p2" id="ph2"><span class="lang-en">2 · backward</span><span class="lang-zh">2 · 反向</span><span class="s">e = D (W<sup>T</sup>e)</span></div>
+    <div class="phase p3" id="ph3"><span class="lang-en">3 · update</span><span class="lang-zh">3 · 更新</span><span class="s">W ← W − η ∂L/∂W</span></div>
   </div>
 
-  <div class="diawrap"><svg class="dia" id="dia" viewBox="0 0 1080 440" preserveAspectRatio="xMidYMid meet"></svg></div>
-  <p class="small muted" id="numhint" style="margin:6px 0 0"></p>
+  <div class="diawrap"><svg class="dia" id="dia" viewBox="0 0 1080 356" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+  <p class="small muted" style="margin:8px 0 0;max-width:900px">
+    <span class="lang-en">Above each layer: the update of that layer, its weight <b>matrix</b>, and what the step turns it into. A matrix is written row by row, <code>[a b ; c d]</code> (<code>…</code> = entries that did not fit); a vector component goes in brackets, <code>e<sub>2</sub>[1]</code>. In <code>∂L/∂W<sub>l</sub> = e<sub>l</sub>(z<sub>l−1</sub>)<sup>T</sup></code> the <span style="color:#b03a2e">red <b>e</b></span> is the error left by the backward pass, and the <span style="color:#1a5276">blue <b>z</b></span> is the activation carried by the forward pass — the two arrows follow each one to where it is made.</span>
+    <span class="lang-zh">每层上方：该层的更新、该层的权重<b>矩阵</b>，以及这一步把它变成什么。矩阵按行写，<code>[a b ; c d]</code>（<code>…</code> 表示放不下的元素）；向量的分量放方括号里，<code>e<sub>2</sub>[1]</code>。在 <code>∂L/∂W<sub>l</sub> = e<sub>l</sub>(z<sub>l−1</sub>)<sup>T</sup></code> 里，<span style="color:#b03a2e">红色的 <b>e</b></span> 是反向传播留下的误差，<span style="color:#1a5276">蓝色的 <b>z</b></span> 是前向传播带过来的激活；两条箭头各自指到它产生的地方。</span></p>
 
   <div class="readout">
     <div class="stat"><div class="k">y</div><div class="v" id="r-y">—</div></div>
     <div class="stat"><div class="k">p</div><div class="v" id="r-p">—</div></div>
     <div class="stat"><div class="k">L</div><div class="v" id="r-l">—</div></div>
-    <div class="stat"><div class="k"><span class="lang-en">updated</span><span class="lang-zh">已更新</span></div><div class="v" id="r-up">0/3</div></div>
+    <div class="stat"><div class="k"><span class="lang-en">layer</span><span class="lang-zh">当前层</span></div><div class="v" id="r-up">—</div></div>
   </div>
 
   <div class="eqpanel" id="eqp"></div>
@@ -231,7 +232,7 @@ html[data-lang="en"] .lang-zh{display:none}
 
 <!-- ============ C · ledger ============ -->
 <details class="ledger" id="ledger">
-  <summary><span class="lang-en">Ledger — every node, with the numbers filled in</span><span class="lang-zh">账本 —— 每个节点代入数字</span></summary>
+  <summary><span class="lang-en">Ledger — every node of this example, with the numbers filled in</span><span class="lang-zh">账本 —— 本样本每个节点都代入数字</span></summary>
   <div class="body">
     <div class="row" style="gap:6px;margin-bottom:8px">
       <button class="btn sm" id="line" type="button"><span class="lang-en">+1 line</span><span class="lang-zh">下一行</span></button>
@@ -249,10 +250,10 @@ html[data-lang="en"] .lang-zh{display:none}
 </details>
 
 <div class="footer-note">
-  <p><span class="lang-en">Weights are drawn from {±0.5, ±1} and every bias starts at 0, so <code>h = Wz + b</code> is exact arithmetic; the draws are also checked so that <b>every</b> weight gets a non-zero gradient on all four examples, and changes visibly at the display precision.</span>
-     <span class="lang-zh">权重取自 {±0.5, ±1}，偏置全部从 0 开始，所以 <code>h = Wz + b</code> 是精确运算；抽到的权重还经过筛选：四组样本下<b>每个</b>权重的梯度都非零，且在显示精度下都能看出变化。</span></p>
-  <p style="margin-top:6px"><span class="lang-en">Numbers are shown to two decimals with trailing zeros removed. Hover an edge for its exact value. <b>←</b> / <b>→</b> step too. Pressing <b>◀ back</b> in the update phase restores the weights exactly.</span>
-     <span class="lang-zh">数字显示两位小数并去掉末尾的 0；鼠标悬停在边上可看精确值。<b>←</b> / <b>→</b> 也能逐步走。在更新阶段按 <b>◀ 上一步</b> 会精确还原权重。</span></p>
+  <p><span class="lang-en">The graph follows <b>Fig. 3.2 “Computational Graph for Backpropagation”</b> of the lecture notes (Chapter 3). Weights come from {±0.5, ±1} and biases start at 0, so every number on the page is exact arithmetic. Two decimals; hover a cell for more. <b>←</b>/<b>→</b> step too.</span>
+     <span class="lang-zh">这张图照搬讲义（第 3 章）里的 <b>Fig. 3.2《Computational Graph for Backpropagation》</b>。权重取自 {±0.5, ±1}、偏置从 0 开始，所以页面上的数字都是精确运算。显示两位小数，悬停看更多。<b>←</b>/<b>→</b> 也能逐步走。</span></p>
+  <p style="margin-top:6px"><span class="lang-en">The output layer is sigmoid + binary cross-entropy, so <code>e<sub>L</sub> = ∂L/∂h<sub>L</sub> = p − y</code>. The notes write the same error as <code>e = h<sub>L</sub> − y</code> for the quadratic loss.</span>
+     <span class="lang-zh">输出层是 sigmoid + 二元交叉熵，所以 <code>e<sub>L</sub> = ∂L/∂h<sub>L</sub> = p − y</code>；讲义里对平方损失把同一个误差写成 <code>e = h<sub>L</sub> − y</code>。</span></p>
 </div>
 
 </main>
@@ -260,8 +261,12 @@ html[data-lang="en"] .lang-zh{display:none}
 <script>
 /* ==========================================================================
    ME2605 · Lec 2 · Part 1 — Backprop Lab
-   One small network, one example, three phases: forward → backward → update.
-   The update goes one weight layer at a time. Nothing is precomputed.
+   One small network, one example. The page walks the computation graph of
+   Fig. 3.2 one layer per step:
+       phase 1  forward   layer 1 … L        h = Wz+b,  z = phi(h)
+       phase 2  backward  layer L … 1        e = D (W^T e),  then dL/dW = e z^T
+       phase 3  update    layer L … 1        W <- W - eta * dL/dW
+   Nothing is precomputed, and every number can be checked by hand.
    ========================================================================== */
 
 /* ---------------------------------------------------------------- utilities */
@@ -286,16 +291,24 @@ function f4(x){
 }
 /* for a factor in a product, a negative number reads better in parentheses */
 function fp(x){ var t=f(x); return (t.charAt(0)==='-'||t.charAt(0)==='−') ? '('+t+')' : t; }
-function sup(t){ return '<sup>'+t+'</sup>'; }
+/* A LAYER index is always a SUBSCRIPT: W2, not W².  The two-matrix warm-up on
+   the slides already writes W1 and W2 this way, and a layer number reads as an
+   index, not as a power.  Powers keep their superscript (`z2` squared, 10^-5). */
 function sub(t){ return '<sub>'+t+'</sub>'; }
-function Wl(l){ return 'W'+sup(l); }
-function zl(l){ return 'z'+sup(l); }
-function hl(l){ return 'h'+sup(l); }
-function el(l){ return 'e'+sup(l); }
-/* the diagram has no <sup>, so it uses the unicode forms */
-var SUPN=['\u2070','\u00b9','\u00b2','\u00b3','\u2074','\u2075'];
-var SUBN=['\u2080','\u2081','\u2082','\u2083','\u2084','\u2085'];
-function hsvg(l){ return 'h\u207d'+SUPN[l]+'\u207e'; }
+function Wl(l){ return 'W'+sub(l); }
+function zl(l){ return 'z'+sub(l); }
+function hl(l){ return 'h'+sub(l); }
+function el(l){ return 'e'+sub(l); }
+function Dl(l){ return 'D'+sub(l); }
+/* A vector component is NOT a layer number: it goes in brackets, e_2[1], so
+   that a subscript is always and only a layer. */
+function comp(sym,l,i){ return sym+sub(l)+'['+i+']'; }
+/* Inside SVG, HTML <sup>/<sub> do not exist, so an index is a shifted tspan.
+   `baseline-shift` moves that tspan alone; `dy` would need undoing later. */
+function sb(x,size){ return '<tspan font-size="'+(size||11)+'" baseline-shift="sub">'+x+'</tspan>'; }
+function wsvg(l){ return 'W'+sb(l); }
+function dsvg(l){ return 'D'+sb(l); }
+
 
 /* ------------------------------------------------------------------- data */
 /* The four corners of the square, labelled by XOR of the two signs. Inputs are
@@ -346,9 +359,7 @@ function richDraw(net){
     acts.push(fw.acts); zs.push(fw.zs); ps.push(fw.p);
     es.push(backward(net,fw,EX[i].y));
   }
-  /* 1. no hidden unit may be a clone of another, or its mirror image: with these
-        weights that is "one row is a scalar multiple of another", which makes the
-        layer rank 1 and the diagram show two mirrored nodes */
+  /* 1. no hidden unit may be a clone of another, or its mirror image */
   for(var lr=1;lr<net.dims.length-1;lr++){
     var lay=net.layers[lr-1];
     for(var a=0;a<lay.nout;a++) for(var bm=a+1;bm<lay.nout;bm++){
@@ -424,7 +435,8 @@ function lossOf(p,y){
   p=Math.min(Math.max(p,1e-12),1-1e-12);
   return -(y?Math.log(p):Math.log(1-p));
 }
-/* backward. l is the 0-indexed weight layer: its error is bw[l].delta. */
+/* backward. l is the 0-indexed weight layer: its error is bw[l].delta, i.e.
+   e^(l+1) in the 1-based notation used on the page. */
 function backward(net,fw,y){
   var G=[], d=new Float64Array(1);
   d[0]=fw.p-y;
@@ -449,8 +461,11 @@ function backward(net,fw,y){
   return G;
 }
 
-/* ==================================================================== state */
-var state={ hl:2, w:2, act:"tanh", eta:1, seed:1, ex:0, phase:1, up:0,
+/* ==================================================================== state
+   state.step counts COMPLETED steps inside the current phase, 0 … L.
+   In phase 1 the layer being computed is 0-based index `step`;
+   in phases 2 and 3 it is `L-1-step` (we walk from the output layer back). */
+var state={ hl:2, w:2, act:"tanh", eta:1, seed:1, ex:0, phase:1, step:0,
             reveal:0, auto:false, speed:900 };
 var net=null, fw=null, bw=null, snap=null;
 var NROW=0, NFWD=0;
@@ -459,6 +474,10 @@ var autoTimer=null;
 function dims(){ var d=[2]; for(var i=0;i<state.hl;i++) d.push(state.w); d.push(1); return d; }
 function exVec(){ return new Float64Array(EX[state.ex].x); }
 function exY(){ return EX[state.ex].y; }
+/* the 0-based layer index the current step is about */
+function actL(){ return state.phase===1 ? state.step : net.L-1-state.step; }
+/* phases 1 and 2 hand over automatically; phase 3 stops on "all layers done" */
+function done(){ return state.phase===3 && state.step>=net.L; }
 
 function cloneWeights(){
   return {W:net.layers.map(function(ly){ return new Float64Array(ly.W); }),
@@ -468,20 +487,294 @@ function restoreWeights(){
   if(!snap) return;
   for(var l=0;l<net.L;l++){ net.layers[l].W.set(snap.W[l]); net.layers[l].b.set(snap.b[l]); }
 }
-function updatedW(l,i){ return snap.W[l][i]-state.eta*bw[l].gW[i]; }
-function updatedB(l,i){ return snap.b[l][i]-state.eta*bw[l].gb[i]; }
+function doLayerUpdate(l){
+  var ly=net.layers[l];
+  for(var i=0;i<ly.W.length;i++) ly.W[i]=snap.W[l][i]-state.eta*bw[l].gW[i];
+  for(var i2=0;i2<ly.b.length;i2++) ly.b[i2]=snap.b[l][i2]-state.eta*bw[l].gb[i2];
+}
 
 /* ================================================================== diagram */
-function layout(){
-  var d=net.dims, n=d.length, X0=104, X1=812, pos=[];
-  for(var c=0;c<n;c++){
-    var m=d[c], col=[], span=Math.min(240, m*82);
-    var x = n<=1 ? X0 : X0+(X1-X0)*c/(n-1);
-    for(var j=0;j<m;j++)
-      col.push({x:x, y:222+(m<=1?0:(j-(m-1)/2)*(span/Math.max(1,m-1)))});
-    pos.push(col);
+function chainGeom(){
+  var L=net.L, WTOT=1080, PAD=34, bwX=62, bwL=118;
+  var avail=WTOT-2*PAD-bwX-bwL;
+  /* Give the weight blocks the width they need and let the gaps take what is
+     left, so the horizontal pitch per layer is as large as possible: the pitch
+     is the budget the per-layer annotation has to fit in. */
+  var gap=Math.max(46,(avail-L*150)/(L+1));
+  var bw=Math.min(150,(avail-(L+1)*gap)/L);
+  var total=bwX+bwL+L*bw+(L+1)*gap, start=(WTOT-total)/2;
+  var xs=[], ws=[], cur;
+  xs[0]=start; ws[0]=bwX;
+  cur=start+bwX+gap;
+  for(var l=1;l<=L;l++){ xs[l]=cur; ws[l]=bw; cur+=bw+gap; }
+  xs[L+1]=cur; ws[L+1]=bwL;
+  var cx=[], gc=[];
+  for(var b=0;b<=L+1;b++) cx.push(xs[b]+ws[b]/2);
+  for(var c=0;c<=L;c++) gc.push((xs[c]+ws[c]+xs[c+1])/2);
+  return {xs:xs, ws:ws, cx:cx, gc:gc, bw:bw, pitch:bw+gap, gap:gap};
+}
+/* the three shades a chain element can be in */
+var C_DONE="#e6eaee", C_PEND="#f1f4f7", S_DONE="#9aa8b5", S_PEND="#d3dae1";
+/* a matrix written the way this page writes it: rows separated by ';'.
+   A 2x2 is therefore `[a b ; c d]` — unmistakably a matrix, never a flat
+   4-vector.  `...` marks the entries that did not fit. */
+function tile(vals,rows,cols,maxr,maxc){
+  maxr=maxr||2; maxc=maxc||3;
+  var R=Math.min(rows,maxr), C=Math.min(cols,maxc), out=[];
+  for(var i=0;i<R;i++){
+    var cells=[];
+    for(var j=0;j<C;j++) cells.push(f(vals[i*cols+j]));
+    if(cols>C) cells.push('\u2026');
+    out.push(cells.join(' '));
   }
-  return pos;
+  if(rows>R) out.push('\u2026');
+  return '['+out.join(' ; ')+']';
+}
+/* the widest tile that still fits in `budget` characters */
+function fitTile(vals,rows,cols,budget){
+  var tries=[[2,3],[2,2],[1,3],[1,2]];
+  for(var t=0;t<tries.length;t++){
+    var s=tile(vals,rows,cols,tries[t][0],tries[t][1]);
+    if(s.length<=budget) return s;
+  }
+  return tile(vals,rows,cols,1,1);
+}
+function drawChain(){
+  var L=net.L, pos=chainGeom(), ph=state.phase, a=actL(), o=[];
+  var FW="#1a5276", BW="#b03a2e", UP="#1e8449";
+  var yBandF=6, yBandB=330, hBand=22;
+  var yA1=43, yA2=58, yA3=73;          /* the update, above the layer it updates */
+  var yLab=92, yBlk=102, hBlk=78;
+  var yChip=194, hChip=58;
+  var yE=278, yLine=302, hOp=36, yOp=yLine-hOp/2;
+  var chipW=Math.max(pos.bw+24,156);
+
+  o.push('<defs>'
+   +'<marker id="arF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+   +'<path d="M0,0 L10,5 L0,10 z" fill="'+FW+'"/></marker>'
+   +'<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+   +'<path d="M0,0 L10,5 L0,10 z" fill="'+BW+'"/></marker>'
+   +'<marker id="arG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
+   +'<path d="M0,0 L10,5 L0,10 z" fill="#8fa3b5"/></marker>'
+   /* the two leader arrows below are thin, so their heads are a fixed size
+      instead of scaling with the stroke */
+   +'<marker id="arFs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7"'
+   +' markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="'+FW+'"/></marker>'
+   +'<marker id="arBs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7"'
+   +' markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="'+BW+'"/></marker>'
+   +'</defs>');
+
+  /* ---- the two pass bands ---- */
+  o.push('<rect x="20" y="'+yBandF+'" width="1040" height="'+hBand+'" rx="6" fill="#f2f8fc"/>');
+  o.push('<text class="bandlbl" x="540" y="'+(yBandF+15)+'" fill="'+FW+'">FORWARD PASS \u2014 compute '
+        +'z'+sb('0')+', z'+sb('1')+', \u2026, z'+sb('L')+'    (h = Wz + b,   z = \u03c6(h))</text>');
+  o.push('<rect x="20" y="'+yBandB+'" width="1040" height="'+hBand+'" rx="6" fill="#fdf3f2"/>');
+  o.push('<text class="bandlbl" x="540" y="'+(yBandB+15)+'" fill="'+BW+'">BACKWARD PASS \u2014 compute '
+        +'e'+sb('L')+', \u2026, e'+sb('1')+'    (e = D (W\u1d40e))</text>');
+
+  /* ================= the update, written above its own layer ================
+     Every step of every phase carries the update of each layer in the picture
+     itself: the expression, this layer's weight MATRIX with its numbers, and
+     what the step turns it into.  That is what lets the diagram and the panel
+     be read side by side.  `annoState` mirrors the walk: in the backward pass
+     layer l's error is known once the walk has reached it; in the update pass
+     the layers already passed have already been rewritten. */
+  function annoState(li){
+    if(ph===1) return "pend";
+    return li>a ? "done" : (li===a ? "active" : "pend");
+  }
+  for(var li0=0;li0<L;li0++){
+    var b0=li0+1, xa=pos.cx[b0], ly0=net.layers[li0], sa=annoState(li0);
+    var colA = sa==="active" ? UP : (sa==="done" ? "#2f6b4a" : "#9aa8b5");
+    var Wb = (ph===3 && snap) ? snap.W[li0] : ly0.W;
+    var gl = bw[li0].gW, Wa = new Float64Array(gl.length);
+    for(var q0=0;q0<gl.length;q0++) Wa[q0]=Wb[q0]-state.eta*gl[q0];
+    /* the numeric lines are set a little smaller, and the tile is chosen to fit
+       the pitch: 6.0 units per character, minus the "W_1 = " prefix. */
+    var budget=Math.floor((pos.pitch-12)/6.0)-6;
+    o.push('<text class="anno" x="'+xa.toFixed(1)+'" y="'+yA1+'" fill="'+colA+'">'
+          +'W'+sb(b0)+' \u2190 W'+sb(b0)+' \u2212 \u03b7 e'+sb(b0)+' z'+sb(li0)+'\u1d40</text>');
+    if(sa!=="pend"){
+      o.push('<text class="anno" style="font-size:10px" x="'+xa.toFixed(1)+'" y="'+yA2+'" fill="'+colA+'">'
+            +'W'+sb(b0)+' = '+fitTile(Wb,ly0.nout,ly0.nin,budget)+'</text>');
+      o.push('<text class="anno" style="font-size:10px" x="'+xa.toFixed(1)+'" y="'+yA3+'" fill="'+colA+'">'
+            +'W'+sb(b0)+'\u2032 = '+fitTile(Wa,ly0.nout,ly0.nin,budget)+'</text>');
+    }
+  }
+
+  /* ---- connectors between the blocks: z_0 \u2026 z_(L-1), then h_L ---- */
+  function connState(c){
+    if(ph===1) return c<=state.step ? "done" : (c===state.step+1 ? "active" : "pend");
+    return "done";
+  }
+  for(var c=0;c<=L;c++){
+    var cst=connState(c), x=pos.gc[c];
+    var lab = (c===L) ? ('h'+sb(L)) : ('z'+sb(c));
+    var v   = (c===L) ? f(fw.zs[L-1][0])
+            : (c===0 ? "["+EX[state.ex].x.join(",")+"]" : vecChip(fw.acts[c], pos.pitch-24));
+    var col = cst==="active" ? FW : (cst==="done" ? "#3d6d8c" : "#b6c2cd");
+    if(cst!=="pend")
+      o.push('<text class="clab" x="'+x.toFixed(1)+'" y="'+yLab+'" fill="'+col+'">'+lab+'='+v+'</text>');
+    else
+      o.push('<text class="clab" x="'+x.toFixed(1)+'" y="'+yLab+'" fill="#c4ced7">'+lab+'</text>');
+    var x1=pos.xs[c]+pos.ws[c], x2=pos.xs[c+1];
+    var acol = cst==="active" ? FW : (cst==="done" ? "#8fa3b5" : "#dde3e8");
+    var aw = cst==="active" ? 3.2 : (cst==="done" ? 2.2 : 1.6);
+    var xa1=(c===0?x1:x1+6), xa2=x2-4;
+    o.push('<line x1="'+xa1.toFixed(1)+'" y1="'+(yBlk+hBlk/2)+'" x2="'+(xa2-(cst==="active"?6:0)).toFixed(1)
+          +'" y2="'+(yBlk+hBlk/2)+'" stroke="'+acol+'" stroke-width="'+aw+'"'
+          + (c===L?'':' marker-end="url(#arF)"')+'/>');
+  }
+
+  /* ---- the blocks ---- */
+  function blkStyle(b){
+    if(b===0) return {fill:"#eef4f8", stroke:"#c3d5e0", text:"#111827"};
+    if(b===L+1) return {fill:"#fdf6e3", stroke:"#d9c9a3", text:"#B45309"};
+    var li=b-1;
+    if(ph===1){
+      if(li<a) return {fill:"#f4f8fb", stroke:"#bcd6e6", text:"#14405c"};
+      if(li===a) return {fill:"#e3f0f9", stroke:FW, text:"#0f3d5c", wide:true, strokeW:3.2};
+      return {fill:"#f5f7f9", stroke:"#dbe2e8", text:"#8b97a3"};
+    }
+    if(ph===2){
+      if(li===a) return {fill:"#fdeceb", stroke:BW, text:"#7d251a", wide:true, strokeW:3.2};
+      return {fill:"#f7f8fa", stroke:"#dbe2e8", text:"#5c6672"};
+    }
+    if(li>a) return {fill:"#f1faf4", stroke:"#8ecfa6", text:"#14532d"};
+    if(li===a) return {fill:"#e2f6ea", stroke:UP, text:"#0f5132", wide:true, strokeW:3.2};
+    return {fill:"#f7f8fa", stroke:"#dbe2e8", text:"#8b97a3"};
+  }
+  for(var b=0;b<=L+1;b++){
+    var s=blkStyle(b), x=pos.xs[b], w=pos.ws[b];
+    o.push('<rect x="'+x.toFixed(1)+'" y="'+yBlk+'" width="'+w.toFixed(1)+'" height="'+hBlk+'" rx="10" fill="'
+          +s.fill+'" stroke="'+s.stroke+'" stroke-width="'+(s.strokeW||1.6)+'"/>');
+    var lines;
+    if(b===0) lines=['x','z'+sb('0')];
+    else if(b===L+1) lines=['Loss \u2113(h'+sb(L)+', y)', '= '+f(lossOf(fw.p,exY()))];
+    else {
+      var li2=b-1;
+      lines=[ (b===L ? wsvg(L) : wsvg(b)+', \u03c6'), 'z'+sb(b)+' = \u03c6(h'+sb(b)+')' ];
+      if(b===L) lines=[wsvg(L), 'h'+sb(L)+' \u2192 p'];
+    }
+    o.push('<text class="cblk" x="'+(x+w/2).toFixed(1)+'" y="'+(yBlk+hBlk/2-10)+'" fill="'+s.text+'">'+lines[0]+'</text>');
+    o.push('<text class="cblkl" x="'+(x+w/2).toFixed(1)+'" y="'+(yBlk+hBlk/2+12)+'" fill="'+(b===0||b===L+1?'#6b7280':s.text)+'">'+lines[1]+'</text>');
+  }
+
+  /* ---- the gradient of each weight layer: the numbers are a MATRIX ---- */
+  for(var li3=0;li3<L;li3++){
+    var b3=li3+1, cxx=pos.cx[b3], ly3=net.layers[li3];
+    var st3;
+    if(ph===1) st3="pend";
+    else st3 = li3>a ? "done" : (li3===a ? "active" : "pend");
+    var f3, s3, t3;
+    if(st3==="active"){ f3="#eafaf0"; s3=UP; t3="#0f5132"; }
+    else if(st3==="done"){ f3="#f6f8fa"; s3="#cbd5dd"; t3="#4b5563"; }
+    else { f3="#fafbfc"; s3="#e3e8ec"; t3="#8b97a3"; }
+    o.push('<rect x="'+(cxx-chipW/2).toFixed(1)+'" y="'+yChip+'" width="'+chipW.toFixed(1)+'" height="'+hChip
+          +'" rx="7" fill="'+f3+'" stroke="'+s3+'" stroke-width="'+(st3==="active"?2.6:1.4)+'"/>');
+    /* the expression: e in the backward colour, z in the forward colour,
+       because the two arrows below point at where each one is computed */
+    o.push('<text class="chip" x="'+cxx.toFixed(1)+'" y="'+(yChip+16)+'" fill="'+t3+'">'
+          +'\u2202L/\u2202W'+sb(b3)+' = <tspan fill="'+BW+'">e'+sb(b3)+'</tspan> '
+          +'<tspan fill="'+FW+'">(z'+sb(li3)+')\u1d40</tspan></text>');
+    var gtxt = (ph===1) ? '\u2014'
+              : fitTile(bw[li3].gW, ly3.nout, ly3.nin, Math.floor((chipW-14)/6.0));
+    o.push('<text class="chip" style="font-size:10px" x="'+cxx.toFixed(1)+'" y="'+(yChip+35)+'" fill="'+t3+'">'+gtxt+'</text>');
+  }
+
+  /* ---- where e and z in that formula come from -------------------------
+     Two arrows per layer, both pointing AT the place the quantity is made:
+     e_l is the error the backward pass leaves at this block, z_(l-1) is the
+     activation carried along the connector that feeds it.  Drawn twice, the
+     first pass in white, so the line reads over the grey connectors. */
+  for(var li6=0;li6<L;li6++){
+    var shown = (ph===2 && li6>=a) || (ph===3);
+    if(!shown) continue;
+    var b6=li6+1, cx6=pos.cx[b6], gx6=pos.gc[li6], lx=cx6-chipW/2, yin=yChip+21;
+    var dz='M'+lx.toFixed(1)+' '+yin+' L'+gx6.toFixed(1)+' '+yin
+          +' L'+gx6.toFixed(1)+' '+(yLab+9);
+    var de='M'+cx6.toFixed(1)+' '+(yChip+hChip+2)+' L'+cx6.toFixed(1)+' '+(yE-10);
+    o.push('<path d="'+dz+'" fill="none" stroke="#fff" stroke-width="3.4" opacity="0.85"/>');
+    o.push('<path d="'+dz+'" fill="none" stroke="'+FW+'" stroke-width="1.4" marker-end="url(#arFs)"/>');
+    o.push('<path d="'+de+'" fill="none" stroke="#fff" stroke-width="3.4" opacity="0.85"/>');
+    o.push('<path d="'+de+'" fill="none" stroke="'+BW+'" stroke-width="1.4" marker-end="url(#arBs)"/>');
+  }
+
+  /* ---- backward path: the loss, then one operator box per weight layer ---- */
+  o.push('<line x1="'+pos.cx[L+1].toFixed(1)+'" y1="'+(yBlk+hBlk)+'" x2="'+pos.cx[L+1].toFixed(1)+'" y2="'
+        +(yLine-2)+'" stroke="'+(ph===1?"#dde3e8":BW)+'" stroke-width="2"/>');
+  if(ph>=2){
+    var lastSt = (ph===2 && a===L-1) ? "active" : "done";
+    o.push('<rect x="'+(pos.cx[L+1]-62).toFixed(1)+'" y="'+(yBlk+hBlk+26)+'" width="124" height="34" rx="7" fill="'
+          + (lastSt==="active"?"#fdeceb":"#f8fafb") +'" stroke="'+(lastSt==="active"?BW:"#e0d6d4")+'" stroke-width="'
+          + (lastSt==="active"?2.6:1.4)+'"/>');
+    o.push('<text class="chip" x="'+pos.cx[L+1].toFixed(1)+'" y="'+(yBlk+hBlk+47)+'" fill="#7d251a">\u2202\u2113/\u2202h'+sb(L)+' = p \u2212 y</text>');
+  }
+  /* e labels at the block centres, above the backward line */
+  for(var li4=0;li4<L;li4++){
+    var vis;
+    if(ph===1) vis=false;
+    else if(ph===2) vis = (li4>=a);
+    else vis=true;
+    if(!vis) continue;
+    var isAct = (ph===2 && li4===a);
+    var txt = 'e'+sb(li4+1)+' = '+vecChip(bw[li4].delta, pos.pitch-58);
+    o.push('<text class="clab" x="'+pos.cx[li4+1].toFixed(1)+'" y="'+yE+'" fill="'
+          +(isAct?BW:"#8a5a52")+'">'+txt+'</text>');
+  }
+  /* the backward line itself — under the operator boxes, so it never cuts them */
+  var xL=pos.cx[L+1], xR=pos.cx[1];
+  o.push('<line x1="'+xL.toFixed(1)+'" y1="'+yLine+'" x2="'+(xR+2).toFixed(1)+'" y2="'+yLine+'" stroke="'
+        + (ph===1?"#dde3e8":BW) +'" stroke-width="2.4" marker-end="url(#arB)"/>');
+  /* the operator boxes sit on the backward line, in the gaps */
+  for(var li5=0;li5<L-1;li5++){
+    var g=li5+1, x5=pos.gc[g];   /* D_l (W_(l+1))^T takes e_(l+1) to e_l */
+    var vis5;
+    if(ph===1) vis5="pend";
+    else if(ph===2) vis5 = li5>a ? "done" : (li5===a ? "active" : "pend");
+    else vis5="done";
+    var f5,s5,t5;
+    if(vis5==="active"){ f5="#fdeceb"; s5=BW; t5="#7d251a"; }
+    else if(vis5==="done"){ f5="#f8fafb"; s5="#e0d6d4"; t5="#8a5a52"; }
+    else { f5="#fafbfc"; s5="#e6ebef"; t5="#8b97a3"; }
+    o.push('<rect x="'+(x5-52).toFixed(1)+'" y="'+yOp+'" width="104" height="'+hOp+'" rx="7" fill="'+f5
+          +'" stroke="'+s5+'" stroke-width="'+(vis5==="active"?2.6:1.4)+'"/>');
+    o.push('<text class="chip" x="'+x5.toFixed(1)+'" y="'+(yOp+23)+'" style="font-size:11.5px" fill="'+t5+'">'+dsvg(g)+'('+wsvg(g+1)+')\u1d40</text>');
+  }
+
+  $("dia").innerHTML=o.join("");
+}
+/* the chip is narrow: show the whole vector only when it fits, else the first two */
+function vecChip(a,maxPx){
+  var full=vecShort(a);
+  if(a.length<=2 || full.length*6.4<=maxPx) return full;
+  return '['+f(a[0])+', '+f(a[1])+', \u2026]';
+}
+function vecShort(a){
+  var s=[];
+  for(var i=0;i<a.length;i++) s.push(f(a[i]));
+  return "["+s.join(", ")+"]";
+}
+function vecT(a){ return '['+Array.prototype.map.call(a,f).join(', ')+']'; }
+
+/* ============================================================ html helpers */
+function matT(vals,rows,cols,opt){
+  opt=opt||{};
+  var o=['<table class="mg'+(opt.wide?" wide":"")+'">'];
+  for(var i=0;i<rows;i++){
+    o.push('<tr>');
+    for(var j=0;j<cols;j++){
+      var v=vals[i*cols+j];
+      var heat = opt.heat===1 ? tint(v,opt.heatAbs||1) : null;
+      o.push('<td'+(heat?' style="background:'+heat+'"':'')+' title="'+f4(v)+'">'+f(v)+'</td>');
+    }
+    o.push('</tr>');
+  }
+  o.push('</table>');
+  return '<span class="mwrap">'+o.join('')+'</span>';
+}
+function mcol(vals,rows,cols,tag,opt){
+  return '<div class="mcol">'+matT(vals,rows,cols,opt)+'<div class="mtag">'+tag+'</div></div>';
 }
 function gcol(g,maxAbs){
   var t = maxAbs>1e-12 ? Math.min(1,Math.abs(g)/maxAbs) : 0;
@@ -494,219 +787,127 @@ function tint(g,maxAbs){
   var a = 0.14+0.46*t;
   return "rgb("+Math.round(255-(255-c[0])*a)+","+Math.round(255-(255-c[1])*a)+","+Math.round(255-(255-c[2])*a)+")";
 }
-function drawDia(){
-  var pos=layout(), L=net.L, up=state.up, ph=state.phase;
-  /* the update runs from the output layer back to the input layer */
-  var target = L-1-up;
-  var cur=(ph===3 && up<L) ? target : -1;
-  var nEdge=0;
-  for(var e=0;e<L;e++) nEdge+=net.layers[e].nout*net.layers[e].nin;
-  var showNums=(nEdge<=14);
-  var maxAbs=0;
-  if(ph>=2) for(var l0=0;l0<L;l0++){ var g0=bw[l0].gW;
-    for(var i0=0;i0<g0.length;i0++) maxAbs=Math.max(maxAbs,Math.abs(g0[i0])); }
-  var o=[];
-  o.push('<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
-        +'<path d="M0,0 L10,5 L0,10 z" fill="#1a5276"/></marker></defs>');
 
-  /* edges */
-  var gap=26;
-  for(var l=0;l<L;l++){
-    var ly=net.layers[l], A=pos[l], B=pos[l+1];
-    for(var oi=0;oi<ly.nout;oi++) for(var ki=0;ki<ly.nin;ki++){
-      var idx=oi*ly.nin+ki, w=ly.W[idx], gv=bw[l].gW[idx];
-      var x1=A[ki].x, y1=A[ki].y, x2=B[oi].x, y2=B[oi].y;
-      var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
-      var ux=dx/len, uy=dy/len;
-      var sx=x1+ux*gap, sy=y1+uy*gap, ex2=x2-ux*gap, ey2=y2-uy*gap;
-      var col="#dbe1e6", wdt=1.6, lbl="", lbl2="", tip="";
-      if(ph===1){
-        col="#a9bcca"; wdt=1.8; lbl=f(w); tip="w = "+f4(w);
-      } else if(ph===2){
-        var t=maxAbs>1e-12?Math.min(1,Math.abs(gv)/maxAbs):0;
-        col=gcol(gv,maxAbs); wdt=1.2+4.2*t; lbl=f(gv);
-        tip="∂L/∂w = "+f4(gv)+"   (w = "+f4(w)+")";
-      } else {
-        if(l===cur){
-          col="#1e8449"; wdt=3.6; lbl=f(snap.W[l][idx]); lbl2="→"+f(updatedW(l,idx));
-          tip="w: "+f4(snap.W[l][idx])+" → "+f4(updatedW(l,idx))+"   (∂L/∂w = "+f4(gv)+")";
-        } else if(l>target){
-          col="#84c199"; wdt=2.2; lbl=f(w); tip="updated: w = "+f4(w);
-        } else {
-          col="#e3e8ec"; wdt=1.5; lbl=f(w); tip="not updated yet: w = "+f4(w);
-        }
-      }
-      o.push('<g><title>'+tip+'</title><line x1="'+sx.toFixed(1)+'" y1="'+sy.toFixed(1)
-            +'" x2="'+ex2.toFixed(1)+'" y2="'+ey2.toFixed(1)+'" stroke="'+col
-            +'" stroke-width="'+wdt.toFixed(2)+'" stroke-linecap="round"/></g>');
-      if(lbl && showNums){
-        var tt=(ki===oi)?0.5:(ki<oi?0.33:0.67);
-        var mx=sx+(ex2-sx)*tt-uy*10, my=sy+(ey2-sy)*tt+ux*10;
-        if(lbl2){
-          o.push('<text class="edgelbl" x="'+mx.toFixed(1)+'" y="'+(my-6).toFixed(1)+'">'+lbl+'</text>');
-          o.push('<text class="edgelbl new" x="'+mx.toFixed(1)+'" y="'+(my+5).toFixed(1)+'">'+lbl2+'</text>');
-        } else {
-          o.push('<text class="edgelbl" x="'+mx.toFixed(1)+'" y="'+my.toFixed(1)+'">'+lbl+'</text>');
-        }
-      }
-    }
-  }
-
-  /* nodes */
-  var dimsArr=net.dims, nCols=dimsArr.length;
-  for(var c=0;c<nCols;c++){
-    var col2=pos[c], isIn=(c===0), isOut=(c===nCols-1), lyrIdx=c-1;
-    for(var j=0;j<col2.length;j++){
-      var x=col2[j].x, y=col2[j].y, val, fill="#ffffff", stroke="#ccd6dd", sw=1.4;
-      if(isIn){ val=EX[state.ex].x[j]; fill="#eef4f8"; }
-      else {
-        val=fw.acts[c][j];
-        if(ph>=2){
-          var dv=bw[c-1].delta[j], mx3=0;
-          for(var q3=0;q3<bw[c-1].delta.length;q3++) mx3=Math.max(mx3,Math.abs(bw[c-1].delta[q3]));
-          if(mx3>1e-12) fill=tint(dv,mx3);
-        }
-        if(isOut){ stroke="#1a5276"; sw=2; if(ph<2) fill="#f2f8fc"; }
-      }
-      if(ph===3 && !isIn && lyrIdx===cur){ stroke="#1e8449"; sw=3.4; }
-      o.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="26" fill="'+fill
-            +'" stroke="'+stroke+'" stroke-width="'+sw+'"/>');
-      o.push('<text class="nodelbl" x="'+x.toFixed(1)+'" y="'+(y+0.5).toFixed(1)+'" fill="#111827">'
-            + (isIn ? String(val) : f(val)) + '</text>');
-      if(!isIn)
-        o.push('<text class="uname" x="'+x.toFixed(1)+'" y="'+(y-30).toFixed(1)+'" fill="#9ca3af">'
-              + hsvg(c)+'='+f(fw.zs[c-1][j])+'</text>');
-      if(isIn)
-        o.push('<text class="uname" x="'+x.toFixed(1)+'" y="'+(y+39).toFixed(1)+'">x'+SUBN[j+1]+'</text>');
-    }
-    o.push('<text class="layname" x="'+col2[0].x.toFixed(0)+'" y="56" style="text-anchor:middle">'
-          + (isIn?'x':isOut?'p':String(c)) + '</text>');
-  }
-
-  /* loss node */
-  var ox=pos[nCols-1][0].x, oy=pos[nCols-1][0].y, Lx=ox+148, Ly=oy;
-  o.push('<line x1="'+(ox+27)+'" y1="'+oy+'" x2="'+(Lx-42)+'" y2="'+Ly+'" stroke="#b7791f" stroke-width="1.6"/>');
-  o.push('<rect x="'+(Lx-42)+'" y="'+(Ly-23)+'" width="84" height="46" rx="9" fill="#fdf6e3" stroke="#d9c9a3"/>');
-  o.push('<text class="nodelbl" x="'+Lx+'" y="'+(Ly+1)+'" fill="#B45309">'+f(lossOf(fw.p,exY()))+'</text>');
-  o.push('<text class="uname" x="'+Lx+'" y="'+(Ly+38)+'">L</text>');
-
-  /* banner */
-  var bc = ph===1?"#1a5276" : ph===2?"#b03a2e" : "#1e8449";
-  var bt = ph===1 ? "FORWARD    h = Wz + b    z = φ(h)"
-         : ph===2 ? "BACKWARD    e = (Wᵀe) ⊙ φ′(h)    ∂L/∂W = e zᵀ"
-         : "UPDATE    ∂L/∂W = e zᵀ    W ← W − η ∂L/∂W"
-           + (up<L ? "    ·  layer "+(up+1)+"/"+L : "    ·  done");
-  o.push('<rect x="0" y="0" width="1080" height="4" fill="'+bc+'"/>');
-  o.push('<text class="banner" x="22" y="30" style="text-anchor:start" fill="'+bc+'">'+bt+'</text>');
-  $("numhint").innerHTML = showNums ? "" :
-    '<span class="lang-en">'+nEdge+' edges — numbers hidden; hover an edge, or go back to 2 hidden layers of width 2.</span>'
-    +'<span class="lang-zh">共 '+nEdge+' 条边，数字已隐藏——悬停在边上可看，或回到 2 层隐藏层、宽度 2。</span>';
-
-  $("dia").innerHTML=o.join("");
-}
-
-/* ============================================================ html helpers */
-function matT(vals,rows,cols,opt){
-  opt=opt||{};
-  var o=['<table class="mg'+(opt.wide?" wide":"")+'">'];
-  for(var i=0;i<rows;i++){
-    o.push('<tr>');
-    for(var j=0;j<cols;j++){
-      var v=vals[i*cols+j];
-      var heat = opt.heat ? tint(v,opt.heat) : null;
-      o.push('<td'+(heat?' style="background:'+heat+'"':'')+'>'+f(v)+'</td>');
-    }
-    o.push('</tr>');
-  }
-  o.push('</table>');
-  return '<span class="mwrap">'+o.join('')+'</span>';
-}
-function vecT(a){ return '['+Array.prototype.map.call(a,f).join(', ')+']'; }
-
-/* ===================================================== panel: the equations */
+/* ===================================================== panel: this one step */
 function renderEq(){
-  var o=[], ph=state.phase, L=net.L;
-  if(ph===1){
-    o.push('<div class="eqline">h = Wz + b &nbsp;&nbsp; z = φ(h)</div>');
-    o.push('<div class="scrollx"><table class="vt"><thead><tr><th>layer</th><th>in</th><th>h</th><th>z</th></tr></thead><tbody>');
-    for(var l=0;l<L;l++)
-      o.push('<tr><td class="lb">'+Wl(l+1)+'</td><td>'+vecT(fw.acts[l])+'</td><td>'+vecT(fw.zs[l])+'</td><td>'+vecT(fw.acts[l+1])+'</td></tr>');
-    o.push('<tr><td class="lb">L</td><td colspan="2" class="muted">y = '+exY()+'</td><td>'+f(lossOf(fw.p,exY()))+'</td></tr>');
-    o.push('</tbody></table></div>');
-  }
-  else if(ph===2){
-    o.push('<div class="eqline">e'+(L>1?sup(L):'')+' = p − y &nbsp;&nbsp;·&nbsp;&nbsp; e = (W<sup>T</sup>e) ⊙ φ′(h) &nbsp;&nbsp;·&nbsp;&nbsp; ∂L/∂W = e z<sup>T</sup></div>');
-    o.push('<div class="scrollx"><table class="vt"><thead><tr><th>layer</th><th>e</th><th>∂L/∂W</th><th>in</th></tr></thead><tbody>');
-    for(var l2=L;l2>=1;l2--){
-      var li=l2-1, ly=net.layers[li];
-      o.push('<tr><td class="lb">'+Wl(l2)+'</td><td>'+vecT(bw[li].delta)+'</td>'
-            +'<td>'+matT(bw[li].gW,ly.nout,ly.nin,{heat:1})+'</td><td>'+vecT(fw.acts[li])+'</td></tr>');
-    }
-    o.push('</tbody></table></div>');
-  }
-  else o.push(renderUpdate());
-  $("eqp").innerHTML=o.join("");
-}
-function chips(){
-  var o=['<div class="uchips">'], L=net.L, up=state.up, target=L-1-up;
-  for(var i=0;i<L;i++){                        /* i is the 0-based layer index */
-    var cls = (i>target ? "uchip done" : (i===target ? "uchip now" : "uchip"));
-    var txt = Wl(i+1) + (i>target ? " ✓" : (i===target ? " ▸" : ""));
-    o.push('<span class="'+cls+'">'+txt+'</span>');
-  }
-  return o.join('')+'</div>';
-}
-function renderUpdate(){
-  var L=net.L, up=state.up, o=[];
-  o.push('<div class="eqline">∂L/∂W = e z<sup>T</sup> &nbsp;&nbsp;·&nbsp;&nbsp; W ← W − η ∂L/∂W &nbsp;&nbsp;<span class="muted">(η = '+f(state.eta)+')</span></div>');
-  o.push(chips());
-  if(up>=L){
+  var L=net.L, ph=state.phase, a=actL(), l=a+1, ly=net.layers[a], o=[];
+  if(done()){
+    o.push(stepHead(3,'<span class="lang-en">all layers updated</span><span class="lang-zh">所有层都已更新</span>'));
     o.push('<div class="scrollx"><table class="vt"><thead><tr><th>layer</th><th>W</th><th>→ W</th><th>b</th><th>→ b</th></tr></thead><tbody>');
-    for(var l=0;l<L;l++){
-      var ly=net.layers[l];
-      o.push('<tr><td class="lb">'+Wl(l+1)+'</td>'
-            +'<td>'+matT(snap.W[l],ly.nout,ly.nin,{wide:1})+'</td>'
-            +'<td>'+matT(ly.W,ly.nout,ly.nin,{wide:1,heat:1})+'</td>'
-            +'<td>'+vecT(snap.b[l])+'</td><td>'+vecT(ly.b)+'</td></tr>');
+    for(var q=0;q<L;q++){
+      var lq=net.layers[q];
+      o.push('<tr><td class="lb">'+Wl(q+1)+'</td>'
+            +'<td>'+matT(snap.W[q],lq.nout,lq.nin,{wide:1})+'</td>'
+            +'<td>'+matT(lq.W,lq.nout,lq.nin,{wide:1})+'</td>'
+            +'<td>'+vecT(snap.b[q])+'</td><td>'+vecT(lq.b)+'</td></tr>');
     }
     o.push('</tbody></table></div>');
     o.push('<p class="small muted" style="margin:8px 0 0">'
-      +'<span class="lang-en">All '+L+' layers updated. The values shown on the diagram are still from the forward pass with the old weights — one gradient step uses one snapshot. Press <b>▶ next</b> for the next example.</span>'
-      +'<span class="lang-zh">'+L+' 层全部更新完。图上的激活仍是更新前那次前向的结果——一次梯度步只用一份快照。按 <b>▶ 下一步</b> 换下一个样本。</span></p>');
+      +'<span class="lang-en">One gradient step used one snapshot: the activations and errors shown on the graph are still those of the forward/backward pass with the old weights. Press <b>▶ next</b> for the next example.</span>'
+      +'<span class="lang-zh">一次梯度步只用一份快照：图上显示的激活与误差仍是更新前那次前向/反向的结果。按 <b>▶ 下一步</b> 换下一个样本。</span></p>');
     return o.join('');
   }
-  var l=L-1-up, ly=net.layers[l], e=bw[l].delta, zin=fw.acts[l];   /* output layer first */
-  var g=bw[l].gW, newW=new Float64Array(g.length);
-  for(var i=0;i<g.length;i++) newW[i]=snap.W[l][i]-state.eta*g[i];
-
-  o.push('<div class="urow">'
-    +'<div class="usec"><h5>e</h5>'+matT(e,e.length,1)+'</div>'
-    +'<div class="usec"><h5>z</h5>'+matT(zin,1,zin.length)+'</div>'
-    +'<div class="uop">×</div>'
-    +'<div class="usec"><h5>∂L/∂W = e z<sup>T</sup></h5>'+matT(g,ly.nout,ly.nin,{heat:1})+'</div>'
-    +'</div>');
-  o.push('<div class="urow">'
-    +'<div class="usec"><h5>W</h5>'+matT(snap.W[l],ly.nout,ly.nin,{wide:1})+'</div>'
-    +'<div class="uop">− η ×</div>'
-    +'<div class="usec"><h5>∂L/∂W</h5>'+matT(g,ly.nout,ly.nin,{wide:1,heat:1})+'</div>'
-    +'<div class="uop">=</div>'
-    +'<div class="usec"><h5>W′</h5>'+matT(newW,ly.nout,ly.nin,{wide:1,heat:1})+'</div>'
-    +'</div>');
-
-  var o0=0,k0=0;
-  for(var q=0;q<e.length;q++) if(Math.abs(e[q])>Math.abs(e[o0])) o0=q;
-  for(var q2=0;q2<zin.length;q2++) if(Math.abs(zin[q2])>Math.abs(zin[k0])) k0=q2;
-  o.push('<div class="uarith">'
-    +Wl(l+1)+'['+(o0+1)+','+(k0+1)+'] = '+f(snap.W[l][o0*ly.nin+k0])
-    +' − '+f(state.eta)+' × '+fp(e[o0])+' × '+fp(zin[k0])
-    +' = <b>'+f(newW[o0*ly.nin+k0])+'</b><br>'
-    +'b'+sup(l+1)+'['+(o0+1)+'] = '+f(snap.b[l][o0])+' − '+f(state.eta)+' × '+fp(e[o0])
-    +' = <b>'+f(snap.b[l][o0]-state.eta*e[o0])+'</b>'
-    +'</div>');
+  if(ph===1){
+    /* ---- forward, layer l ---- */
+    var zin=fw.acts[a], h=fw.zs[a], z=fw.acts[a+1], b=ly.b;
+    o.push(stepHead(1,'<span class="lang-en">forward · layer '+l+' of '+L+'</span><span class="lang-zh">前向 · 第 '+l+' / '+L+' 层</span>'));
+    var hh=new Float64Array(ly.nout);
+    for(var i=0;i<ly.nout;i++){
+      var s=0; for(var k=0;k<ly.nin;k++) s+=ly.W[i*ly.nin+k]*zin[k];
+      hh[i]=s+b[i];
+    }
+    o.push('<div class="secline"><div class="lhs">'+hl(l)+' = '+Wl(l)+' '+zl(a)+' + b'+sub(l)+'</div>'
+      +'<div class="mrow">'+mcol(ly.W,ly.nout,ly.nin,Wl(l))
+      +'<span class="uop">×</span>'+mcol(zin,zin.length,1,zl(a))
+      +'<span class="uop">+</span>'+mcol(b,b.length,1,'b'+sub(l))
+      +'<span class="uop">=</span>'+mcol(h,h.length,1,hl(l))+'</div></div>');
+    var imax=0; for(var q2=1;q2<ly.nout;q2++) if(Math.abs(h[q2])>Math.abs(h[imax])) imax=q2;
+    var terms=[];
+    for(var k2=0;k2<ly.nin;k2++){
+      var wk=ly.W[imax*ly.nin+k2], neg=(wk<0);
+      var piece=f(Math.abs(wk))+'×'+fp(zin[k2]);
+      terms.push(k2===0 ? (neg?'−':'')+piece : (neg?' − ':' + ')+piece);
+    }
+    terms.push(' + '+f(b[imax]));
+    o.push('<div class="uarith">'+comp('h',l,imax+1)+' = '+terms.join('')
+      +' = <b>'+f(h[imax])+'</b><br>'+comp('z',l,imax+1)+' = '+actName()+'('+f(h[imax])+') = <b>'+f(z[imax])+'</b></div>');
+    o.push('<p class="small muted" style="margin:8px 0 0">'
+      +'<span class="lang-en">Step '+state.step+' of '+L+' in the forward pass. The next click moves to '+Wl(l+1)+'.</span>'
+      +'<span class="lang-zh">前向第 '+state.step+' / '+L+' 步。下一次点击走到 '+Wl(l+1)+'。</span></p>');
+    return o.join('');
+  }
+  if(ph===2){
+    /* ---- backward, layer l ---- */
+    o.push(stepHead(2,'<span class="lang-en">backward · layer '+l+' of '+L+'</span><span class="lang-zh">反向 · 第 '+l+' / '+L+' 层</span>'));
+    var e=bw[a].delta;
+    if(l===L){
+      o.push('<div class="secline"><div class="lhs">'+el(L)+' = ∂ℓ/∂'+hl(L)+' = p − y</div>'
+        +'<div class="mrow"><span>p = '+f(fw.p)+'</span><span class="uop">−</span><span>y = '+exY()+'</span>'
+        +'<span class="uop">=</span><b>'+vecT(e)+'</b></div>'
+        +'<div class="uarith">'+comp('e',L,1)+' = '+f(fw.p)+' − '+exY()+' = <b>'+f(e[0])+'</b></div></div>');
+    } else {
+      /* e_l = D_l (W_(l+1))^T e_(l+1).  The three factors have three different
+         sizes, and they agree only because W_(l+1) is nout_(l+1) x nin_(l+1):
+           D_l            is nout_l  (the size of h_l),
+           (W_(l+1))^T    is nout_l x nout_(l+1),   since nin_(l+1) = nout_l,
+           e_(l+1)        is nout_(l+1).
+         Taking the sizes off the NEXT layer — not off this one — is what keeps
+         the panel right when the widths change, as they do at the output. */
+      var nxt=bw[a+1].delta, nL=net.layers[a+1], Wn=nL.W;
+      var wc=nL.nin, wr=nL.nout;                /* W_(l+1) is wr x wc */
+      var dg=new Float64Array(ly.nout);         /* D_l has the size of h_l */
+      for(var k3=0;k3<dg.length;k3++) dg[k3]=dact(fw.acts[a+1][k3],net.act);
+      var Wt=new Float64Array(wc*wr);           /* (W_(l+1))^T is wc x wr */
+      for(var r=0;r<wr;r++) for(var c2=0;c2<wc;c2++) Wt[c2*wr+r]=Wn[r*wc+c2];
+      o.push('<div class="secline"><div class="lhs">'+el(l)+' = '+Dl(l)+' ('+Wl(l+1)+')<sup>T</sup> '+el(l+1)+'</div>'
+        +'<div class="mrow">'+mcol(dg,dg.length,1,Dl(l)+' = '+dactName(net.act))
+        +'<span class="uop">·</span>'+mcol(Wt,wc,wr,'('+Wl(l+1)+')<sup>T</sup>')
+        +'<span class="uop">·</span>'+mcol(nxt,nxt.length,1,el(l+1))
+        +'<span class="uop">=</span>'+mcol(e,e.length,1,el(l))+'</div>');
+      var accs=[];
+      for(var o3=0;o3<wr;o3++) accs.push(f(Wn[o3*wc])+'×'+fp(nxt[o3]));
+      o.push('<div class="uarith">'+comp('e',l,1)+' = '+f(dg[0])+' × ( '+accs.join(' + ')+' ) = <b>'+f(e[0])+'</b></div>');
+    }
+    /* the gradient of this layer's weights, available immediately */
+    var g=bw[a].gW, gmax=0;
+    for(var q4=0;q4<g.length;q4++) gmax=Math.max(gmax,Math.abs(g[q4]));
+    o.push('<div class="secline"><div class="lhs">∂L/∂'+Wl(l)+' = '+el(l)+' ('+zl(a)+')<sup>T</sup></div>'
+      +'<div class="mrow">'+mcol(e,e.length,1,el(l))
+      +'<span class="uop">×</span>'+mcol(fw.acts[a],1,fw.acts[a].length,'('+zl(a)+')<sup>T</sup>')
+      +'<span class="uop">=</span>'+mcol(g,ly.nout,ly.nin,'∂L/∂'+Wl(l),{heat:1,heatAbs:gmax})+'</div>'
+      +'<div class="uarith">∂L/∂'+Wl(l)+'[1,1] = '+comp('e',l,1)+' × '+comp('z',a,1)+' = '
+      +fp(e[0])+' × '+fp(fw.acts[a][0])+' = <b>'+f(g[0])+'</b>'
+      +'<br>∂L/∂b'+sub(l)+' = '+el(l)+' = <b>'+vecT(bw[a].gb)+'</b></div></div>');
+    o.push('<p class="small muted" style="margin:8px 0 0">'
+      +'<span class="lang-en">Step '+state.step+' of '+L+' in the backward pass. '+el(l)+' arrives, so ∂L/∂'+Wl(l)+' is finished right away — no second pass needed.</span>'
+      +'<span class="lang-zh">反向第 '+state.step+' / '+L+' 步。'+el(l)+' 一到手，∂L/∂'+Wl(l)+' 就立刻算完了，不用再走一遍。</span></p>');
+    return o.join('');
+  }
+  /* ---- update, layer l ---- */
+  var g5=bw[a].gW, nW=new Float64Array(g5.length), nB=new Float64Array(ly.b.length);
+  for(var i5=0;i5<g5.length;i5++) nW[i5]=snap.W[a][i5]-state.eta*g5[i5];
+  for(var i6=0;i6<ly.b.length;i6++) nB[i6]=snap.b[a][i6]-state.eta*bw[a].gb[i6];
+  var gmax5=0; for(var q6=0;q6<g5.length;q6++) gmax5=Math.max(gmax5,Math.abs(g5[q6]));
+  var gx=0; for(var q7=1;q7<g5.length;q7++) if(Math.abs(g5[q7])>Math.abs(g5[gx])) gx=q7;
+  var r0=Math.floor(gx/ly.nin), c0=gx%ly.nin;
+  o.push(stepHead(3,'<span class="lang-en">update · layer '+l+' of '+L+'</span><span class="lang-zh">更新 · 第 '+l+' / '+L+' 层</span>'));
+  o.push('<div class="secline"><div class="lhs">W'+sub(l)+' \u2190 '+Wl(l)+' \u2212 \u03b7 \u2202L/\u2202'+Wl(l)+'   <span class="muted">(\u03b7 = '+f(state.eta)+')</span></div>'
+    +'<div class="mrow">'+mcol(snap.W[a],ly.nout,ly.nin,Wl(l))
+    +'<span class="uop">\u2212 \u03b7 \u00d7</span>'+mcol(g5,ly.nout,ly.nin,'\u2202L/\u2202'+Wl(l),{heat:1,heatAbs:gmax5})
+    +'<span class="uop">=</span>'+mcol(nW,ly.nout,ly.nin,'W'+sub(l)+' \u2032',{heat:1,heatAbs:gmax5})+'</div>'
+    +'<div class="uarith">W'+sub(l)+'['+(r0+1)+','+(c0+1)+'] = '+f(snap.W[a][gx])+' \u2212 '+f(state.eta)+' \u00d7 '+fp(g5[gx])
+    +' = <b>'+f(nW[gx])+'</b><br>b'+sub(l)+' = '+vecT(snap.b[a])+' \u2212 '+f(state.eta)+' \u00d7 '+vecT(bw[a].gb)
+    +' = <b>'+vecT(nB)+'</b></div></div>');
   o.push('<p class="small muted" style="margin:8px 0 0">'
-    +'<span class="lang-en">Every gradient was computed in the backward pass, so the order of the layers does not matter.</span>'
-    +'<span class="lang-zh">所有梯度在反向阶段就已算好，所以层的顺序无所谓。</span></p>');
+    +'<span class="lang-en">Step '+state.step+' of '+L+' in the update. The next click goes to '+(l>1?Wl(l-1):'the next example')+'.</span>'
+    +'<span class="lang-zh">更新第 '+state.step+' / '+L+' 步。下一次点击走到 '+(l>1?Wl(l-1):'下一个样本')+'。</span></p>');
   return o.join('');
+}
+/* sigma at the output layer, the chosen activation inside */
+function actName(){ return (actL()===net.L-1) ? '\u03c3' : (state.act==='linear' ? 'id' : state.act); }
+function stepHead(ph,label){
+  var cls = ph===1?'p1':ph===2?'p2':'p3';
+  return '<div class="stephead"><span class="tag '+cls+'">'+label+'</span></div>';
 }
 
 /* ==================================================================== table */
@@ -715,40 +916,41 @@ function buildTable(){
   var rows=[], L=net.L;
   function R(cls,sym,expr,val){ rows.push({cls:cls,sym:sym,expr:expr,val:val}); }
 
-  R("grp","", "<span>forward</span>","");
+  R("grp","", "forward","");
   for(var l=0;l<L;l++){
     var ly=net.layers[l], isOut=(l===L-1), zin=fw.acts[l];
-    R("grp","", "<span>layer "+(l+1)+" · "+Wl(l+1)+" is "+ly.nout+'\u00d7'+ly.nin+"</span>","");
+    R("grp","", "layer "+(l+1)+" \u00b7 "+Wl(l+1)+" is "+ly.nout+'\u00d7'+ly.nin,"");
     for(var o=0;o<ly.nout;o++){
       var terms=[];
       for(var k=0;k<ly.nin;k++){
         var wk=ly.W[o*ly.nin+k], neg=(wk<0);
-        var piece=f(Math.abs(wk))+'·'+fp(zin[k]);
-        terms.push(k===0 ? (neg?'−':'')+piece : (neg?' − ':' + ')+piece);
+        var piece=f(Math.abs(wk))+'\u00b7'+fp(zin[k]);
+        terms.push(k===0 ? (neg?'\u2212':'')+piece : (neg?' \u2212 ':' + ')+piece);
       }
       var bt=ly.b[o];
-      terms.push(Math.abs(bt)>1e-12 ? ((bt<0?' − ':' + ')+f(Math.abs(bt))) : ' + 0');
-      R("fwd", 'h'+SUBN[o+1], terms.join(''), f(fw.zs[l][o]));
-      R("fwd", 'z'+SUBN[o+1], (isOut?'σ':state.act)+'('+f(fw.zs[l][o])+')', f(fw.acts[l+1][o]));
+      terms.push(Math.abs(bt)>1e-12 ? ((bt<0?' \u2212 ':' + ')+f(Math.abs(bt))) : ' + 0');
+      R("fwd", comp('h',l+1,o+1), terms.join(''), f(fw.zs[l][o]));
+      R("fwd", comp('z',l+1,o+1), (isOut?'\u03c3':state.act)+'('+f(fw.zs[l][o])+')', f(fw.acts[l+1][o]));
     }
   }
   R("fwd","L","y = "+exY(), f(lossOf(fw.p,exY())));
   NFWD=rows.length;
 
-  R("grp","", "<span>backward</span>","");
-  R("bwd","e", "p − y", f(bw[L-1].delta[0]));
+  R("grp","", "backward","");
+  R("bwd", el(L), "p \u2212 y", f(bw[L-1].delta[0]));
   for(var l2=L;l2>=1;l2--){
     var li=l2-1, ly2=net.layers[li];
-    R("grp","", "<span>layer "+l2+"</span>","");
+    R("grp","", "layer "+l2,"");
     for(var o2=0;o2<ly2.nout;o2++){
       var gv=[]; for(var k2=0;k2<ly2.nin;k2++) gv.push(bw[li].gW[o2*ly2.nin+k2]);
-      R("bwd","∂L/∂w"+SUBN[o2+1], 'e'+SUBN[o2+1]+' × '+vecT(fw.acts[li]), vecT(gv));
-      R("bwd","∂L/∂b"+SUBN[o2+1], 'e'+SUBN[o2+1], f(bw[li].gb[o2]));
+      R("bwd","\u2202L/\u2202"+Wl(l2)+"["+(o2+1)+",:]",
+        comp('e',l2,o2+1)+' \u00d7 '+zl(li)+'\u1d40 = '+vecT(fw.acts[li]), vecT(gv));
+      R("bwd","\u2202L/\u2202b"+sub(l2)+"["+(o2+1)+"]", comp('e',l2,o2+1), f(bw[li].gb[o2]));
     }
     if(l2>1) for(var k3=0;k3<ly2.nin;k3++){
-      var accs=[]; for(var o3=0;o3<ly2.nout;o3++) accs.push(f(ly2.W[o3*ly2.nin+k3])+'·'+fp(bw[li].delta[o3]));
-      R("bwd","e"+SUBN[k3+1],
-        '[ '+accs.join(' + ')+' ] × '+dactName(net.act)+'  (z = '+f(fw.acts[li][k3])+')',
+      var accs=[]; for(var o3=0;o3<ly2.nout;o3++) accs.push(f(ly2.W[o3*ly2.nin+k3])+'\u00b7'+fp(bw[li].delta[o3]));
+      R("bwd", comp('e',li,k3+1),
+        '[ '+accs.join(' + ')+' ] \u00d7 '+dactName(net.act)+'  (z = '+f(fw.acts[li][k3])+')',
         f(bw[li-1].delta[k3]));
     }
   }
@@ -766,70 +968,66 @@ function renderTable(){
   $("ntb").innerHTML=o.join("");
 }
 
-/* ============================================================== phase machine */
-function recompute(){
-  fw=forward(net,exVec());
-  bw=backward(net,fw,exY());
-  buildTable();
-}
-function rebuild(){
-  net=makeNet(dims(),state.act,state.seed);
-  snap=null; state.up=0;
-  recompute();
-}
-function enterUpdate(){ state.phase=3; state.up=0; snap=cloneWeights(); }
-function doLayerUpdate(l){
-  var ly=net.layers[l];
-  for(var i=0;i<ly.W.length;i++) ly.W[i]=snap.W[l][i]-state.eta*bw[l].gW[i];
-  for(var i2=0;i2<ly.b.length;i2++) ly.b[i2]=snap.b[l][i2]-state.eta*bw[l].gb[i2];
-}
-function setPhase(p){
-  state.phase=p;
-  if(p===3) enterUpdate();
-  state.reveal = (p===1) ? NFWD : NROW;
-  renderTable(); render();
-}
-function render(){
-  drawDia(); renderEq();
-  $("ph1").classList.toggle("on", state.phase===1);
-  $("ph2").classList.toggle("on", state.phase===2);
-  $("ph3").classList.toggle("on", state.phase===3);
-  var curLayer=Math.max(1,net.L-state.up);
-  $("ph3sub").innerHTML = state.phase===3
-    ? '<span class="lang-en">layer '+curLayer+' / '+net.L+'</span><span class="lang-zh">第 '+curLayer+' / '+net.L+' 层</span>'
-    : '';
-  var nx=$("next");
-  if(state.phase===1) nx.innerHTML='▶ <span class="lang-en">backward</span><span class="lang-zh">反向</span>';
-  else if(state.phase===2) nx.innerHTML='▶ <span class="lang-en">update</span><span class="lang-zh">更新</span>';
-  else if(state.up<net.L) nx.innerHTML='▶ '+Wl(net.L-state.up);
-  else nx.innerHTML='▶ <span class="lang-en">next example</span><span class="lang-zh">下一个样本</span>';
-  $("back").disabled = (state.phase===1);
-  $("r-y").textContent=String(exY());
-  $("r-p").textContent=f(fw.p);
-  $("r-l").textContent=f(lossOf(fw.p,exY()));
-  $("r-up").textContent=state.up+"/"+net.L;
-  syncExButtons();
+/* ============================================================== step machine */
+function recompute(){ fw=forward(net,exVec()); bw=backward(net,fw,exY()); buildTable(); }
+function rebuild(){ net=makeNet(dims(),state.act,state.seed); snap=null; state.step=0; recompute(); }
+function enterUpdate(){ state.phase=3; state.step=0; snap=cloneWeights(); }
+
+function nextLabel(){
+  var L=net.L, a=actL();
+  if(state.phase===1) return '\u25b6 '+hl(a+1)+', '+zl(a+1);
+  if(state.phase===2) return '\u25b6 '+el(a+1);
+  if(done()) return '\u25b6 <span class="lang-en">next example</span><span class="lang-zh">下一个样本</span>';
+  return '\u25b6 '+Wl(a+1);
 }
 function advance(){
-  if(state.phase===1) setPhase(2);
-  else if(state.phase===2) setPhase(3);
-  else {
-    if(state.up<net.L){ doLayerUpdate(net.L-1-state.up); state.up++; render(); }
-    else { state.ex=(state.ex+1)%EX.length; snap=null; state.up=0; recompute(); setPhase(1); }
+  var L=net.L;
+  if(state.phase===1){
+    if(state.step+1<L) state.step++; else { state.phase=2; state.step=0; }
+  } else if(state.phase===2){
+    if(state.step+1<L) state.step++; else enterUpdate();
+  } else {
+    if(state.step<L){ doLayerUpdate(L-1-state.step); state.step++; }
+    else { state.ex=(state.ex+1)%EX.length; snap=null; state.phase=1; state.step=0; recompute(); }
   }
+  render();
   if(state.auto){ if(autoTimer) clearTimeout(autoTimer); autoTimer=setTimeout(advance,state.speed); }
 }
 function retreat(){
-  if(state.phase===3 && snap){ restoreWeights(); snap=null; state.up=0; setPhase(2); }
-  else if(state.phase===3){ state.up=0; setPhase(2); }
-  else if(state.phase===2) setPhase(1);
+  var L=net.L;
+  if(state.phase===1){ if(state.step>0) state.step--; }
+  else if(state.phase===2){
+    if(state.step>0) state.step--; else { state.phase=1; state.step=L-1; }
+  } else {
+    if(state.step>0){
+      restoreWeights();
+      state.step--;
+      for(var k=0;k<state.step;k++) doLayerUpdate(L-1-k);
+    } else { restoreWeights(); snap=null; state.phase=2; state.step=L-1; }
+  }
+  render();
 }
 function stopAuto(){
   state.auto=false;
   if(autoTimer) clearTimeout(autoTimer);
   autoTimer=null;
   $("auto").classList.remove("primary");
-  $("auto").innerHTML='<span class="lang-en">auto</span><span class="lang-zh">自动</span>';
+  $("auto").innerHTML='<span class="lang-en">auto</span><span class="lang-zh">\u81ea\u52a8</span>';
+}
+
+function render(){
+  var L=net.L, a=actL();
+  drawChain(); $("eqp").innerHTML = renderEq();
+  $("ph1").classList.toggle("on", state.phase===1);
+  $("ph2").classList.toggle("on", state.phase===2);
+  $("ph3").classList.toggle("on", state.phase===3);
+  $("next").innerHTML = nextLabel();
+  $("back").disabled = (state.phase===1 && state.step===0);
+  $("r-y").textContent=String(exY());
+  $("r-p").textContent=f(fw.p);
+  $("r-l").textContent=f(lossOf(fw.p,exY()));
+  $("r-up").textContent = done() ? L+'/'+L : (a+1)+'/'+L;
+  syncExButtons();
 }
 
 /* ==================================================================== wiring */
@@ -840,21 +1038,22 @@ function syncExButtons(){
 function buildExButtons(){
   var h=[];
   for(var i=0;i<EX.length;i++)
-    h.push('<button class="exbtn" type="button" data-ex="'+i+'">('+EX[i].x[0]+', '+EX[i].x[1]+') → '+EX[i].y+'</button>');
+    h.push('<button class="exbtn" type="button" data-ex="'+i+'">('+EX[i].x[0]+', '+EX[i].x[1]+') \u2192 '+EX[i].y+'</button>');
   $("exrow").innerHTML=h.join("");
   var bs=$("exrow").children;
   for(var j=0;j<bs.length;j++)
     bs[j].addEventListener("click",function(){
       stopAuto();
       state.ex=parseInt(this.getAttribute("data-ex"),10);
-      snap=null; state.up=0;
-      recompute(); setPhase(1);
+      snap=null; state.phase=1; state.step=0;
+      recompute(); render();
     });
 }
 function hardReset(){
   stopAuto(); rebuild();
   $("hlVal").textContent=state.hl; $("wVal").textContent=state.w;
-  setPhase(1);
+  state.phase=1; state.step=0;
+  state.reveal=NFWD; renderTable(); render();
 }
 $("hl").addEventListener("input",function(){ state.hl=parseInt(this.value,10); hardReset(); });
 $("w").addEventListener("input",function(){ state.w=parseInt(this.value,10); hardReset(); });
@@ -868,10 +1067,9 @@ $("line").addEventListener("click",function(){ state.reveal=Math.min(NROW,state.
 $("all").addEventListener("click",function(){ state.reveal=NROW; renderTable(); });
 $("none").addEventListener("click",function(){ state.reveal=0; renderTable(); });
 function startAuto(){ state.auto=true; $("auto").classList.add("primary");
-  $("auto").innerHTML='<span class="lang-en">pause</span><span class="lang-zh">暂停</span>'; advance(); }
+  $("auto").innerHTML='<span class="lang-en">pause</span><span class="lang-zh">\u6682\u505c</span>'; advance(); }
 $("auto").addEventListener("click",function(){ if(state.auto) stopAuto(); else startAuto(); });
 $("speed").addEventListener("change",function(){ state.speed=parseInt(this.value,10); });
-window.addEventListener("resize",function(){ drawDia(); });
 window.addEventListener("keydown",function(e){
   var t=e.target&&e.target.tagName?e.target.tagName.toUpperCase():"";
   if(t==="INPUT"||t==="SELECT"||t==="TEXTAREA") return;
@@ -881,7 +1079,7 @@ window.addEventListener("keydown",function(e){
 $("langBtn").addEventListener("click",function(){
   var zh=document.documentElement.getAttribute("data-lang")==="zh";
   document.documentElement.setAttribute("data-lang",zh?"en":"zh");
-  this.textContent=zh?"中文":"English";
+  this.textContent=zh?"\u4e2d\u6587":"English";
 });
 
 /* --------------------------------------------------------------- deep link */
@@ -898,14 +1096,17 @@ $("langBtn").addEventListener("click",function(){
   $("eta").value=String(state.eta); $("seed").value=String(state.seed);
   buildExButtons(); rebuild();
   $("hlVal").textContent=state.hl; $("wVal").textContent=state.w;
+  /* phase and step: ?phase=1|2|3&step=k  ( ?up= is kept as an alias for step ) */
   var ph=q.has("phase")?parseInt(q.get("phase"),10):1;
-  setPhase(Math.max(1,Math.min(3,ph||1)));
-  if(state.phase===3){
-    var up=q.has("up")?parseInt(q.get("up"),10):0;
-    up=Math.max(0,Math.min(net.L,up));
-    for(var k=0;k<up;k++) doLayerUpdate(net.L-1-k);
-    state.up=up; render();
-  }
+  ph=Math.max(1,Math.min(3,ph||1));
+  state.phase=ph; state.step=0;
+  if(ph===3) snap=cloneWeights();
+  var st=q.has("step")?parseInt(q.get("step"),10):(q.has("up")?parseInt(q.get("up"),10):0);
+  st=Math.max(0,Math.min(net.L,st||0));
+  if(ph===3) for(var k=0;k<st;k++) doLayerUpdate(net.L-1-k);
+  state.step=st;
+  state.reveal = (ph===1) ? NFWD : NROW;
+  renderTable(); render();
   if(q.has("reveal")){ state.reveal=Math.max(0,Math.min(NROW,parseInt(q.get("reveal"),10)||0)); renderTable(); }
   if(q.get("open")==="1") $("ledger").setAttribute("open","");
   if(q.get("auto")==="1"){ autoTimer=setTimeout(function(){ startAuto(); }, state.speed); }

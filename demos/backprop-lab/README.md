@@ -1,7 +1,7 @@
 # Lec 2 / Part 1 — Backprop Lab
 
 ME2605 / DDA6204, used in the **first hour** of the two-hour lecture: backpropagation
-itself, before anything about initialization. Parts 2 and 3 (`nn-init-lab`,
+itself, before anything about initialization. Parts 2 and 3 (`first-trial-demo`,
 `nn-signal-lab`) are for the second hour.
 
 One small network, one example, three phases:

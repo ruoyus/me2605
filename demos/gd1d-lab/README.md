@@ -64,6 +64,6 @@ page's own code**, not estimated.
 ## Neighbours
 
 - `../backprop-lab/` — Part 1, the first hour
-- `../nn-init-lab/` — the same question in high dimension: which settings make a real
-  network train
+- `../first-trial-demo/` — the same question in high dimension: which settings make a
+  real network train
 - `../nn-signal-lab/` — Part 3, which explains *why* the tuned scale works

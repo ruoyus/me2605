@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Initialization Lab — ME2605 Week 2 Demo (Part 1)</title>
-<meta name="description" content="ME2605 interactive demo, part 2: six fixed scenarios. In each one, find the initialization and the learning rate that make the network train — judged only by the training and test error.">
+<title>First Trial: Make Training Work — ME2605 · Lec 2 Part 2</title>
+<meta name="description" content="ME2605 interactive demo, Lec 2 part 2: six fixed scenarios. In each one, find the settings that make the network train — judged only by the training and test error.">
 <style>
 :root{
   --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
@@ -162,7 +162,7 @@ html[data-lang="en"] .lang-zh{display:none}
 
 <header class="site-header">
   <div class="nav-inner">
-    <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Lec 2 · Part 2 — Initialization Lab</span><span class="lang-zh">第 2 讲 · 第 2 部分 — 初始化实验室</span></a>
+    <a class="brand" href="../../index.html"><span class="code">ME2605</span> · <span class="lang-en">Lec 2 · Part 2 — First Trial: Make Training Work</span><span class="lang-zh">第 2 讲 · 第 2 部分 — 先把训练跑起来</span></a>
     <nav class="nav-links">
       <a href="../gd1d-lab/"><span class="lang-en">← Step-Size Lab</span><span class="lang-zh">← 步长实验室</span></a>
       <a href="../backprop-lab/"><span class="lang-en">← Part 1 · Backprop Lab</span><span class="lang-zh">← 第 1 部分 · 反向传播</span></a>
@@ -322,7 +322,7 @@ html[data-lang="en"] .lang-zh{display:none}
 
 <script>
 /* ==========================================================================
-   ME2605 · Initialization Lab  (Part 2 — the exploration)
+   ME2605 · First Trial: Make Training Work  (Lec 2 Part 2 — the exploration)
    Everything runs in the browser. No dependencies, no network.
 
      x (2) --W1--> h1 --phi--> z1 --W2--> ... --WL--> hL --phi--> zL --Wo--> s
@@ -654,7 +654,7 @@ function curScen(){ return SCEN[state.sc]; }
 /* the page is bilingual: every string that goes into the DOM carries both */
 function BL(en,zh){ return '<span class="lang-en">'+en+'</span><span class="lang-zh">'+zh+'</span>'; }
 
-var LSKEY="me2605-initlab-cleared";
+var LSKEY="me2605-firsttrial-cleared";
 function saveCleared(){ try{ localStorage.setItem(LSKEY, JSON.stringify(CLEARED)); }catch(e){} }
 function loadCleared(){
   try{ var q=localStorage.getItem(LSKEY); if(q) CLEARED=JSON.parse(q)||{}; }catch(e){ CLEARED={}; }

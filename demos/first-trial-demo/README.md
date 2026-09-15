@@ -1,4 +1,4 @@
-# Demo — Initialization Lab (Lec 2 · Part 2)
+# Demo — First Trial: Make Training Work (Lec 2 · Part 2)
 
 Part 2 of the ME2605 / DDA6204 Week 3 demos, and the **exploration before the
 answer**: nothing on the page names the principle, the hyper-parameter that

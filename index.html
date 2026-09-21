@@ -86,6 +86,7 @@
     <tbody>
 
       <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part 0 — Quick Guide to Run Neural Net Training</span><span class="lang-zh">Part 0 — 快速上手运行神经网络训练</span></td></tr>
+
       <tr>
         <td class="week">1</td>
         <td><span class="lang-en">Course overview and motivation; ML basics review &mdash; loss, cross-entropy, gradient and Hessian, gradient descent; the three-error decomposition of test error</span>
@@ -99,50 +100,85 @@
       </tr>
 
       <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part I — Foundations of Neural Network Training</span><span class="lang-zh">Part I — 神经网络训练基础</span></td></tr>
+
       <tr>
         <td class="week">2</td>
-        <td><span class="lang-en">Optimization algorithms and stochastic training: GD, SGD with momentum, learning-rate selection; AdaGrad, RMSProp, Adam; convergence theory of Adam</span>
-            <span class="lang-zh">优化算法与随机训练：GD、带动量 SGD、学习率选择；AdaGrad、RMSProp、Adam；Adam 收敛理论</span></td>
-        <td>&mdash;</td>
-        <td><span class="lang-en">Compare optimizers</span><span class="lang-zh">比较不同优化器</span></td>
-      </tr>
-      <tr>
-        <td class="week">3</td>
-        <td><span class="lang-en">Backpropagation review; initialization and signal propagation: forward/backward signal propagation, activation functions, Xavier/He initialization, dynamical isometry</span>
-            <span class="lang-zh">反向传播回顾；初始化与信号传播：前向/后向信号传播、激活函数、Xavier/He 初始化、动力等距</span></td>
+        <td><span class="lang-en">Backpropagation and signal propagation: forward and backward passes, the linearization trick; activation functions, Xavier/He initialization, dynamical isometry</span>
+            <span class="lang-zh">反向传播与信号传播：前向与反向传播、线性化技巧；激活函数、Xavier/He 初始化、动力等距</span></td>
         <td>
           <a href="slides/lecture_2.pdf"><span class="lang-en">Lecture 2 notes (PDF)</span><span class="lang-zh">讲义 2（PDF）</span></a><br>
           <a href="demos/backprop-lab/"><span class="lang-en">Demo 1 &middot; Backprop Lab</span><span class="lang-zh">Demo 1 &middot; 反向传播实验室</span></a><br>
           <a href="demos/first-trial-demo/"><span class="lang-en">Demo 2 &middot; First Trial</span><span class="lang-zh">Demo 2 &middot; 先把训练跑起来</span></a><br>
           <a href="demos/nn-signal-lab/"><span class="lang-en">Demo 3 &middot; Signal Propagation Lab</span><span class="lang-zh">Demo 3 &middot; 信号传播实验室</span></a>
         </td>
-        <td><span class="lang-en">Step backprop one phase at a time, then choose the initialization of every layer and train &mdash; then measure the activation and gradient statistics across depth</span><span class="lang-zh">逐阶段走一遍反向传播；再逐层选择初始化并训练——然后测量不同深度的激活与梯度统计量</span></td>
+        <td><span class="lang-en">Step backprop one phase at a time, then choose the initialization of every layer and train — then measure the activation and gradient statistics across depth</span>
+            <span class="lang-zh">逐阶段走一遍反向传播；再逐层选择初始化并训练——然后测量不同深度的激活与梯度统计量</span></td>
       </tr>
+
+      <tr>
+        <td class="week">3</td>
+        <td><span class="lang-en">Depth and normalization: why depth is hard, the depth–width ratio; the normalization operation, LayerNorm, RMSNorm, BatchNorm; the gradient of a normalization layer</span>
+            <span class="lang-zh">深度与归一化：深度为何难训、深度–宽度比；归一化操作、LayerNorm、RMSNorm、BatchNorm；归一化层的梯度</span></td>
+        <td>
+          &mdash;
+        </td>
+        <td><span class="lang-en">Run the normalization lab; compare mechanisms on ill-scaled inputs</span>
+            <span class="lang-zh">运行归一化实验室；在病态尺度的输入上比较各种机制</span></td>
+      </tr>
+
       <tr>
         <td class="week">4</td>
-        <td><span class="lang-en">Normalization, skip connections and landscape: BatchNorm, LayerNorm, RMSNorm; residual MLPs; local loss geometry</span>
-            <span class="lang-zh">归一化、跳跃连接与损失景观：BatchNorm、LayerNorm、RMSNorm；残差 MLP；局部损失几何</span></td>
-        <td>&mdash;</td>
-        <td><span class="lang-en">Visualize landscape; train MLP and ResNet</span><span class="lang-zh">可视化损失景观；训练 MLP 与 ResNet</span></td>
+        <td><span class="lang-en">Convergence theory and explaining normalization: convergence of gradient descent, the condition number; data preprocessing and Jacobi preconditioning; why normalization lowers the condition number</span>
+            <span class="lang-zh">收敛理论与归一化的解释：梯度下降的收敛性、条件数；数据预处理与 Jacobi 预条件；归一化为何降低条件数</span></td>
+        <td>
+          &mdash;
+        </td>
+        <td><span class="lang-en">Measure the condition number before and after normalization</span>
+            <span class="lang-zh">测量归一化前后的条件数</span></td>
+      </tr>
+
+      <tr>
+        <td class="week">5</td>
+        <td><span class="lang-en">Width and the loss landscape: global landscape, mode connectivity; skip connections and residual networks</span>
+            <span class="lang-zh">宽度与损失景观：全局景观、模式连通性；跳跃连接与残差网络</span></td>
+        <td>
+          &mdash;
+        </td>
+        <td><span class="lang-en">Visualize the landscape; train an MLP and a ResNet</span>
+            <span class="lang-zh">可视化损失景观；训练 MLP 与 ResNet</span></td>
       </tr>
 
       <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>
+
       <tr>
-        <td class="week">5</td>
+        <td class="week">6</td>
         <td><span class="lang-en">Seq2Seq, Transformers and nanoGPT: next-token prediction, tokenization, self-attention, multi-head attention, Transformer blocks</span>
             <span class="lang-zh">Seq2Seq、Transformer 与 nanoGPT：next-token 预测、分词、自注意力、多头注意力、Transformer 模块</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Pre-train a small nanoGPT model</span><span class="lang-zh">预训练小型 nanoGPT 模型</span></td>
       </tr>
+
       <tr>
-        <td class="week">6</td>
+        <td class="week">7</td>
+        <td><span class="lang-en">Optimization algorithms and Adam: GD, SGD with momentum, learning-rate selection; AdaGrad, RMSProp, Adam; convergence theory of Adam</span>
+            <span class="lang-zh">优化算法与 Adam：GD、带动量 SGD、学习率选择；AdaGrad、RMSProp、Adam；Adam 收敛理论</span></td>
+        <td>
+          &mdash;
+        </td>
+        <td><span class="lang-en">Compare optimizers</span>
+            <span class="lang-zh">比较不同优化器</span></td>
+      </tr>
+
+      <tr>
+        <td class="week">8</td>
         <td><span class="lang-en">Supervised fine-tuning and LoRA: instruction/response formatting, full fine-tuning, forgetting; low-rank updates, rank and scaling, memory accounting</span>
             <span class="lang-zh">监督微调与 LoRA：指令/回复格式、全量微调、遗忘问题；低秩更新、秩与缩放、显存核算</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Fine-tune a common LLM</span><span class="lang-zh">微调一个常见 LLM</span></td>
       </tr>
+
       <tr>
-        <td class="week">7</td>
+        <td class="week">9</td>
         <td><span class="lang-en">Distributed training: data parallelism, all-reduce, gradient accumulation, communication cost; scaling efficiency; acceleration theory</span>
             <span class="lang-zh">分布式训练：数据并行、all-reduce、梯度累积、通信开销；扩展效率；加速理论</span></td>
         <td>&mdash;</td>
@@ -150,43 +186,49 @@
       </tr>
 
       <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part III — Advanced LLM Training</span><span class="lang-zh">Part III — 进阶 LLM 训练</span></td></tr>
+
       <tr>
-        <td class="week">8</td>
+        <td class="week">10</td>
         <td><span class="lang-en">Advanced architecture: sparse attention, GQA, MLA, DSA; MoE (optional)</span>
             <span class="lang-zh">先进架构：稀疏注意力、GQA、MLA、DSA；MoE（可选）</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
+
       <tr>
-        <td class="week">9</td>
+        <td class="week">11</td>
         <td><span class="lang-en">Second-order optimization: relation of Adam and Gauss–Newton; Shampoo and Kronecker factorization; muon and matrix orthogonalization</span>
             <span class="lang-zh">二阶优化：Adam 与 Gauss–Newton 的关系；Shampoo 与 Kronecker 分解；muon 与矩阵正交化</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
+
       <tr>
-        <td class="week">10</td>
+        <td class="week">12</td>
         <td><span class="lang-en">Advanced theory — Hessian structure and spectra: Hessian–vector product, computing the spectrum, Hessian structure of neural nets</span>
             <span class="lang-zh">进阶理论——Hessian 结构与谱：Hessian–vector product、谱的计算、神经网络 Hessian 结构</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
+
       <tr>
-        <td class="week">11</td>
+        <td class="week">13</td>
         <td><span class="lang-en">Kernels and performance optimization: kernels and hardware architecture; Flash Attention</span>
             <span class="lang-zh">Kernel 与性能优化：kernel 与硬件架构；Flash Attention</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
+
       <tr>
-        <td class="week">12</td>
+        <td class="week">14</td>
         <td><span class="lang-en">Scaling laws: Kaplan/Chinchilla-style scaling relations; model–data–systems tradeoffs under a fixed budget</span>
             <span class="lang-zh">Scaling law：Kaplan/Chinchilla 式缩放关系；固定预算下的模型–数据–系统权衡</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
+
       <tr>
-        <td class="week">13</td>
+        <td class="week">15</td>
         <td><span class="lang-en">Advanced topics — precision and/or data selection: bf16 &amp; fp32; error analysis</span>
             <span class="lang-zh">进阶专题——精度与/或数据选择：bf16 与 fp32；误差分析</span></td>
         <td>&mdash;</td>
@@ -194,14 +236,14 @@
       </tr>
 
       <tr><td colspan="4" class="sub part-label"><span class="lang-en">Final</span><span class="lang-zh">结课</span></td></tr>
+
       <tr>
-        <td class="week">14</td>
+        <td class="week">16</td>
         <td><span class="lang-en">Open poster symposium: student presentations of pre-training, LoRA, or theory projects</span>
             <span class="lang-zh">开放海报研讨会：学生展示预训练、LoRA 或理论项目</span></td>
         <td></td>
         <td><span class="lang-en">Poster session</span><span class="lang-zh">海报展示</span></td>
       </tr>
-
     </tbody>
   </table>
 </section>

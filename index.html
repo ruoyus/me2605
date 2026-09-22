@@ -6,6 +6,10 @@
 <title>ME2605: Training Neural Networks: Theory and Practice</title>
 <meta name="description" content="ME2605 Training Neural Networks: Theory and Practice — a PhD-level course on neural network training with emphasis on large language models. CUHK-Shenzhen, Fall 2026.">
 <link rel="stylesheet" href="assets/style.css">
+  <style>
+    td.when { white-space: nowrap; color: var(--muted); }
+    td.holiday { text-align: center; font-style: italic; }
+  </style>
 </head>
 <body>
 
@@ -71,24 +75,25 @@
 <!-- ============ SCHEDULE ============ -->
 <section id="schedule">
   <h2><span class="lang-en">Schedule</span><span class="lang-zh">日程安排</span></h2>
-  <p class="subtitle lang-en">Tentative. Slides are attached to each session as the semester progresses.</p>
-  <p class="subtitle lang-zh">暂定安排。课件将在学期进行中逐次附上。</p>
+  <p class="subtitle lang-en">Tentative. Classes meet on Mondays; the week of Oct 5 is a public holiday (no class). Slides are attached to each session as the semester progresses.</p>
+  <p class="subtitle lang-zh">暂定安排。课程在周一上课；10 月 5 日当周为国庆假期，停课一次。课件将在学期进行中逐次附上。</p>
 
   <table>
     <thead>
       <tr>
         <th>#</th>
+        <th><span class="lang-en">Date</span><span class="lang-zh">日期</span></th>
         <th><span class="lang-en">Topic</span><span class="lang-zh">主题</span></th>
         <th><span class="lang-en">Slides / Materials</span><span class="lang-zh">课件 / 材料</span></th>
         <th><span class="lang-en">Hands-on</span><span class="lang-zh">实践</span></th>
       </tr>
     </thead>
     <tbody>
-
-      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part 0 — Quick Guide to Run Neural Net Training</span><span class="lang-zh">Part 0 — 快速上手运行神经网络训练</span></td></tr>
+      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part 0 — Quick Guide to Run Neural Net Training</span><span class="lang-zh">Part 0 — 快速上手运行神经网络训练</span></td></tr>
 
       <tr>
         <td class="week">1</td>
+        <td class="when">Sep 7</td>
         <td><span class="lang-en">Course overview and motivation; ML basics review &mdash; loss, cross-entropy, gradient and Hessian, gradient descent; the three-error decomposition of test error</span>
             <span class="lang-zh">课程总览与动机；机器学习基础复习——损失、交叉熵、梯度与 Hessian、梯度下降；测试误差的三误差分解</span></td>
         <td>
@@ -99,10 +104,11 @@
         <td><span class="lang-en">Train a small MLP on MNIST (with AI); in-class Quiz 1 &amp; 2; live three-error demo</span><span class="lang-zh">在 MNIST 上训练小型 MLP（可借助 AI）；课堂 Quiz 1 与 2；三误差实时 demo</span></td>
       </tr>
 
-      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part I — Foundations of Neural Network Training</span><span class="lang-zh">Part I — 神经网络训练基础</span></td></tr>
+      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part I — Foundations of Neural Network Training</span><span class="lang-zh">Part I — 神经网络训练基础</span></td></tr>
 
       <tr>
         <td class="week">2</td>
+        <td class="when">Sep 14</td>
         <td><span class="lang-en">Backpropagation and signal propagation: forward and backward passes, the linearization trick; activation functions, Xavier/He initialization, dynamical isometry</span>
             <span class="lang-zh">反向传播与信号传播：前向与反向传播、线性化技巧；激活函数、Xavier/He 初始化、动力等距</span></td>
         <td>
@@ -117,6 +123,7 @@
 
       <tr>
         <td class="week">3</td>
+        <td class="when">Sep 21</td>
         <td><span class="lang-en">Depth and normalization: why depth is hard, the depth–width ratio; the normalization operation, LayerNorm, RMSNorm, BatchNorm; the gradient of a normalization layer</span>
             <span class="lang-zh">深度与归一化：深度为何难训、深度–宽度比；归一化操作、LayerNorm、RMSNorm、BatchNorm；归一化层的梯度</span></td>
         <td>
@@ -126,8 +133,11 @@
             <span class="lang-zh">把深度推到此前调参范围之外，看训练 loss 的变化；再运行归一化实验室，在病态尺度的输入上比较各种机制</span></td>
       </tr>
 
+      <tr><td colspan="5" class="sub holiday"><span class="lang-en">Oct 5 &mdash; National Day holiday, no class</span><span class="lang-zh">10 月 5 日 &mdash; 国庆假期，停课</span></td></tr>
+
       <tr>
         <td class="week">4</td>
+        <td class="when">Sep 28</td>
         <td><span class="lang-en">Convergence theory and explaining normalization: convergence of gradient descent, the condition number; data preprocessing and Jacobi preconditioning; why normalization lowers the condition number</span>
             <span class="lang-zh">收敛理论与归一化的解释：梯度下降的收敛性、条件数；数据预处理与 Jacobi 预条件；归一化为何降低条件数</span></td>
         <td>
@@ -139,6 +149,7 @@
 
       <tr>
         <td class="week">5</td>
+        <td class="when">Oct 12</td>
         <td><span class="lang-en">Width and the loss landscape: global landscape, mode connectivity; skip connections and residual networks</span>
             <span class="lang-zh">宽度与损失景观：全局景观、模式连通性；跳跃连接与残差网络</span></td>
         <td>
@@ -148,10 +159,11 @@
             <span class="lang-zh">可视化损失景观；训练 MLP 与 ResNet</span></td>
       </tr>
 
-      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>
+      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>
 
       <tr>
         <td class="week">6</td>
+        <td class="when">Oct 19</td>
         <td><span class="lang-en">Seq2Seq, Transformers and nanoGPT: next-token prediction, tokenization, self-attention, multi-head attention, Transformer blocks</span>
             <span class="lang-zh">Seq2Seq、Transformer 与 nanoGPT：next-token 预测、分词、自注意力、多头注意力、Transformer 模块</span></td>
         <td>&mdash;</td>
@@ -160,6 +172,7 @@
 
       <tr>
         <td class="week">7</td>
+        <td class="when">Oct 26</td>
         <td><span class="lang-en">Optimization algorithms and Adam: GD, SGD with momentum, learning-rate selection; AdaGrad, RMSProp, Adam; convergence theory of Adam</span>
             <span class="lang-zh">优化算法与 Adam：GD、带动量 SGD、学习率选择；AdaGrad、RMSProp、Adam；Adam 收敛理论</span></td>
         <td>
@@ -171,24 +184,18 @@
 
       <tr>
         <td class="week">8</td>
+        <td class="when">Nov 2</td>
         <td><span class="lang-en">Supervised fine-tuning and LoRA: instruction/response formatting, full fine-tuning, forgetting; low-rank updates, rank and scaling, memory accounting</span>
             <span class="lang-zh">监督微调与 LoRA：指令/回复格式、全量微调、遗忘问题；低秩更新、秩与缩放、显存核算</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Fine-tune a common LLM</span><span class="lang-zh">微调一个常见 LLM</span></td>
       </tr>
 
+      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part III — Advanced LLM Training</span><span class="lang-zh">Part III — 进阶 LLM 训练</span></td></tr>
+
       <tr>
         <td class="week">9</td>
-        <td><span class="lang-en">Distributed training: data parallelism, all-reduce, gradient accumulation, communication cost; scaling efficiency; acceleration theory</span>
-            <span class="lang-zh">分布式训练：数据并行、all-reduce、梯度累积、通信开销；扩展效率；加速理论</span></td>
-        <td>&mdash;</td>
-        <td><span class="lang-en">Train on 4–8 NPUs</span><span class="lang-zh">在 4–8 张 NPU 上训练</span></td>
-      </tr>
-
-      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Part III — Advanced LLM Training</span><span class="lang-zh">Part III — 进阶 LLM 训练</span></td></tr>
-
-      <tr>
-        <td class="week">10</td>
+        <td class="when">Nov 9</td>
         <td><span class="lang-en">Advanced architecture: sparse attention, GQA, MLA, DSA; MoE (optional)</span>
             <span class="lang-zh">先进架构：稀疏注意力、GQA、MLA、DSA；MoE（可选）</span></td>
         <td>&mdash;</td>
@@ -196,7 +203,8 @@
       </tr>
 
       <tr>
-        <td class="week">11</td>
+        <td class="week">10</td>
+        <td class="when">Nov 16</td>
         <td><span class="lang-en">Second-order optimization: relation of Adam and Gauss–Newton; Shampoo and Kronecker factorization; muon and matrix orthogonalization</span>
             <span class="lang-zh">二阶优化：Adam 与 Gauss–Newton 的关系；Shampoo 与 Kronecker 分解；muon 与矩阵正交化</span></td>
         <td>&mdash;</td>
@@ -204,7 +212,8 @@
       </tr>
 
       <tr>
-        <td class="week">12</td>
+        <td class="week">11</td>
+        <td class="when">Nov 23</td>
         <td><span class="lang-en">Advanced theory — Hessian structure and spectra: Hessian–vector product, computing the spectrum, Hessian structure of neural nets</span>
             <span class="lang-zh">进阶理论——Hessian 结构与谱：Hessian–vector product、谱的计算、神经网络 Hessian 结构</span></td>
         <td>&mdash;</td>
@@ -212,7 +221,8 @@
       </tr>
 
       <tr>
-        <td class="week">13</td>
+        <td class="week">12</td>
+        <td class="when">Nov 30</td>
         <td><span class="lang-en">Kernels and performance optimization: kernels and hardware architecture; Flash Attention</span>
             <span class="lang-zh">Kernel 与性能优化：kernel 与硬件架构；Flash Attention</span></td>
         <td>&mdash;</td>
@@ -220,25 +230,19 @@
       </tr>
 
       <tr>
-        <td class="week">14</td>
+        <td class="week">13</td>
+        <td class="when">Dec 7</td>
         <td><span class="lang-en">Scaling laws: Kaplan/Chinchilla-style scaling relations; model–data–systems tradeoffs under a fixed budget</span>
             <span class="lang-zh">Scaling law：Kaplan/Chinchilla 式缩放关系；固定预算下的模型–数据–系统权衡</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
 
-      <tr>
-        <td class="week">15</td>
-        <td><span class="lang-en">Advanced topics — precision and/or data selection: bf16 &amp; fp32; error analysis</span>
-            <span class="lang-zh">进阶专题——精度与/或数据选择：bf16 与 fp32；误差分析</span></td>
-        <td>&mdash;</td>
-        <td></td>
-      </tr>
-
-      <tr><td colspan="4" class="sub part-label"><span class="lang-en">Final</span><span class="lang-zh">结课</span></td></tr>
+      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Final</span><span class="lang-zh">结课</span></td></tr>
 
       <tr>
-        <td class="week">16</td>
+        <td class="week">14</td>
+        <td class="when">Dec 14</td>
         <td><span class="lang-en">Open poster symposium: student presentations of pre-training, LoRA, or theory projects</span>
             <span class="lang-zh">开放海报研讨会：学生展示预训练、LoRA 或理论项目</span></td>
         <td></td>

@@ -5,12 +5,22 @@ Numbers below were produced by running the page's own code (the same `makeMoons`
 itself with a DOM stub. They are what the lab will show; do not write any number into
 `index.html` that is not in this file.
 
-**Metric (changed 2026-09-22).** Dashboard A plots the per-layer signal strength
-`S_l = (1/n) Σ_k ‖z_l[k]‖` — for each data point take the norm of the whole
-post-activation vector, then average over the n points. (It used to plot the per-unit
-RMS, `sqrt( (1/(d n)) Σ_{k,j} z_j[k]² )`, which is smaller by about `√d`.) The
-pre-activation `h_l` is no longer computed or drawn. The code was checked against a
-brute-force recomputation of `S_l` on the same net: max difference 1.2 · 10⁻⁸.
+**Metric (final form, 2026-09-22).** Dashboard A plots the per-layer **RMS**
+
+```
+RMS_l = sqrt( (1 / (n · d_l)) · Σ_k Σ_j  z_{l,j}[k]² )        index 0 = the input x
+```
+
+the root mean square of every entry of the post-activation `z_l`, over all n data
+points. This is the quantity Claim 1 is about: `(1/d_out) E‖Wx‖²` is exactly
+`E[RMS(Wx)²]`, so the claim reads *the expected squared RMS is preserved*. **A norm is a
+different number** — the L2 norm of one sample is `√d_l · RMS_l`, so a healthy layer
+would read ≈ `√d_l` (≈ 5 at d = 24), not ≈ 1. The lab must not plot the norm: then the
+curve starts ≈ √(d/d_in) above the input-scale reference line, and nothing in the deck
+would match it. The pre-activation `h_l` is not computed or drawn.
+
+Code checked against a brute-force recomputation of `RMS_l` on the same net:
+**max difference 5.2 · 10⁻⁹** (d = 24, L = 20, seed 3).
 
 **Fixed throughout:** two moons, noise 0.13, 400 train / 400 test · no bias, no
 normalization, no skip connections · mini-batch SGD, batch 32, lr 0.03, momentum 0.9,
@@ -18,27 +28,27 @@ global gradient clipping at norm 1 · width d = 24.
 
 ## How far the initial signal gets, d = 24, seed 1 (no training)
 
-`S_l / S_0`, where `S_0 = 0.992`:
+`RMS_l / RMS_0`, where `RMS_0 = 0.7594`:
 
 | gain g | activation | L = 4 | L = 10 | L = 20 | L = 50 | L = 100 | L = 200 |
 |--------|-----------|-------|--------|--------|--------|---------|---------|
-| √2 | ReLU (He)       | 2.12   | 0.97   | 0.14   | 0.23   | 2.4 · 10⁻³ | 1.8 · 10⁻⁵ |
-| 1  | tanh (LeCun)    | 1.36   | 0.73   | 0.57   | 0.15   | 2.6 · 10⁻² | 2.0 · 10⁻⁴ |
-| 1  | linear          | 2.50   | 1.63   | 1.49   | 0.49   | 9.3 · 10⁻² | 7.3 · 10⁻⁴ |
+| √2 | ReLU (He)    | 0.61 | 0.29 | 0.042 | 0.071 | 7.5 · 10⁻⁴ | 5.6 · 10⁻⁶ |
+| 1  | tanh (LeCun) | 0.37 | 0.20 | 0.15  | 0.045 | 7.9 · 10⁻³ | 5.9 · 10⁻⁵ |
+| 1  | linear       | 0.71 | 0.46 | 0.42  | 0.16  | 3.0 · 10⁻² | 2.2 · 10⁻⁴ |
 
-⚠️ The ratio is not 1 at a healthy layer: `S_l` is a **vector norm**, so a well-scaled
-layer of width d sits near `√(d/d_in) ×` the input level (≈ 3.5 for d = 24, d_in = 2).
-The verdict box in the page compares the ratio against that reference, not against 1.
+A well-scaled net keeps the curve flat near the input's own RMS — that is what
+`RMS_l ≈ 1` means once the input is normalised to unit per-entry variance (here the
+input's RMS is 0.76, so "preserved" means ≈ 0.76, and the grey reference line sits there).
 
 ## ReLU, gain g = √2 (He), 400 steps, d = 24
 
-| L  | S_L / S₀ before training | loss (start → end) | test error |
-|----|--------------------------|--------------------|------------|
-| 4  | 2.12                     | 0.695 → 0.254      | 12.3 %     |
-| 10 | 0.97                     | 0.621 → 0.245      | 12.5 %     |
-| 20 | 0.14                     | 0.695 → 0.254      | 13.3 %     |
-| 100| 2.4 · 10⁻³                | 0.693 → 0.456      | 50.0 %     |
-| 200| 1.8 · 10⁻⁵                | 0.693 → 0.693      | 50.0 %     |
+| L  | RMS_L / RMS_0 before training | loss (start → end) | test error |
+|----|-------------------------------|--------------------|------------|
+| 4  | 0.61                          | 0.695 → 0.254      | 12.3 %     |
+| 10 | 0.29                          | 0.621 → 0.245      | 12.5 %     |
+| 20 | 0.042                         | 0.695 → 0.254      | 13.3 %     |
+| 100| 7.5 · 10⁻⁴                     | 0.693 → 0.456      | 50.0 %     |
+| 200| 5.6 · 10⁻⁶                     | 0.693 → 0.693      | 50.0 %     |
 
 Same settings, 500 steps, seeds 1 / 2 / 7 (test error):
 
@@ -55,23 +65,27 @@ precise frontier** — the lab is where the student finds it.
 
 ## L = 200, d = 24, seeds 1 … 12 (the two numbers quoted on the page)
 
-| setting | S_L / S₀ before training | final loss | test error |
-|---------|--------------------------|-----------|------------|
-| ReLU, g = √2 | 1.2 · 10⁻⁶ … 1.9 · 10⁻², **median 1.7 · 10⁻⁴** | 6 seeds stay at 0.693, 6 dip to ≈ 0.46 | **50.0 % for all 12** |
-| tanh, g = 1  | 2.0 · 10⁻⁴ … 1.1 · 10⁻¹, **median 3.6 · 10⁻³** | 0.23 … 0.39 | 5.5 % … 11.3 %, median 10.5 % |
+| setting | RMS_L / RMS_0 before training | final loss | test error |
+|---------|-------------------------------|-----------|------------|
+| ReLU, g = √2 | 3.7 · 10⁻⁷ … 5.8 · 10⁻³, **median 6.1 · 10⁻⁵** | 6 seeds stay at 0.693, 6 dip to ≈ 0.46 | **50.0 % for all 12** |
+| tanh, g = 1  | 5.9 · 10⁻⁵ … 3.0 · 10⁻², **median 1.0 · 10⁻³** | 0.23 … 0.39 | 5.5 % … 11.3 %, median 10.5 % |
 
-⚠️ This is the reason the verdict box makes **no claim that a small initial signal
-stops training**: for tanh the initial signal at L = 200 is only ~20× larger than the
-ReLU case, and training still works. ReLU dies because φ′(h) = 0 wherever h ≤ 0, so a
-network that starts dead stays dead; tanh has φ′ ≈ 1 near 0 and revives during training.
+Seed 1 is the lab's default, and it is the number the page's caveat quotes:
+**5.6 · 10⁻⁶ (ReLU)** and **5.9 · 10⁻⁵ (tanh)**.
 
-## After training the signal comes back (this is not a bug)
+⚠️ This is the reason the verdict box makes **no claim that a small initial signal stops
+training**: for tanh the initial signal at L = 200 is only ~10× larger than the ReLU
+case, and training still works. ReLU dies because φ′(h) = 0 wherever h ≤ 0, so a network
+that starts dead stays dead; tanh has φ′ ≈ 1 near 0 and revives during training.
 
-At d = 16, L = 105, ReLU, g = √2, seed 3: `S_L/S_0` goes from 1.8 · 10⁻³ before
-training to 1.79 after — the trained net's top layers are *healthier* than at init.
-Training repairs the decayed layers, and a trained ReLU net can overshoot the initial
-level. Measured max `S_l` at L = 45: 6.9 (d = 16), 9.9 (d = 32), 21.0 (d = 64) — that is
-`O(√d)`, i.e. the healthy level for that width, not an explosion.
+## After training the top-layer signal comes back (this is not a bug)
+
+At d = 16, L = 105, ReLU, g = √2, seed 3 the top-layer RMS runs `5.2 · 10⁻⁴` before
+training and **0.74** after — it recovers to the input's own RMS (0.76). Training repairs
+the layers that the initialisation had killed. On a shallower, wider net the trained net
+overshoots a little: trained `RMS_L` at L = 45 is 0.66 (d = 16), 2.98 (d = 32), 3.29
+(d = 64) — a few times the input level, which is what a ReLU net looks like once it has
+sharpened its decision boundary. **Not an explosion**, and not a bug.
 
 ## Cost (node, single core; the browser is the same order)
 

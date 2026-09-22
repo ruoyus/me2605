@@ -197,7 +197,7 @@ html[data-lang="en"] .lang-zh{display:none}
           <line x1="60" y1="150" x2="660" y2="150" stroke="#cbd5dd"/>
           <line x1="60" y1="20" x2="60" y2="150" stroke="#cbd5dd"/>
           <text x="360" y="172" text-anchor="middle" fill="#5a5a5a">layer index l</text>
-          <text x="18" y="90" fill="#5a5a5a" transform="rotate(-90 18 90)" text-anchor="middle">signal strength  S<tspan baseline-shift="sub" font-size="9">l</tspan></text>
+          <text x="18" y="90" fill="#5a5a5a" transform="rotate(-90 18 90)" text-anchor="middle">RMS(z<tspan baseline-shift="sub" font-size="9">l</tspan>)</text>
           <path d="M60 42 L660 148" stroke="#2471a3" stroke-width="2.5" fill="none"/>
           <text x="606" y="140" fill="#2471a3" font-weight="700">g &lt; 1: vanishes</text>
           <line x1="60" y1="62" x2="660" y2="62" stroke="#1e8449" stroke-width="2.5"/>
@@ -308,8 +308,8 @@ html[data-lang="en"] .lang-zh{display:none}
           <span><i class="swatch" style="background:var(--post);height:0;border-top:2px dashed var(--post)"></i><span class="lang-en">post-training layer signal strength</span><span class="lang-zh">训练后的逐层信号强度</span></span>
           <span><i class="swatch" style="background:var(--ref);height:0;border-top:2px dashed var(--ref)"></i><span class="lang-en">input scale</span><span class="lang-zh">输入尺度</span></span>
         </div>
-        <p class="small muted" style="margin-top:8px"><span class="lang-en">How the curve is computed: for one input x[k], z<sub>l</sub>[k] is the post-activation vector at layer l. Take its norm ‖z<sub>l</sub>[k]‖, then average over the n data points, S<sub>l</sub> = (1/n) Σ<sub>k</sub> ‖z<sub>l</sub>[k]‖. The x-axis is the layer l; the y-axis is S<sub>l</sub>.</span>
-           <span class="lang-zh">曲线怎么算：对单个输入 x[k]，z<sub>l</sub>[k] 是第 l 层的 post-activation 向量；取它的范数 ‖z<sub>l</sub>[k]‖，再对所有 n 个数据点求平均，S<sub>l</sub> = (1/n) Σ<sub>k</sub> ‖z<sub>l</sub>[k]‖。横轴是层号 l，纵轴是 S<sub>l</sub>。</span></p>
+        <p class="small muted" style="margin-top:8px"><span class="lang-en">How the curve is computed: RMS<sub>l</sub> = sqrt( (1/(n·d<sub>l</sub>)) Σ<sub>k</sub>Σ<sub>j</sub> z<sub>l,j</sub>[k]<sup>2</sup> ) — the root mean square of every entry of the post-activation z<sub>l</sub>, over all n data points. The x-axis is the layer l; the y-axis is RMS<sub>l</sub>. (The L2 norm of one sample is √d<sub>l</sub> times its RMS.)</span>
+           <span class="lang-zh">曲线怎么算：RMS<sub>l</sub> = sqrt( (1/(n·d<sub>l</sub>)) Σ<sub>k</sub>Σ<sub>j</sub> z<sub>l,j</sub>[k]<sup>2</sup> ) —— 把 post-activation z<sub>l</sub> 的所有分量、所有 n 个数据点一起取均方根。横轴是层号 l，纵轴是 RMS<sub>l</sub>。（单条样本的 L2 范数 = 它的 RMS × √d<sub>l</sub>。）</span></p>
         <div class="readout">
           <div class="stat"><div class="k"><span class="lang-en">input RMS</span><span class="lang-zh">输入 RMS</span></div><div class="v" id="r-in">–</div></div>
           <div class="stat"><div class="k"><span class="lang-en">output RMS</span><span class="lang-zh">输出 RMS</span></div><div class="v" id="r-out">–</div></div>
@@ -346,8 +346,8 @@ html[data-lang="en"] .lang-zh{display:none}
   <div class="footer-note">
     <p><span class="lang-en"><b>What you can change</b> — activation φ; the init gain g; the depth L (2 … 200); the width d (8 … 64); the seed. <b>What is fixed</b> — the two-moons task (400 train / 400 test, noise 0.13); mini-batch SGD, batch 32, learning rate 0.03, momentum 0.9; gradient clipping at norm 1; no bias, no normalization, no skip connections. The gain only enters through W<sub>ij</sub> ~ N(0, g²/fan-in).</span>
        <span class="lang-zh"><b>能调的</b>——激活函数 φ；初始化增益 g；深度 L（2…200）；宽度 d（8…64）；随机种子。<b>固定的</b>——双月牙任务（训练/测试各 400，噪声 0.13）；mini-batch SGD，批大小 32，学习率 0.03，动量 0.9；梯度按范数 1 裁剪；无偏置、无归一化、无跳跃连接。增益只通过 W<sub>ij</sub> ~ N(0, g²/fan-in) 起作用。</span></p>
-    <p style="margin-top:8px"><span class="lang-en"><b>Two honest caveats.</b> (1) Gradient clipping renormalises the update direction at every step, so a small gradient by itself does not stop the training here. (2) The activation decides what "dead" means. With ReLU, once the pre-activations sit at 0 the derivative is 0 as well, so a network that starts dead stays dead: at d = 24, g = √2, L = 200 the initial signal is about 1.7·10<sup>−4</sup> of the input (median over 12 seeds) and the test error stays at 50 % — it never separates the two moons. With tanh the derivative near 0 is close to 1, so a signal that has decayed just as far can still be revived by training: at d = 24, g = 1, L = 200 the initial signal is about 3.6·10<sup>−3</sup> of the input, yet 400 steps still reach about 10 % test error. Depth is not the only variable here, and the lab lets you see that.</span>
-       <span class="lang-zh"><b>两点如实说明。</b>（1）梯度裁剪每一步都会把更新方向重新归一化，所以在这里「梯度小」本身并不足以让训练停下来。（2）「死了」是什么意思由激活函数决定。对 ReLU，一旦 pre-activation 落在 0，导数也是 0，所以一开始就是死的网络会一直死下去：在 d = 24、g = √2、L = 200 时初始信号约为输入的 1.7·10<sup>−4</sup>（12 个种子的中位数），测试 error 全程停在 50%——它始终分不开两个月牙。对 tanh，0 附近的导数接近 1，所以衰减得同样厉害的信号仍可能被训练救回来：在 d = 24、g = 1、L = 200 时初始信号约为输入的 3.6·10<sup>−3</sup>，但 400 步之后测试 error 仍约为 10%。深度不是这里的唯一变量，实验台会让你看到这一点。</span></p>
+    <p style="margin-top:8px"><span class="lang-en"><b>Two honest caveats.</b> (1) Gradient clipping renormalises the update direction at every step, so a small gradient by itself does not stop the training here. (2) The activation decides what "dead" means. With ReLU, once the pre-activations sit at 0 the derivative is 0 as well, so a network that starts dead stays dead: at d = 24, g = √2, L = 200 the initial signal is about 6·10<sup>−6</sup> of the input, and the test error stays at 50 % — it never separates the two moons. With tanh the derivative near 0 is close to 1, so a signal that has decayed just as far can still be revived by training: at d = 24, g = 1, L = 200 the initial signal is about 6·10<sup>−5</sup> of the input, yet 400 steps still reach about 10 % test error. Depth is not the only variable here, and the lab lets you see that.</span>
+       <span class="lang-zh"><b>两点如实说明。</b>（1）梯度裁剪每一步都会把更新方向重新归一化，所以在这里「梯度小」本身并不足以让训练停下来。（2）「死了」是什么意思由激活函数决定。对 ReLU，一旦 pre-activation 落在 0，导数也是 0，所以一开始就是死的网络会一直死下去：在 d = 24、g = √2、L = 200 时初始信号约为输入的 6·10<sup>−6</sup>，测试 error 全程停在 50%——它始终分不开两个月牙。对 tanh，0 附近的导数接近 1，所以衰减得同样厉害的信号仍可能被训练救回来：在 d = 24、g = 1、L = 200 时初始信号约为输入的 6·10<sup>−5</sup>，但 400 步之后测试 error 仍约为 10%。深度不是这里的唯一变量，实验台会让你看到这一点。</span></p>
     <p style="margin-top:8px"><span class="lang-en">Background follows <i>Optimization for Deep Learning</i> §2.1 and the Week 3 lecture on depth. Demo for ME2605 · DDA6204, CUHK-Shenzhen.</span>
        <span class="lang-zh">背景内容对应讲义 <i>Optimization for Deep Learning</i> 第 2.1 节与第 3 周深度讲义。ME2605 · DDA6204 课程 demo，香港中文大学（深圳）。</span></p>
   </div>
@@ -435,11 +435,11 @@ function newGrads(net){
 }
 
 /* One forward pass over idx; if grads is given, also the backward pass needed
-   to take a step. Returns the per-layer signal strength S_l = mean_k ||z_l[k]||
+   to take a step. Returns the per-layer RMS, RMS_l = sqrt( mean_{k,j} z_{l,j}[k]^2 )
    (index 0 = the input), plus loss and err. */
 function forward(net,data,idx,grads){
   var L=net.L,d=net.d,din=net.din,k=net.act;
-  var buf=makeBuf(net), sigSum=new Float64Array(L+1);   /* Σ_k ‖z_l[k]‖ */
+  var buf=makeBuf(net), sqSum=new Float64Array(L+1);   /* Σ_{k,j} z_{l,j}[k]² */
   var n=idx.length, loss=0, bad=0;
   for(var ii=0;ii<n;ii++){
     var si=idx[ii];
@@ -454,13 +454,10 @@ function forward(net,data,idx,grads){
     var p=logit(sOut), y=data.Y[si];
     loss += -(y?Math.log(Math.max(p,1e-12)):Math.log(Math.max(1-p,1e-12)));
     if(((p>0.5)?1:0)!==y) bad++;
-    var s0=0;
-    for(var q=0;q<din;q++){ var xq=buf.z[0][q]; s0+=xq*xq; }
-    sigSum[0]+=Math.sqrt(s0);
+    for(var q=0;q<din;q++){ var xq=buf.z[0][q]; sqSum[0]+=xq*xq; }
     for(var l2=1;l2<=L;l2++){
-      var zz2=buf.z[l2], sl=0;
-      for(var q2=0;q2<d;q2++){ var zq=zz2[q2]; sl+=zq*zq; }
-      sigSum[l2]+=Math.sqrt(sl);
+      var zz2=buf.z[l2];
+      for(var q2=0;q2<d;q2++){ var zq=zz2[q2]; sqSum[l2]+=zq*zq; }
     }
     if(grads){
       var e=buf.e, dOut=p-y, eN=e[L-1], zL=buf.z[L];
@@ -482,7 +479,10 @@ function forward(net,data,idx,grads){
     }
   }
   var post=[];
-  for(var l3=0;l3<=L;l3++) post.push(sigSum[l3]/n);   /* S_l = mean_k ‖z_l[k]‖ */
+  for(var l3=0;l3<=L;l3++){
+    var dl=(l3===0?din:d);
+    post.push(Math.sqrt(sqSum[l3]/(n*dl)));   /* RMS_l, over the batch and the layer */
+  }
   return {post:post,loss:loss/n,err:bad/n};
 }
 
@@ -709,8 +709,6 @@ function refresh(){
   drawSigChart(stats,trained,state);
   var inR=stats.post[0], outR=stats.post[net.L];
   var ratio=inR>0?outR/inR:Infinity;
-  /* S_l is a vector norm, so a well-scaled net of width d sits near sqrt(d/d_in) x the input level */
-  var ref=inR*Math.sqrt(state.d/2), rel=(ref>0)?outR/ref:Infinity;
   document.getElementById("r-in").textContent=fmt(inR);
   document.getElementById("r-out").textContent=fmt(outR);
   document.getElementById("r-ratio").textContent=fmt(ratio);
@@ -718,25 +716,25 @@ function refresh(){
     ? (fmt(trained.loss0)+" → "+fmt(trained.loss))
     : (fmt(stats.loss)+" → –");
   var v=document.getElementById("verdict"), cls, txt;
-  if(!isFinite(rel)||rel<1e-3){
+  if(!isFinite(ratio)||ratio<1e-3){
     cls="low";
-    txt='<span class="lang-en">Before training, the signal at layer L is '+fmt(outR)+', against '+fmt(inR)+' at the input: it has all but disappeared by the top.</span>'
-       +'<span class="lang-zh">训练前第 L 层的信号是 '+fmt(outR)+'，输入是 '+fmt(inR)+'：传到顶层时几乎已经没有了。</span>'
+    txt='<span class="lang-en">Before training, the RMS at layer L is '+fmt(outR)+', against '+fmt(inR)+' at the input: it has all but disappeared by the top.</span>'
+       +'<span class="lang-zh">训练前第 L 层的 RMS 是 '+fmt(outR)+'，输入是 '+fmt(inR)+'：传到顶层时几乎已经没有了。</span>'
        +'<span class="badge low">vanished</span>';
-  } else if(rel<0.25){
+  } else if(ratio<0.25){
     cls="low";
-    txt='<span class="lang-en">Before training, the signal at layer L is '+fmt(ratio)+'× the input level, while a well-scaled net of this width sits near '+fmt(Math.sqrt(state.d/2))+'×. In expectation the scale is preserved, so this gap is what one run does.</span>'
-       +'<span class="lang-zh">训练前第 L 层的信号是输入的 '+fmt(ratio)+' 倍，而这个宽度下良好缩放的网络应接近 '+fmt(Math.sqrt(state.d/2))+' 倍。期望意义上尺度是保住的，所以这个差距来自「一次抽样」。</span>'
+    txt='<span class="lang-en">Before training, layer L carries '+fmt(ratio)+'× the input RMS. Claim 1 pins the expected squared RMS at every depth, so this gap is what one run does.</span>'
+       +'<span class="lang-zh">训练前第 L 层是输入 RMS 的 '+fmt(ratio)+' 倍。Claim 1 保证的是「平方 RMS 的期望」在任意深度不变，所以这个差距来自「一次抽样」。</span>'
        +'<span class="badge low">decayed</span>';
-  } else if(rel>6){
+  } else if(ratio>6){
     cls="high";
-    txt='<span class="lang-en">At layer L the signal is '+fmt(rel)+'× what a well-scaled net of this width would carry: it has grown with depth. Deep layers saturate (tanh) or a few units dominate (ReLU).</span>'
-       +'<span class="lang-zh">到第 L 层时信号是这个宽度下良好缩放网络的 '+fmt(rel)+' 倍：它随深度放大了。深层会饱和（tanh）或被少数单元主导（ReLU）。</span>'
+    txt='<span class="lang-en">At layer L the RMS is '+fmt(ratio)+'× the input: it has grown with depth. Deep layers saturate (tanh) or a few units dominate (ReLU).</span>'
+       +'<span class="lang-zh">到第 L 层时 RMS 达到输入的 '+fmt(ratio)+' 倍：它随深度放大了。深层会饱和（tanh）或被少数单元主导（ReLU）。</span>'
        +'<span class="badge high">exploding</span>';
   } else {
     cls="ok";
-    txt='<span class="lang-en">At layer L the signal is '+fmt(ratio)+'× the input level — near the '+fmt(Math.sqrt(state.d/2))+'× a well-scaled net of this width carries. Whether training then succeeds is a separate question — press Train.</span>'
-       +'<span class="lang-zh">到第 L 层时信号是输入的 '+fmt(ratio)+' 倍，接近这个宽度下良好缩放网络的 '+fmt(Math.sqrt(state.d/2))+' 倍。训练是否就此成功是另一个问题——按「训练」。</span>'
+    txt='<span class="lang-en">At layer L the RMS is '+fmt(ratio)+'× the input: it survives the depth. Whether training then succeeds is a separate question — press Train.</span>'
+       +'<span class="lang-zh">到第 L 层时 RMS 是输入的 '+fmt(ratio)+' 倍：它穿过了整个深度。训练是否就此成功是另一个问题——按「训练」。</span>'
        +'<span class="badge ok">preserved</span>';
   }
   if(trained){

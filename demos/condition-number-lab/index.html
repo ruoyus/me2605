@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Condition Number Lab · ME2605 Lecture 4</title>
+<meta name="description" content="ME2605 Lecture 4, Part 2 — the condition number of the house-price regression: compute it, predict the number of gradient-descent steps, then measure.">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
+  --accent-soft:#eaf2f8; --border:#e2e2e2; --code-bg:#f6f8fa; --maxw:1160px;
+  --good:#1e8449; --low:#2471a3; --high:#b03a2e; --warn:#b7791f;
+  --panel:#fbfcfd;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+a{color:var(--accent)}
+code,.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+sub{font-size:.72em} sup{font-size:.72em}
+.site-header{position:sticky; top:0; z-index:20; background:rgba(255,255,255,.94);
+  backdrop-filter:saturate(180%) blur(8px); border-bottom:1px solid var(--border)}
+.nav-inner{max-width:var(--maxw); margin:0 auto; padding:11px 20px; display:flex;
+  align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap}
+.brand{font-size:14.5px; color:var(--muted); text-decoration:none}
+.brand .code{color:var(--accent); font-weight:600}
+.nav-links{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.nav-links a{font-size:14px; padding:6px 11px; border-radius:6px; border:1px solid transparent;
+  background:none; color:var(--muted); cursor:pointer; text-decoration:none}
+.nav-links a:hover{background:var(--accent-soft); color:var(--accent)}
+main{max-width:var(--maxw); margin:0 auto; padding:30px 20px 90px}
+h1{font-size:29px; line-height:1.28; margin:4px 0 10px; letter-spacing:-.01em}
+h2{font-size:19px; margin:0 0 10px}
+p{margin:0 0 12px}
+.lede{font-size:17.5px; color:var(--muted); max-width:760px}
+.grid{display:grid; grid-template-columns:340px 1fr; gap:22px; margin-top:22px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px 18px}
+.card h3{font-size:15px; margin:0 0 10px; color:var(--muted); font-weight:600}
+.ctl{margin-bottom:15px}
+.ctl label{display:block; font-size:14px; color:var(--muted); margin-bottom:5px}
+.ctl .val{color:var(--fg); font-weight:600}
+input[type=range]{width:100%}
+.row{display:flex; gap:9px; flex-wrap:wrap; margin-top:4px}
+button{font:inherit; font-size:14px; padding:8px 13px; border-radius:7px;
+  border:1px solid var(--border); background:#fff; color:var(--fg); cursor:pointer}
+button:hover{border-color:#c9d6e0; background:var(--accent-soft)}
+button.primary{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600}
+button.primary:hover{background:#154360}
+.readouts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 18px}
+.ro{display:flex; justify-content:space-between; gap:10px; border-bottom:1px dashed var(--border); padding-bottom:5px}
+.ro span:first-child{color:var(--muted); font-size:14px}
+.ro span:last-child{font-family:ui-monospace,Menlo,monospace; white-space:nowrap}
+.ro.wide{grid-column:1 / -1}
+.verdict{margin-top:12px; padding:9px 12px; border-radius:7px; font-size:15px}
+.verdict.ok{background:#eafaf1; color:#14663a; border:1px solid #bfe6cf}
+.verdict.no{background:#fdecea; color:#8c2b21; border:1px solid #f2c2bb}
+.verdict.idle{background:var(--code-bg); color:var(--muted); border:1px solid var(--border)}
+canvas{width:100%; height:auto; display:block}
+.fig{margin-top:16px}
+.figcap{font-size:13.5px; color:var(--muted); margin-top:6px}
+.two{display:grid; grid-template-columns:1fr 1fr; gap:22px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+ul.check{margin:6px 0 0; padding-left:20px}
+ul.check li{margin-bottom:5px}
+.mat{font-family:ui-monospace,Menlo,monospace; font-size:14.5px}
+footer{max-width:var(--maxw); margin:0 auto; padding:10px 20px 40px; color:var(--muted); font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="../"><span class="code">ME2605</span> · Lecture 4 — Convergence and Normalization</a>
+    <nav class="nav-links">
+      <a href="../normalization-lab/">Normalization Lab</a>
+      <a href="../nn-error-lab/">Depth Lab</a>
+      <a href="https://ruoyus.github.io/me2605/">Course site</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1>Condition Number Lab</h1>
+  <p class="lede">Seventeen houses, one slope and one intercept, gradient descent with a
+  constant step. The only thing you choose is the scale of the area column — and that choice
+  decides whether a thousand steps are enough.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h3>Controls</h3>
+
+      <div class="ctl">
+        <label>Area column: multiply by <span class="val" id="v-scale">1</span></label>
+        <input type="range" id="scale" min="-4" max="0" step="0.1" value="0">
+      </div>
+
+      <div class="ctl">
+        <label>Step size
+          <span class="val" id="v-eta">auto (1 / λ<sub>max</sub>)</span></label>
+        <input type="range" id="etaN" min="0.90" max="1.0" step="0.005" value="1">
+        <div class="figcap">0.90 = a step 10× smaller than the largest stable one.</div>
+      </div>
+
+      <div class="ctl">
+        <label>Start: w<sub>0</sub> = (<span class="val" id="v-w0">10, 50</span>)</label>
+        <div class="figcap">The same start in both of the lecture's runs.</div>
+      </div>
+
+      <div class="row">
+        <button class="primary" id="run">Run 1000 steps</button>
+        <button id="toeps">Run to ε = 10<sup>−4</sup></button>
+        <button id="reset">Reset</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="card">
+        <h3>What the scale does to the Hessian</h3>
+        <div class="readouts">
+          <div class="ro wide"><span>X X<sup>T</sup> = [a b ; b d]</span><span class="mat" id="r-xx">—</span></div>
+          <div class="ro"><span>λ<sub>max</sub></span><span id="r-lmax">—</span></div>
+          <div class="ro"><span>λ<sub>min</sub></span><span id="r-lmin">—</span></div>
+          <div class="ro"><span>κ = λ<sub>max</sub>/λ<sub>min</sub></span><span id="r-kappa">—</span></div>
+          <div class="ro"><span>step η</span><span id="r-eta">—</span></div>
+          <div class="ro"><span>predicted steps to ε</span><span id="r-pred">—</span></div>
+          <div class="ro"><span>measured steps to ε</span><span id="r-meas">—</span></div>
+          <div class="ro"><span>loss now</span><span id="r-loss">—</span></div>
+        </div>
+        <div class="verdict idle" id="verdict">Press Run, then compare the two step counts.</div>
+      </div>
+
+      <div class="two">
+        <div class="fig">
+          <canvas id="lossC" width="520" height="300"></canvas>
+          <div class="figcap">Objective against the step, log scale. The dashed line is the
+            optimum, F* = <span id="r-fstar">—</span>.</div>
+        </div>
+        <div class="fig">
+          <canvas id="fitC" width="520" height="300"></canvas>
+          <div class="figcap">The data, the current line, and the optimum in dashes.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:22px">
+    <h3>What to check</h3>
+    <ul class="check">
+      <li>Read κ off the panel, then predict the steps yourself: about (κ/2)·ln(1/ε), with
+          ε measured on the relative gap (F − F*)/(F<sub>0</sub> − F*).</li>
+      <li>Areas × 0.01 leaves κ near 4,500; areas × 0.0001 leaves it near 44.</li>
+      <li>A lower κ is not a smaller objective: both scalings solve the same problem.</li>
+      <li>The prediction is an upper bound. A run that is faster is fine; a slower run means
+          the two numbers disagree.</li>
+      <li>For this model the Hessian is constant, so κ at the start is κ all the way; for a
+          nonlinear model it would drift, which is why normalization acts at every layer.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>ME2605 / DDA6204 · Neural Network Training · Fall 2026 — Part 2 of Lecture 4.
+Data: 17 houses, living area against price.</footer>
+
+<script>
+/* ======================= numeric core (no DOM) ======================= */
+var HOUSES = [
+  [1030, 95], [1100, 120], [1101, 287], [1139, 141], [1210, 100],
+  [1572, 167], [2280, 195], [2490, 205], [2576, 227], [3210, 290],
+  [3210, 410], [3241, 345], [3440, 355], [4340, 480], [5000, 405],
+  [5719, 567], [6320, 545]
+];
+var N = HOUSES.length;
+var AREA = HOUSES.map(function (h) { return h[0]; });
+var PRICE = HOUSES.map(function (h) { return h[1] / 10; });   /* the lecture scales prices by 0.1 */
+var S1 = 0, S2 = 0, SP = 0, SY1 = 0;
+for (var i = 0; i < N; i++) { S1 += AREA[i]; S2 += AREA[i] * AREA[i]; SP += AREA[i] * PRICE[i]; SY1 += PRICE[i]; }
+
+function design(c) { return { a: c, s1: c * S1, s2: c * c * S2 }; }
+function stats(c) {                       /* eigenvalues of X X^T, closed form for 2x2 */
+  var d = design(c), t = d.s2 + N, det = d.s2 * N - d.s1 * d.s1, r = Math.sqrt(Math.max(0, t * t - 4 * det));
+  var lo = (t - r) / 2, hi = (t + r) / 2;
+  return { lmin: lo, lmax: hi, kappa: hi / lo, xx: [[d.s2, d.s1], [d.s1, N]] };
+}
+function optimum(c) {                     /* least squares, solved directly */
+  var d = design(c), det = d.s2 * N - d.s1 * d.s1;
+  var b1 = c * SP, b2 = SY1;                            /* X y  (2-vector) */
+  return [(N * b1 - d.s1 * b2) / det, (d.s2 * b2 - d.s1 * b1) / det];
+}
+function loss(c, w) {                     /* 0.5 * ||X^T w - y||^2 */
+  var d = design(c), a = d.a, s = 0;
+  for (var i = 0; i < N; i++) { var r = a * AREA[i] * w[0] + w[1] - PRICE[i]; s += r * r; }
+  return 0.5 * s;
+}
+function grad(c, w) {
+  var d = design(c), a = d.a, g0 = 0, g1 = 0;
+  for (var i = 0; i < N; i++) {
+    var r = a * AREA[i] * w[0] + w[1] - PRICE[i];
+    g0 += a * AREA[i] * r; g1 += r;
+  }
+  return [g0, g1];
+}
+function run(c, eta, steps, w0) {
+  var w = [w0[0], w0[1]], hist = [loss(c, w)];
+  for (var r = 0; r < steps; r++) {
+    var g = grad(c, w);
+    w = [w[0] - eta * g[0], w[1] - eta * g[1]];
+    hist.push(loss(c, w));
+  }
+  return { w: w, hist: hist };
+}
+/* the iteration count part 1 states: r >= (kappa+1)/2 * ln(1/eps) for the objective gap */
+function predicted(c, eps) { return Math.ceil((stats(c).kappa + 1) / 2 * Math.log(1 / eps)); }
+/* the bound the lecture states is on the RELATIVE GAP (F_r - F*)/(F_0 - F*), so the
+   measurement has to use the same yardstick, not the gap divided by F*. */
+function stepsTo(c, eta, eps, w0, cap) {
+  var w = [w0[0], w0[1]], fstar = loss(c, optimum(c)), gap0 = loss(c, w) - fstar, r = 0;
+  var f = loss(c, w);
+  while (r < cap && (f - fstar) / gap0 > eps) {
+    var g = grad(c, w);
+    w = [w[0] - eta * g[0], w[1] - eta * g[1]];
+    f = loss(c, w); r++;
+  }
+  return { steps: r, reached: (f - fstar) / gap0 <= eps, w: w, gap0: gap0 };
+}
+if (typeof module !== "undefined") {
+  module.exports = { HOUSES: HOUSES, AREA: AREA, PRICE: PRICE, stats: stats, optimum: optimum,
+                     loss: loss, grad: grad, run: run, predicted: predicted, stepsTo: stepsTo };
+}
+/* ======================= charts and the page ======================= */
+</script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var W0 = [10, 50], EPS = 1e-4, CAP = 200000;
+  var LOG = [];                    /* one record per run - never `history` */
+  var S = { k: 0, etaFrac: 1, w: W0.slice(), hist: [loss(1, W0)], fstar: 0, meas: null };
+
+  function fmt(v) {                /* fewest digits that are still honest */
+    if (!isFinite(v)) return v > 0 ? "∞" : "−∞";
+    var a = Math.abs(v);
+    if (a === 0) return "0";
+    if (a >= 1e5 || a < 1e-3) { return v.toExponential(2).replace("e+", "e").replace("e-0", "e-"); }
+    if (a >= 100) return v.toFixed(0);
+    if (a >= 1) return String(Math.round(v * 100) / 100);
+    return String(Math.round(v * 1e4) / 1e4);
+  }
+  function si(v) {
+    var a = Math.abs(v);
+    if (a >= 1e6) return (v / 1e6).toFixed(2) + "e6";
+    if (a >= 1e3) return (v / 1e3).toFixed(2) + "e3";
+    if (a >= 1) return fmt(v);
+    return v.toExponential(2).replace("e-0", "e-");
+  }
+  function c() { return Math.pow(10, S.k); }
+  function etaAuto() { return 1 / stats(c()).lmax; }
+  function eta() { return S.etaFrac * etaAuto(); }
+
+  function draw() {
+    var st = stats(c()), w = S.w, opt = optimum(c());
+    $("v-scale").textContent = (S.k === 0 ? "1" : "10^" + S.k.toFixed(1).replace(/\.0$/, ""));
+    $("v-eta").innerHTML = S.etaFrac >= 0.999 ? "auto (1 / λ<sub>max</sub>)"
+                                              : (S.etaFrac * 100).toFixed(1) + "% of 1/λ<sub>max</sub>";
+    $("r-xx").textContent = "[" + si(st.xx[0][0]) + " " + si(st.xx[0][1]) + " ; " + si(st.xx[1][0]) + " " + si(st.xx[1][1]) + "]";
+    $("r-lmax").textContent = si(st.lmax);
+    $("r-lmin").textContent = si(st.lmin);
+    $("r-kappa").textContent = st.kappa >= 1000 ? si(st.kappa) : fmt(st.kappa);
+    $("r-eta").textContent = fmt(eta());
+    $("r-pred").textContent = fmt(predicted(c(), EPS));
+    $("r-meas").textContent = S.meas === null ? "—" : (S.meas.reached ? fmt(S.meas.steps) : "> " + fmt(S.meas.steps) + " (not yet)");
+    $("r-loss").textContent = fmt(S.hist[S.hist.length - 1]);
+    $("r-fstar").textContent = fmt(loss(c(), opt));
+    verdict(st);
+    drawLoss(), drawFit(w, opt);
+    window.__state = { k: S.k, kappa: st.kappa, pred: predicted(c(), EPS),
+                       meas: S.meas, loss: S.hist[S.hist.length - 1] };
+  }
+  function verdict(st) {
+    var el = $("verdict");
+    if (S.meas === null) {
+      el.className = "verdict idle";
+      el.textContent = "Press Run, then compare the two step counts.";
+      return;
+    }
+    var p = predicted(c(), EPS);
+    var ok = S.meas.reached && S.meas.steps <= p;
+    el.className = "verdict " + (ok ? "ok" : "no");
+    el.textContent = ok
+      ? "κ = " + fmt(st.kappa) + " predicts at most " + fmt(p) + " steps; the run needed " +
+        fmt(S.meas.steps) + ". The bound holds."
+      : (S.meas.reached
+          ? "κ = " + fmt(st.kappa) + " predicts " + fmt(p) + " steps but the run needed " +
+            fmt(S.meas.steps) + " — report this: the two numbers disagree."
+          : "Not converged in " + fmt(S.meas.steps) + " steps: this is the first try of the lecture.");
+  }
+
+  function axes(ctx, xmax, ymin, ymax, logy) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    var L = 54, R = 12, T = 14, B = 34, W = ctx.canvas.width - L - R, H = ctx.canvas.height - T - B;
+    ctx.strokeStyle = "#e2e2e2"; ctx.fillStyle = "#5a5a5a";
+    ctx.font = "12px ui-monospace,Menlo,monospace"; ctx.lineWidth = 1;
+    var ticks = 4;
+    for (var i = 0; i <= ticks; i++) {
+      var f = i / ticks, y = T + H * (1 - f);
+      ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L + W, y); ctx.stroke();
+      var val = logy ? Math.pow(10, Math.log10(ymin) + f * (Math.log10(ymax) - Math.log10(ymin)))
+                     : ymin + f * (ymax - ymin);
+      ctx.fillText(logy ? val.toExponential(0).replace("e+", "e") : fmt(val), 4, y + 4);
+    }
+    ctx.strokeStyle = "#9aa5ad";
+    ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, T + H); ctx.lineTo(L + W, T + H); ctx.stroke();
+    return { L: L, T: T, W: W, H: H, xmax: xmax, ymin: ymin, ymax: ymax, logy: logy };
+  }
+  function drawLoss() {
+    var ctx = $("lossC").getContext("2d"), h = S.hist, fstar = loss(c(), optimum(c()));
+    var ymin = Math.max(fstar * 0.8, Math.min.apply(null, h) * 0.8);
+    var ymax = Math.max.apply(null, h) * 1.25;
+    var ax = axes(ctx, h.length - 1, ymin, ymax, true);
+    function X(r) { return ax.L + ax.W * (h.length < 2 ? 0 : r / (h.length - 1)); }
+    function Y(v) {
+      var t = (Math.log10(Math.max(v, ymin)) - Math.log10(ymin)) / (Math.log10(ymax) - Math.log10(ymin));
+      return ax.T + ax.H * (1 - t);
+    }
+    ctx.strokeStyle = "#b7791f"; ctx.setLineDash([5, 4]); ctx.beginPath();
+    ctx.moveTo(ax.L, Y(fstar)); ctx.lineTo(ax.L + ax.W, Y(fstar)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = "#b03a2e"; ctx.lineWidth = 2; ctx.beginPath();
+    for (var r = 0; r < h.length; r++) { if (r === 0) ctx.moveTo(X(r), Y(h[r])); else ctx.lineTo(X(r), Y(h[r])); }
+    ctx.stroke();
+    ctx.fillStyle = "#5a5a5a"; ctx.fillText("F*", ax.L + 6, Y(fstar) - 4);
+    ctx.fillText("step", ax.L + ax.W / 2 - 12, ax.T + ax.H + 22);
+  }
+  function drawFit(w, opt) {
+    var ctx = $("fitC").getContext("2d"), cc = c(), SC = 10;
+    var ax = axes(ctx, 6800, 0, 660, false);
+    function X(x) { return ax.L + ax.W * (x / ax.xmax); }
+    function Y(v) { return ax.T + ax.H * (1 - v / ax.ymax); }
+    ctx.fillStyle = "#1a1a1a";
+    for (var i = 0; i < N; i++) {
+      ctx.beginPath(); ctx.arc(X(AREA[i]), Y(PRICE[i] * SC), 3.0, 0, 6.2832); ctx.fill();
+    }
+    function line(w0, colour, dash, lw) {
+      ctx.strokeStyle = colour; ctx.lineWidth = lw; ctx.setLineDash(dash); ctx.beginPath();
+      ctx.moveTo(X(0), Y(SC * w0[1]));
+      ctx.lineTo(X(ax.xmax), Y(SC * (w0[0] * cc * ax.xmax + w0[1])));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    line(opt, "#2471a3", [5, 4], 1.6);
+    line(w, "#b03a2e", [], 2.2);
+    ctx.fillStyle = "#5a5a5a";
+    ctx.fillText("area (ft²)", ax.L + ax.W / 2 - 26, ax.T + ax.H + 22);
+  }
+
+  function runSteps(n) {
+    var r = run(c(), eta(), n, W0);
+    S.w = r.w; S.hist = r.hist; S.meas = null; LOG.push({ k: S.k, n: n }); draw();
+  }
+  function runToEps() {
+    var m = stepsTo(c(), eta(), EPS, W0, CAP);
+    S.meas = { steps: m.steps, reached: m.reached };
+    S.w = m.w; S.hist = [loss(c(), W0)];
+    var w = W0.slice();
+    for (var r = 0; r < Math.min(m.steps, 1000); r++) { var g = grad(c(), w); w = [w[0] - eta() * g[0], w[1] - eta() * g[1]]; S.hist.push(loss(c(), w)); }
+    LOG.push({ k: S.k, toEps: m.steps, reached: m.reached });
+    draw();
+  }
+
+  $("scale").addEventListener("input", function () { S.k = parseFloat(this.value); S.meas = null; S.w = W0.slice(); S.hist = [loss(c(), W0)]; draw(); });
+  $("etaN").addEventListener("input", function () { S.etaFrac = parseFloat(this.value); draw(); });
+  $("run").addEventListener("click", function () { runSteps(1000); });
+  $("toeps").addEventListener("click", runToEps);
+  $("reset").addEventListener("click", function () {
+    S.k = 0; S.etaFrac = 1; S.w = W0.slice(); S.hist = [loss(1, W0)]; S.meas = null;
+    $("scale").value = "0"; $("etaN").value = "1"; draw();
+  });
+
+  /* deep links, so a lecturer can open a prepared state (and so can a screenshot) */
+  var q = new URLSearchParams(location.search);
+  if (q.has("k")) { S.k = parseFloat(q.get("k")); $("scale").value = String(S.k); }
+  if (q.has("eta")) { S.etaFrac = parseFloat(q.get("eta")); $("etaN").value = String(S.etaFrac); }
+  if (q.has("eps")) { EPS = parseFloat(q.get("eps")); }
+  draw();
+  if (q.has("run")) { runSteps(parseInt(q.get("run"), 10) || 1000); }
+  if (q.has("toeps")) { runToEps(); }
+})();
+</script>
+</body>
+</html>

@@ -104,3 +104,93 @@ variance of the activations those rows produce.
     --layers 16 --steps 1200 --every 300 --lr 0.05 \
     --out results/arm_illscaled_standardized.json
 ```
+
+---
+
+# The in-page replica: the four settings, and why they are these ones
+
+`index.html` runs its **own** training loop (vanilla JS, no server, no network).
+The student picks one of four settings, picks one mechanism, and presses Train.
+The page's job is to make one contrast legible: **on this data, plain ReLU + He
+does not train, and adding LayerNorm does.**
+
+That is a claim about the replica, not a consequence of the code compiling — so
+it was checked against the page's own maths before shipping. Constants:
+
+| | |
+|---|---|
+| inputs | 48; each scaled by a fixed log-uniform factor over `10⁻² … 10²` |
+| data | 1 536 train / 512 test, linear teacher, labels `s ≥ 0` |
+| net | ReLU, **zero-init biases on every layer** (learned), He init `W ~ N(0, 2/fan_in)` |
+| optimisation | plain SGD, batch 24, η = 0.05, 300 steps |
+| evaluation | 256 test samples every 20 steps |
+
+**The four settings** (all width 64, varying depth), measured on the page's own
+seeds and re-measured on three further seed sets:
+
+| setting | plain (ReLU + He) | + LayerNorm |
+|---|---|---|
+| L = 8,  d = 64 | diverges, gradient non-finite at step 6 | **0.035** |
+| L = 12, d = 64 | diverges at step 5 | **0.035** |
+| L = 16, d = 64 | diverges at step 4 | **0.035** |
+| L = 20, d = 64 | saturates to Inf in 10 of 20 layers, sits at 0.559 (chance) | **0.078** |
+
+The verdict holds on all four settings across four independent seed sets
+(data / initialisation / minibatch stream): plain fails every time, LayerNorm is
+at or below 0.15 every time.
+
+### What the sweep ruled out, and what it fixed
+
+- **Width alone is not the axis.** A *depth* ladder is what separates the two
+  arms; at fixed depth the effect is much weaker. Narrow nets (d = 8, 10, the
+  "d = 10, L = 50" shape) fail for a different reason — capacity — and LayerNorm
+  does not rescue them either, so they are not shipped as settings.
+- **The step size had to be measured, not guessed.** At η ≤ 0.02 the *plain* net
+  starts to succeed — a small enough step survives the bad conditioning — which
+  destroys the contrast. η = 0.05 is inside the window where plain always fails;
+  η ≥ 0.5 breaks LayerNorm's own stability at depth.
+- **The comparison needed zero-initialised biases.** Without them a deep
+  no-bias net is structurally handicapped and *both* arms fail from L ≈ 16, so
+  there was no depth range in which the claim was true. Adding learned biases
+  (a thing a real network has) opened L ≈ 8…20.
+- **LayerNorm does not rescue unbounded depth.** L = 24 works on 3 of 4 seed
+  sets, L = 28 fails on all of them. This matches the MNIST table above: pinning
+  the forward scale does not repair the backward signal. The lab stops at L = 20
+  rather than shipping a setting whose caption would be false.
+
+### Honest notes on the other two mechanisms
+
+- **The regularizer behaves like the baseline**: it diverges on all four
+  settings, exactly as plain does.
+- **Gradient projection does *not* collapse on this replica** — it reaches
+  0.063 / 0.066 / 0.086 / 0.211 across the four settings. The MNIST table shows
+  it collapsing (0.104). A 48-input, 64-wide, 300-step replica is not the same
+  experiment; the table is the one the lecture quotes. This discrepancy is
+  stated on the page rather than tuned away.
+
+### Reproducing the page's numbers
+
+The page's numeric block (RNG, data, forward/backward, the mechanisms) has no DOM
+in it, so it can be lifted out and driven in Node:
+
+```bash
+python3 - <<'PY'
+s = open('index.html', encoding='utf-8').read()
+a = s.index('function mulberry32(a){')
+b = s.index('   2. the page')
+open('/tmp/core.js','w').write(s[a:s.rindex('/* ====', 0, b)])
+PY
+node -e "eval(require('fs').readFileSync('/tmp/core.js','utf8')); /* drive runBatch / sgdStep */"
+```
+
+Two checks are worth re-running after any change to the core:
+
+1. **finite-difference gradient check** over every parameter — weights, the
+   per-layer biases, and the LayerNorm `γ` / `β` — judged as
+   `|num − ana| / max(1e-6, |num| + |ana|)`, and counting only entries whose
+   analytic gradient is above `1e-6`. A ReLU unit whose gate is shut has an
+   analytic gradient of exactly 0 while a finite difference still "wakes" it once
+   `h` exceeds the margin; without that filter a correct backward pass reads as a
+   failure. Worst relative error on the shipped core: **2.5e-6**.
+2. **the design assertion** — for all four settings, plain must fail and
+   LayerNorm must land at or below 0.15.

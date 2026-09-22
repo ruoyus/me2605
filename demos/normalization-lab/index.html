@@ -86,13 +86,13 @@ p{margin:0 0 12px}
 .btn:disabled{opacity:.45; cursor:not-allowed}
 
 /* ---------- lab ---------- */
-.labgrid{display:grid; grid-template-columns:298px minmax(0,1fr); gap:22px; align-items:start}
+.labgrid{display:grid; grid-template-columns:322px minmax(0,1fr); gap:26px; align-items:start}
 @media (max-width:900px){.labgrid{grid-template-columns:1fr}}
-.card{border:1px solid var(--border); border-radius:12px; background:var(--panel); padding:18px 20px; margin-bottom:20px}
-.card > h3{font-size:15px; letter-spacing:.02em; color:var(--muted); text-transform:uppercase; margin-bottom:14px}
+.card{border:1px solid var(--border); border-radius:12px; background:var(--panel); padding:20px 22px; margin-bottom:16px}
+.card > h3{font-size:14.5px; font-weight:600; color:var(--fg); margin-bottom:14px}
 .ctl{margin-bottom:16px}
 .ctl:last-child{margin-bottom:0}
-.ctl label{display:block; font-size:14px; margin-bottom:5px}
+.ctl label{display:block; font-size:14px; margin-bottom:8px}
 .ctl .val{float:right; font-family:ui-monospace,Menlo,monospace; font-size:13.5px; color:var(--accent)}
 input[type=range]{width:100%; accent-color:var(--accent)}
 .checks{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px}
@@ -107,7 +107,7 @@ input[type=range]{width:100%; accent-color:var(--accent)}
 .progress i{display:block; height:100%; width:0; background:var(--accent); transition:width .12s linear}
 .wait{font-size:13.5px; color:var(--muted); margin-top:8px; min-height:20px}
 
-.dash h3{font-size:15px; color:var(--muted); text-transform:uppercase; letter-spacing:.02em}
+.dash h3{font-size:14.5px; font-weight:600; color:var(--fg); margin-bottom:10px}
 .legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin:2px 0 10px; font-size:13.5px}
 .legend span{display:flex; align-items:center; gap:6px}
 .chart{width:100%; height:auto; display:block}
@@ -125,18 +125,29 @@ tbody th{text-align:left; font-weight:600}
 footer{max-width:var(--maxw); margin:0 auto; padding:0 20px 60px; color:var(--muted); font-size:13.5px}
 figure{margin:0}
 
-    .btn.preset.wide{font-size:13px; padding:7px 8px}
-    .mechpick{display:grid; grid-template-columns:1fr; gap:6px}
-    .mechpick label{display:flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; margin:0}
-    .swatch{width:11px; height:11px; border-radius:3px; display:inline-block; flex:none}
-    .verdict-bad{color:#b03a2e; font-weight:600}
-    .verdict-good{color:#1e8449; font-weight:600}
-    .logrow{padding:7px 0; border-bottom:1px solid var(--border)}
-    .logrow:last-child{border-bottom:none}
-    .loghead{display:flex; align-items:center; gap:6px; font-size:13.5px; margin-bottom:3px}
-    .loghead b{font-weight:600}
-    .loghead .muted{font-size:12.5px; margin-left:auto}
-    .affine-off{opacity:.45}
+    /* --- lab v3 --- */
+    .lead{font-size:15px; line-height:1.55; color:var(--muted); max-width:70ch; margin:8px 0 24px}
+    .setgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+    .setgrid .btn{width:100%; font-size:13.5px; padding:9px 8px; font-weight:500}
+    .setgrid .btn.on{border-color:var(--accent); color:var(--accent); background:var(--accent-soft); font-weight:600}
+    .opt{display:grid; gap:10px}
+    .opt label{display:flex; align-items:center; gap:9px; font-size:14px; margin:0; cursor:pointer}
+    .opt input{accent-color:var(--accent); flex:none}
+    .sub{padding-left:25px; display:grid; gap:10px}
+    .note{font-size:13px; line-height:1.5; color:var(--muted); margin:10px 0 0}
+    .off{opacity:.40}
+    .fixedlist{margin:0; padding:0; list-style:none; font-size:13.5px; line-height:1.6; color:var(--muted)}
+    .fixedlist li{padding:5px 0}
+    .verdict-bad{color:var(--high); font-weight:600}
+    .verdict-good{color:var(--good); font-weight:600}
+    .logrow{display:flex; gap:12px; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--border)}
+    .logrow:first-child{padding-top:0}
+    .logrow:last-child{border-bottom:none; padding-bottom:0}
+    .logwho{flex:none; width:96px; font-size:13.5px; font-weight:600}
+    .logwho i{display:block; font-style:normal; font-weight:400; font-size:12.5px; color:var(--muted)}
+    .logsay{font-size:13.5px; line-height:1.45}
+    .figcap{font-size:13px; line-height:1.5; color:var(--muted); margin:10px 0 0}
+    .runsplit{display:flex; align-items:center; gap:10px; flex:none}
 </style>
 </head>
 <body>
@@ -391,89 +402,88 @@ figure{margin:0}
 <!-- ===================== 2. THE LAB ===================== -->
 <section id="view-lab" style="display:none">
   <h1><span class="lang-en">Normalization Lab</span><span class="lang-zh">归一化实验室</span></h1>
-  <p class="lede">
-    <span class="lang-en">Four settings. Choose one, choose a mechanism, press Train. The training runs here, in this page.</span>
-    <span class="lang-zh">四个设定。选一个，选一种机制，按开始训练。训练就在这个页面里跑。</span>
+  <p class="lead">
+    <span class="lang-en">Pick a setting, pick what to add, press Train. The run happens in this page.</span>
+    <span class="lang-zh">选一个设定，选要加什么，按开始训练。训练就在本页运行。</span>
   </p>
 
   <div class="labgrid">
 
     <aside>
       <div class="card">
-        <h3><span class="lang-en">Controls</span><span class="lang-zh">控制项</span></h3>
+        <h3><span class="lang-en">1 &middot; Setting</span><span class="lang-zh">1 &middot; 设定</span></h3>
+        <div class="setgrid" id="presets"></div>
+      </div>
 
-        <div class="ctl">
-          <label><span class="lang-en">Setting &mdash; sets the depth L and the width d</span><span class="lang-zh">设定 &mdash; 同时定下深度 L 和宽度 d</span></label>
-          <div class="row" id="presets" style="flex-wrap:wrap"></div>
+      <div class="card">
+        <h3><span class="lang-en">2 &middot; What to add</span><span class="lang-zh">2 &middot; 加什么</span></h3>
+        <div class="opt">
+          <label for="cLn" id="lnRow"><input type="checkbox" id="cLn">
+            <span><span class="lang-en">LayerNorm</span><span class="lang-zh">LayerNorm</span></span></label>
         </div>
-
-        <div class="ctl">
-          <label><span class="lang-en">Mechanism</span><span class="lang-zh">机制</span></label>
-          <div class="mechpick" id="mech"></div>
+        <div class="sub" id="affineBox" style="margin-top:10px">
+          <label for="cGam"><input type="checkbox" id="cGam" checked>
+            <span><span class="lang-en">learn &gamma;</span><span class="lang-zh">学 &gamma;</span></span></label>
+          <label for="cBet"><input type="checkbox" id="cBet" checked>
+            <span><span class="lang-en">learn &beta;</span><span class="lang-zh">学 &beta;</span></span></label>
         </div>
+        <p class="note" id="affineNote"></p>
 
-        <div class="ctl" id="affineBox">
-          <label><span class="lang-en">Affine pair of the normalization</span><span class="lang-zh">归一化的仿射对</span></label>
-          <div class="checks">
-            <label for="cGam"><input type="checkbox" id="cGam" checked>
-              <span><span class="lang-en">learn &gamma; (scale)</span><span class="lang-zh">学 &gamma;（缩放）</span></span></label>
-            <label for="cBet"><input type="checkbox" id="cBet" checked>
-              <span><span class="lang-en">learn &beta; (shift)</span><span class="lang-zh">学 &beta;（平移）</span></span></label>
-          </div>
-          <p class="small muted" id="affineNote" style="margin:8px 0 0"></p>
-        </div>
+        <div class="opt" id="cmp" style="margin-top:18px"></div>
+        <p class="note" id="cmpNote"></p>
+      </div>
 
-        <div class="row" style="margin-top:14px">
-          <button class="btn primary" id="runBtn" type="button"><span class="lang-en">Train</span><span class="lang-zh">开始训练</span></button>
-          <button class="btn" id="stopBtn" type="button" disabled><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
+      <div class="card">
+        <div class="row">
+          <button class="btn primary" id="runBtn" type="button" style="flex:2"><span class="lang-en">Train</span><span class="lang-zh">开始训练</span></button>
+          <button class="btn" id="stopBtn" type="button" disabled style="flex:1"><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
         </div>
         <div class="progress"><i id="bar"></i></div>
         <div class="wait" id="wait"></div>
       </div>
 
       <div class="card">
-        <h3><span class="lang-en">Runs in this session</span><span class="lang-zh">本次会话跑过的</span></h3>
+        <h3><span class="lang-en">Runs</span><span class="lang-zh">运行记录</span></h3>
         <div id="log"></div>
       </div>
 
       <div class="card">
-        <h3><span class="lang-en">What is fixed</span><span class="lang-zh">固定的</span></h3>
-        <ul class="small" style="margin:0;padding-left:18px">
-          <li><span class="lang-en">ReLU, plain SGD, batch 24, <span class="code">300</span> steps, step size <span class="code">&eta; = 0.05</span>, 48 inputs, 1 536 train / 512 test samples.</span><span class="lang-zh">ReLU、纯 SGD、批大小 24、<span class="code">300</span> 步、步长 <span class="code">&eta; = 0.05</span>、48 维输入、训练 1 536 / 测试 512 个样本。</span></li>
-          <li><span class="lang-en">Weights start at He: <span class="code">W ~ N(0, 2/fan_in)</span>; every layer also carries a zero-initialised bias, learned like the weights.</span><span class="lang-zh">权重起点是 He：<span class="code">W ~ N(0, 2/fan_in)</span>；每层另有一个零初始化的偏置，和权重一起学。</span></li>
-          <li><span class="lang-en">Each input feature is multiplied by a fixed log-uniform factor spanning <span class="code">10⁻² &hellip; 10²</span> &mdash; identical data, incoherent scales.</span><span class="lang-zh">每个输入特征乘一个固定的对数均匀因子，跨 <span class="code">10⁻² &hellip; 10²</span> &mdash; 同一份数据，尺度互不相称。</span></li>
-          <li><span class="lang-en">The two weight-side mechanisms aim at row norm <span class="code">&radic;2</span> &mdash; the value He initialization already gives, so they start at a point that satisfies their own constraint. Regularizer strength 1.0.</span><span class="lang-zh">两种权重侧机制的目标行范数都是 <span class="code">&radic;2</span> &mdash; 正是 He 初始化已经给的值，所以它们起点就满足自己的约束。正则强度 1.0。</span></li>
-          <li><span class="lang-en">The seed is fixed: the same setting and the same mechanism give the same run.</span><span class="lang-zh">随机种子固定：同样的设定、同样的机制，给同样的结果。</span></li>
+        <h3><span class="lang-en">Fixed</span><span class="lang-zh">固定项</span></h3>
+        <ul class="fixedlist">
+          <li><span class="lang-en">ReLU + He init <span class="code">W ~ N(0, 2/fan_in)</span>; a zero-init learned bias per layer.</span><span class="lang-zh">ReLU + He 初始化 <span class="code">W ~ N(0, 2/fan_in)</span>；每层一个零初始化可学偏置。</span></li>
+          <li><span class="lang-en">48 inputs, fixed log-uniform scales over <span class="code">10⁻² &hellip; 10²</span>.</span><span class="lang-zh">48 维输入，固定对数均匀尺度 <span class="code">10⁻² &hellip; 10²</span>。</span></li>
+          <li><span class="lang-en">Plain SGD, batch 24, <span class="code">&eta; = 0.05</span>, 300 steps, 1 536 train / 512 test.</span><span class="lang-zh">纯 SGD、批 24、<span class="code">&eta; = 0.05</span>、300 步、训练 1 536 / 测试 512。</span></li>
+          <li><span class="lang-en">Fixed seed: the same choice always gives the same run.</span><span class="lang-zh">种子固定：同样的选择永远给同样的结果。</span></li>
         </ul>
       </div>
     </aside>
 
     <div>
       <div class="card dash">
-        <h3><span class="lang-en">A &middot; Scale of what enters the activation, layer by layer</span><span class="lang-zh">A &middot; 进入激活函数之前的尺度，逐层</span></h3>
+        <h3><span class="lang-en">A &middot; Pre-activation scale, layer by layer</span><span class="lang-zh">A &middot; 激活前的逐层尺度</span></h3>
         <div class="legend" id="legendA"></div>
         <div id="chartA"></div>
-        <p class="small muted" style="margin:8px 0 0">
-          <span class="lang-en">&radic;mean of the squares of the pre-activation, after that layer's own mechanism has acted, on the test batch. The curve is measured at initialization and then replaced by the running network's measurement as training proceeds.</span>
-          <span class="lang-zh">激活前数值的均方根（在该层自己的机制作用之后），在测试批上测量。曲线先给初始化的测量，训练推进时被当前网络的测量值替换。</span>
+        <p class="figcap">
+          <span class="lang-en">&radic;mean square of the pre-activation, test batch, redrawn from the live network.</span>
+          <span class="lang-zh">激活前的均方根，测试批，随训练实时重画。</span>
         </p>
       </div>
 
       <div class="card dash">
-        <h3><span class="lang-en">B &middot; Test error while training</span><span class="lang-zh">B &middot; 训练过程中的测试错误率</span></h3>
+        <h3><span class="lang-en">B &middot; Test error</span><span class="lang-zh">B &middot; 测试错误率</span></h3>
         <div class="legend" id="legendB"></div>
         <div id="chartB"></div>
-        <p class="small muted" style="margin:8px 0 0">
-          <span class="lang-en">Misclassification rate, one curve per run you start. A curve that stops is a run whose gradient stopped being finite &mdash; that is a result, not a missing point.</span>
-          <span class="lang-zh">误分类率，每跑一次一条曲线。曲线中断表示这次运行的梯度不再是有限值 &mdash; 那是一个结果，不是一个缺失的数据点。</span>
+        <p class="figcap">
+          <span class="lang-en">One line per run. A line that stops hit a non-finite gradient.</span>
+          <span class="lang-zh">每次运行一条线。线段中断即遇到非有限梯度。</span>
         </p>
       </div>
 
       <div class="card">
-        <h3><span class="lang-en">C &middot; The same comparison on MNIST, measured</span><span class="lang-zh">C &middot; 同样的对比，在 MNIST 上实测</span></h3>
-        <p class="small muted" style="margin:0 0 12px">
-          <span class="lang-en">The page above is a small replica. This is the lecture's own experiment: 16 hidden layers of width 128, He init, ReLU, plain SGD, 20 000 training images, 1 200 steps. Validation accuracy, measured once. Nothing here is simulated.</span>
-          <span class="lang-zh">上面的页面是一个缩小的复刻。这里是讲义本身的实验：16 个隐层、宽度 128、He 初始化、ReLU、纯 SGD、20 000 张训练图、1 200 步。下表是实测一次的正确率。没有任何一项是模拟出来的。</span>
+        <h3><span class="lang-en">C &middot; The same comparison on MNIST</span><span class="lang-zh">C &middot; 同样的对比，MNIST 实测</span></h3>
+        <p class="figcap" style="margin:0 0 12px">
+          <span class="lang-en">The lecture's own run: 16 layers, width 128, 1 200 steps, measured once. Not a replica.</span>
+          <span class="lang-zh">讲义本身的实验：16 层、宽 128、1 200 步，实测一次。不是复制品。</span>
         </p>
         <div class="scroll">
         <table>
@@ -499,9 +509,9 @@ figure{margin:0}
           </tbody>
         </table>
         </div>
-        <p class="small muted" style="margin:12px 0 0">
-          <span class="lang-en">&ldquo;&mdash;&rdquo; means the run became non-finite before the end. Two things this experiment does not show, stated up front: it does not show that LayerNorm beats BatchNorm, and it does not rescue depth 64 &mdash; at 64 layers even the normalizing mechanisms sit near 0.12&ndash;0.20, because pinning the forward scale does not repair the backward signal.</span>
-          <span class="lang-zh">&ldquo;&mdash;&rdquo;表示这次运行在结束前就变成非有限值。这个实验有两件事<i>没有</i>证明，先说清楚：它没有证明 LayerNorm 胜过 BatchNorm；它也救不了深度 64 &mdash; 到 64 层，连做归一化的机制也只有 0.12&ndash;0.20，因为把前向尺度钉住并不能修好反向信号。</span>
+        <p class="figcap" style="margin:12px 0 0">
+          <span class="lang-en">&ldquo;&mdash;&rdquo;: the run went non-finite. Not shown: that LayerNorm beats BatchNorm, or that it rescues depth 64.</span>
+          <span class="lang-zh">&ldquo;&mdash;&rdquo;表示该次运行中途变为非有限值。没有证明的两件事：LayerNorm 胜过 BatchNorm；以及它能救深度 64。</span>
         </p>
       </div>
     </div>
@@ -884,32 +894,33 @@ function sgdStep(net, D, idx, B, eta){
 var NIN = 48, BATCH = 24, STEPS = 300, EVAL_N = 256, EVAL_EVERY = 20;
 var ETA = 0.05, SPREAD = 2;
 
-var PRESETS = [
+/* Every run is ReLU + He init. LayerNorm is an add-on; the two weight-side
+   mechanisms are an alternative to it, not a peer of the baseline. */
+var SETTINGS = [
   { L: 8,  d: 64 },
   { L: 12, d: 64 },
   { L: 16, d: 64 },
   { L: 20, d: 64 }
 ];
-var MECHS = [
-  { id: "plain", arm: "none" },
-  { id: "ln",    arm: "ln"   },
-  { id: "reg",   arm: "reg"  },
-  { id: "proj",  arm: "proj" }
+var CMP = [
+  { id: "none", en: "nothing",              zh: "不加" },
+  { id: "reg",  en: "weight regularizer",   zh: "权重正则" },
+  { id: "proj", en: "gradient projection",  zh: "梯度投影" }
 ];
-var MTEXT = {
-  plain: { en: "ReLU + He init",                 zh: "ReLU + He 初始化" },
-  ln:    { en: "add LayerNorm",                  zh: "加 LayerNorm" },
-  reg:   { en: "regularizer on the weights",     zh: "权重上加正则" },
-  proj:  { en: "gradient projection",            zh: "梯度投影" }
-};
-var COLOR = { plain: "#b03a2e", ln: "#1a5276", reg: "#a04000", proj: "#b7791f" };
-var STATE = { preset: 0, mech: "plain", useGam: true, useBet: true };
+var COLOR = { none: "#b03a2e", ln: "#1a5276", reg: "#a04000", proj: "#b7791f" };
+var STATE = { preset: 0, ln: false, cmp: "none", useGam: true, useBet: true };
 var DATA = null, TIDX = null, RUN = null, LOG = [], TIMER = null, RUNNING = false;
-var MAXLOG = 9;
-var runBtn, stopBtn, barEl, waitEl, presetsEl, mechEl, logEl, affineBox, cGam, cBet, affineNote;
+var MAXLOG = 10;
+var runBtn, stopBtn, barEl, waitEl, presetsEl, logEl, affineBox, cGam, cBet, affineNote, cmpEl, cmpNote, cLn;
 
-function mechById(id){ for (var i = 0; i < MECHS.length; i++) if (MECHS[i].id === id) return MECHS[i]; return MECHS[0]; }
-function label(r){ return (r.mech === "ln" ? "LN" : r.mech) + " \u00b7 L" + r.L + " d" + r.d; }
+function armNow(){
+  if (STATE.cmp !== "none") return STATE.cmp;
+  return STATE.ln ? "ln" : "none";
+}
+function armName(a){
+  return a === "none" ? "baseline" : a === "ln" ? "+ LayerNorm" : a === "reg" ? "+ regularizer" : "+ projection";
+}
+function label(r){ return "L" + r.L + " · " + armName(r.arm); }
 function needData(){
   if (!DATA){
     DATA = buildData(7, NIN, 1536, 512, SPREAD);
@@ -920,10 +931,10 @@ function needData(){
 function prepare(){
   if (RUNNING) return;
   needData();
-  var P = PRESETS[STATE.preset], M = mechById(STATE.mech);
-  var net = makeNet(P.L, P.d, NIN, M.arm, mulberry32(12345));
+  var P = SETTINGS[STATE.preset], arm = armNow();
+  var net = makeNet(P.L, P.d, NIN, arm, mulberry32(12345));
   var sc = runBatch(net, DATA.test, TIDX, EVAL_N, false, { scaleOnly: true }).scale;
-  RUN = { L: P.L, d: P.d, mech: M.id, gam: STATE.useGam, bet: STATE.useBet, net: net,
+  RUN = { L: P.L, d: P.d, arm: arm, gam: STATE.useGam, bet: STATE.useBet, net: net,
           step: 0, diverged: false, divStep: -1, done: false, err: null,
           hist: [], scale: sc, finalScale: null, idx: new Int32Array(BATCH) };
 }
@@ -934,15 +945,13 @@ function drawIdx(run){
 function evalQuick(run){ return runBatch(run.net, DATA.test, TIDX, EVAL_N, false, { scaleOnly: true }); }
 
 function verdict(r){
-  if (r.diverged) return { cls: "verdict-bad", n: 0,
-    en: "diverged &mdash; the gradient stopped being finite at step " + r.divStep,
-    zh: "发散了 &mdash; 第 " + r.divStep + " 步起梯度不再是有限值" };
-  if (r.err <= 0.15) return { cls: "verdict-good", n: 1,
-    en: "trained &mdash; test error " + r.err.toFixed(3),
-    zh: "训起来了 &mdash; 测试错误率 " + r.err.toFixed(3) };
-  return { cls: "verdict-bad", n: 2,
-    en: "did not train &mdash; test error " + r.err.toFixed(3) + ", i.e. chance",
-    zh: "没训起来 &mdash; 测试错误率 " + r.err.toFixed(3) + "，等于瞎猜" };
+  if (r.diverged) return { cls: "verdict-bad",
+    en: "diverged at step " + r.divStep, zh: "第 " + r.divStep + " 步发散" };
+  if (r.err <= 0.15) return { cls: "verdict-good",
+    en: "test error " + r.err.toFixed(3), zh: "测试错误率 " + r.err.toFixed(3) };
+  return { cls: "verdict-bad",
+    en: "test error " + r.err.toFixed(3) + " \u2014 no better than chance",
+    zh: "测试错误率 " + r.err.toFixed(3) + " \u2014 与瞎猜无异" };
 }
 
 function trainAll(){
@@ -986,14 +995,17 @@ function stopRun(){
   waitEl.textContent = "stopped";
 }
 
-/* ---------------- charts ---------------- */
+/* ---------------- charts (short: one line each) ---------------- */
 function svgOpen(w, h){ return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" role="img">'; }
+function supNum(k){
+  var m = { "-": "\u207b", "0": "\u2070", "1": "\u00b9", "2": "\u00b2", "3": "\u00b3",
+            "4": "\u2074", "5": "\u2075", "6": "\u2076", "7": "\u2077", "8": "\u2078", "9": "\u2079" };
+  return String(k).split("").map(function(c){ return m[c] || c; }).join("");
+}
 function decade(k){ return k === 0 ? "1" : "10" + supNum(k); }
-function supNum(k){ var m = { "-": "\u207b", "0": "\u2070", "1": "\u00b9", "2": "\u00b2", "3": "\u00b3", "4": "\u2074", "5": "\u2075", "6": "\u2076", "7": "\u2077", "8": "\u2078", "9": "\u2079" };
-  return String(k).split("").map(function(c){ return m[c] || c; }).join(""); }
 
 function drawScaleChart(){
-  var W = 720, H = 250, ml = 58, mr = 18, mt = 16, mb = 34;
+  var W = 720, H = 172, ml = 46, mr = 14, mt = 14, mb = 28;
   var iw = W - ml - mr, ih = H - mt - mb, L = RUN.L;
   var vals = (RUN.done && RUN.finalScale) ? RUN.finalScale : RUN.scale;
   var lg = [], offscale = 0;
@@ -1008,29 +1020,28 @@ function drawScaleChart(){
   var lo = Math.min(-1, Math.floor(Math.min.apply(null, fin)));
   var hi = Math.max(1, Math.ceil(Math.max.apply(null, fin) + 1e-9));
   if (offscale) hi = Math.max(hi, 6);
-  if (hi - lo > 7) lo = hi - 7;
+  if (hi - lo > 5) lo = hi - 5;
   function X(i){ return ml + iw * (L <= 1 ? 0.5 : i / (L - 1)); }
   function Y(v){ return mt + ih * (1 - (v - lo) / (hi - lo)); }
   function Yv(v){ return v === null ? mt : Y(v); }
   var s = svgOpen(W, H);
+  var kstep = ((hi - lo) > 4) ? 2 : 1;
   for (var k = lo; k <= hi; k++){
     var y = Y(k);
     s += '<line x1="' + ml + '" y1="' + y.toFixed(1) + '" x2="' + (W - mr) + '" y2="' + y.toFixed(1) +
-         '" stroke="' + (k === 0 ? "#c9d4dc" : "#eef1f4") + '" stroke-width="1"/>';
-    s += '<text x="' + (ml - 8) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" font-size="11.5" fill="#6b7780">' + decade(k) + '</text>';
+         '" stroke="' + (k === 0 ? "#ccd6dd" : "#eff2f5") + '" stroke-width="1"/>';
+    if ((k - lo) % kstep === 0)
+      s += '<text x="' + (ml - 7) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="11" fill="#7d8994">' + decade(k) + '</text>';
   }
   var pts = [];
   for (i = 0; i < lg.length; i++) pts.push(X(i).toFixed(1) + "," + Yv(lg[i]).toFixed(1));
-  s += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + COLOR[RUN.mech] + '" stroke-width="2.4" stroke-linejoin="round"/>';
+  s += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + COLOR[RUN.arm] + '" stroke-width="2.2" stroke-linejoin="round"/>';
   for (i = 0; i < lg.length; i++)
-    s += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Yv(lg[i]).toFixed(1) + '" r="3" fill="' +
-         (lg[i] === null ? "#8b97a3" : COLOR[RUN.mech]) + '"/>';
-  if (offscale)
-    s += '<text x="' + (ml + 8) + '" y="' + (mt + 13) + '" font-size="11.5" fill="#8b97a3">' +
-         offscale + ' layer(s) = Inf \u2014 \u5df2\u7206\uff0c\u753b\u5728\u9876\u7aef</text>';
-  s += '<text x="' + (ml + iw / 2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="12" fill="#6b7780">layer  1 \u2026 L</text>';
-  s += '</svg>';
-  return s;
+    s += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Yv(lg[i]).toFixed(1) + '" r="2.4" fill="' +
+         (lg[i] === null ? "#8b97a3" : COLOR[RUN.arm]) + '"/>';
+  if (offscale) RUN.offscale = offscale;
+  s += '<text x="' + (ml + iw / 2) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="11.5" fill="#7d8994">layer 1 \u2026 L</text>';
+  return s + '</svg>';
 }
 
 function series(){
@@ -1040,36 +1051,32 @@ function series(){
   return out;
 }
 function drawErrChart(){
-  var W = 720, H = 260, ml = 58, mr = 18, mt = 16, mb = 36;
+  var W = 720, H = 178, ml = 46, mr = 14, mt = 14, mb = 28;
   var iw = W - ml - mr, ih = H - mt - mb;
-  var sets = series();
-  var ymax = 0.6;
-  sets.forEach(function(r){ r.hist.forEach(function(p){ if (p.e > ymax) ymax = p.e; }); });
-  ymax = Math.min(1, Math.ceil(ymax * 10) / 10 + 0.05);
+  var sets = series(), peak = 0;
+  sets.forEach(function(r){ r.hist.forEach(function(p){ if (p.e > peak) peak = p.e; }); });
+  var CAND = [0.3, 0.6, 0.9], ymax = 1.0;
+  for (var ci = 0; ci < CAND.length; ci++) if (peak <= CAND[ci]) { ymax = CAND[ci]; break; }
   function X(st){ return ml + iw * st / STEPS; }
   function Y(v){ return mt + ih * (1 - v / ymax); }
   var s = svgOpen(W, H);
-  for (var g = 0; g <= 6; g++){
-    var v = ymax * g / 6, y = Y(v);
-    s += '<line x1="' + ml + '" y1="' + y.toFixed(1) + '" x2="' + (W - mr) + '" y2="' + y.toFixed(1) + '" stroke="#eef1f4" stroke-width="1"/>';
-    s += '<text x="' + (ml - 8) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" font-size="11.5" fill="#6b7780">' + v.toFixed(2) + '</text>';
+  for (var g = 0; g <= 3; g++){
+    var v = ymax * g / 3, y = Y(v);
+    s += '<line x1="' + ml + '" y1="' + y.toFixed(1) + '" x2="' + (W - mr) + '" y2="' + y.toFixed(1) + '" stroke="#eff2f5" stroke-width="1"/>';
+    s += '<text x="' + (ml - 7) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end" font-size="11" fill="#7d8994">' + v.toFixed(2) + '</text>';
   }
-  s += '<line x1="' + ml + '" y1="' + Y(0.5).toFixed(1) + '" x2="' + (W - mr) + '" y2="' + Y(0.5).toFixed(1) + '" stroke="#c9d4dc" stroke-width="1" stroke-dasharray="4 3"/>';
-  s += '<text x="' + (W - mr) + '" y="' + (Y(0.5) - 5).toFixed(1) + '" text-anchor="end" font-size="11.5" fill="#8b97a3">chance</text>';
+  s += '<line x1="' + ml + '" y1="' + Y(0.5).toFixed(1) + '" x2="' + (W - mr) + '" y2="' + Y(0.5).toFixed(1) + '" stroke="#ccd6dd" stroke-width="1" stroke-dasharray="4 3"/>';
   sets.forEach(function(r){
     if (!r.hist.length) return;
     var pts = [];
     r.hist.forEach(function(p){ pts.push(X(p.s).toFixed(1) + "," + Y(p.e).toFixed(1)); });
-    s += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + COLOR[r.mech] + '" stroke-width="2.2" stroke-linejoin="round" opacity="' + (r === RUN ? 1 : 0.65) + '"/>';
-    if (r.diverged){
+    s += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + COLOR[r.arm] + '" stroke-width="2" stroke-linejoin="round" opacity="' + (r === RUN ? 1 : 0.6) + '"/>';
+    if (r.diverged)
       s += '<line x1="' + X(r.divStep).toFixed(1) + '" y1="' + mt + '" x2="' + X(r.divStep).toFixed(1) + '" y2="' + (mt + ih) +
-           '" stroke="' + COLOR[r.mech] + '" stroke-width="1.4" stroke-dasharray="4 3"/>';
-      s += '<text x="' + (X(r.divStep) + 5).toFixed(1) + '" y="' + (mt + 14) + '" font-size="11.5" fill="' + COLOR[r.mech] + '">non-finite</text>';
-    }
+           '" stroke="' + COLOR[r.arm] + '" stroke-width="1.3" stroke-dasharray="4 3"/>';
   });
-  s += '<text x="' + (ml + iw / 2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="12" fill="#6b7780">step</text>';
-  s += '</svg>';
-  return s;
+  s += '<text x="' + (ml + iw / 2) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="11.5" fill="#7d8994">step</text>';
+  return s + '</svg>';
 }
 
 function legendB(){
@@ -1077,52 +1084,62 @@ function legendB(){
   if (!sets.length) return '<span class="muted">no run yet</span>';
   return sets.map(function(r){
     var v = verdict(r);
-    return '<span><i class="swatch" style="background:' + COLOR[r.mech] + '"></i>' + label(r) +
-           ' <span class="' + v.cls + '">' + (v.n === 1 ? "&#10003;" : (v.n === 0 ? "&#9888;" : "&#10007;")) + '</span></span>';
+    return '<span><i class="swatch" style="background:' + COLOR[r.arm] + '"></i>' + label(r) +
+           ' <span class="' + v.cls + '">' + (r.err !== null && r.err <= 0.15 && !r.diverged ? "&#10003;" : "&#10007;") + '</span></span>';
   }).join("");
 }
 function drawLog(){
-  if (!LOG.length) return '<p class="small muted" style="margin:0">' +
-    '<span class="lang-en">Nothing yet. Press Train.</span><span class="lang-zh">还没有。按开始训练。</span></p>';
+  if (!LOG.length) return '<p class="note" style="margin:0">' +
+    '<span class="lang-en">No runs yet.</span><span class="lang-zh">还没有运行。</span></p>';
   return LOG.slice().reverse().map(function(r){
     var v = verdict(r);
-    var pair = (r.mech === "ln")
-      ? '<span class="muted">&gamma; ' + (r.gam ? "on" : "off") + ' &middot; &beta; ' + (r.bet ? "on" : "off") + '</span>'
-      : '';
-    return '<div class="logrow">' +
-      '<div class="loghead"><i class="swatch" style="background:' + COLOR[r.mech] + '"></i><b>' + label(r) + '</b>' + pair + '</div>' +
-      '<div class="' + v.cls + '"><span class="lang-en">' + v.en + '</span><span class="lang-zh">' + v.zh + '</span></div>' +
-      '</div>';
+    var sub = (r.arm === "ln") ? '<i>&gamma; ' + (r.gam ? "on" : "off") + ' \u00b7 &beta; ' + (r.bet ? "on" : "off") + '</i>' : '';
+    return '<div class="logrow"><div class="logwho">' + label(r) + sub + '</div>' +
+           '<div class="' + v.cls + ' logsay"><span class="lang-en">' + v.en + '</span><span class="lang-zh">' + v.zh + '</span></div></div>';
   }).join("");
 }
 
 function renderLab(){
+  RUN.offscale = 0;
   document.getElementById("chartA").innerHTML = drawScaleChart();
   document.getElementById("chartB").innerHTML = drawErrChart();
-  document.getElementById("legendA").innerHTML = '<span><i class="swatch" style="background:' + COLOR[RUN.mech] + '"></i>' +
-    label(RUN) + (RUN.done ? "" : ' <span class="muted">(initializing)</span>') + '</span>';
+  document.getElementById("legendA").innerHTML = '<span><i class="swatch" style="background:' + COLOR[RUN.arm] + '"></i>' +
+    label(RUN) + (RUN.done ? "" : ' <span class="muted">\u00b7 initializing</span>') + '</span>' +
+    (RUN.offscale ? '<span class="verdict-bad">' + RUN.offscale + ' layer(s) = Inf</span>' : '');
   document.getElementById("legendB").innerHTML = legendB();
   logEl.innerHTML = drawLog();
-  var frac = runFrac();
-  barEl.style.width = (frac * 100).toFixed(1) + "%";
+  barEl.style.width = (Math.min(1, RUN.step / STEPS) * 100).toFixed(1) + "%";
   if (RUNNING) waitEl.textContent = label(RUN) + " \u00b7 step " + RUN.step + " / " + STEPS;
 }
-function runFrac(){ return Math.min(1, RUN.step / STEPS); }
 
 /* ---------------- wiring ---------------- */
 function paintPresets(){
   var btns = presetsEl.querySelectorAll("button");
   Array.prototype.forEach.call(btns, function(b, i){ b.classList.toggle("on", i === STATE.preset); });
 }
-function syncAffine(){
-  var norm = (STATE.mech === "ln");
-  cGam.disabled = !norm; cBet.disabled = !norm;
-  affineBox.classList.toggle("affine-off", !norm);
-  affineNote.innerHTML = norm
-    ? '<span class="lang-en">&gamma; starts at 1 and &beta; at 0, one entry per feature of the layer output, learned by the same SGD step as the weights. Switch either off and train again.</span>' +
-      '<span class="lang-zh">&gamma; 初值 1、&beta; 初值 0，每个输出特征一个分量，和权重走同一个 SGD 步一起学。关掉其中一个再训一遍。</span>'
-    : '<span class="lang-en">Not available: &gamma; and &beta; belong to the normalization layer. The weight-side mechanisms have no affine pair, so there is nothing to switch on or off here.</span>' +
-      '<span class="lang-zh">不可选：&gamma; 与 &beta; 属于归一化层。权重侧机制没有仿射对，所以这里没有可开关的东西。</span>';
+function syncControls(){
+  var weightSide = (STATE.cmp !== "none");
+  var lnOn = STATE.ln && !weightSide;
+  cLn.disabled = weightSide;
+  cGam.disabled = !lnOn; cBet.disabled = !lnOn;
+  document.getElementById("lnRow").classList.toggle("off", weightSide);
+  affineBox.classList.toggle("off", !lnOn);
+  affineNote.innerHTML = weightSide
+    ? '<span class="lang-en">Replaces the normalization: LayerNorm and its &gamma;, &beta; are switched off.</span>' +
+      '<span class="lang-zh">取代归一化：LayerNorm 及其 &gamma;、&beta; 已关闭。</span>'
+    : (lnOn
+      ? '<span class="lang-en">&gamma; starts at 1, &beta; at 0; trained by the same SGD step as the weights.</span>' +
+        '<span class="lang-zh">&gamma; 初值 1、&beta; 初值 0；与权重走同一个 SGD 步。</span>'
+      : '<span class="lang-en">Only LayerNorm has &gamma; and &beta;.</span>' +
+        '<span class="lang-zh">只有 LayerNorm 有 &gamma; 和 &beta;。</span>');
+  cmpEl.querySelectorAll("input").forEach(function(inp){
+    inp.checked = (inp.value === STATE.cmp);
+  });
+  cmpNote.innerHTML = weightSide
+    ? '<span class="lang-en">Row norm target &radic;2 &mdash; what He init already gives. Strength 1.0.</span>' +
+      '<span class="lang-zh">目标行范数 &radic;2 &mdash; 正是 He 初始化已给的值。强度 1.0。</span>'
+    : '<span class="lang-en">Either one constrains the weights instead of the activations.</span>' +
+      '<span class="lang-zh">两者都是在约束权重，而不是约束激活。</span>';
 }
 function reset(){ if (!RUNNING){ prepare(); renderLab(); barEl.style.width = "0"; waitEl.textContent = ""; } }
 
@@ -1132,15 +1149,16 @@ function initLab(){
   barEl = document.getElementById("bar");
   waitEl = document.getElementById("wait");
   presetsEl = document.getElementById("presets");
-  mechEl = document.getElementById("mech");
   logEl = document.getElementById("log");
   affineBox = document.getElementById("affineBox");
   cGam = document.getElementById("cGam");
   cBet = document.getElementById("cBet");
   affineNote = document.getElementById("affineNote");
+  cmpEl = document.getElementById("cmp");
+  cmpNote = document.getElementById("cmpNote");
 
-  presetsEl.innerHTML = PRESETS.map(function(p, i){
-    return '<button class="btn preset wide" type="button" data-i="' + i + '">L = ' + p.L + ', d = ' + p.d + '</button>';
+  presetsEl.innerHTML = SETTINGS.map(function(p, i){
+    return '<button class="btn" type="button" data-i="' + i + '">L = ' + p.L + ' &middot; d = ' + p.d + '</button>';
   }).join("");
   Array.prototype.forEach.call(presetsEl.querySelectorAll("button"), function(b){
     b.addEventListener("click", function(){
@@ -1150,15 +1168,21 @@ function initLab(){
     });
   });
 
-  mechEl.innerHTML = MECHS.map(function(m){
-    return '<label for="m-' + m.id + '"><input type="radio" name="mech" id="m-' + m.id + '" value="' + m.id + '"' +
-      (m.id === STATE.mech ? " checked" : "") + '><i class="swatch" style="background:' + COLOR[m.id] + '"></i>' +
-      '<span><span class="lang-en">' + MTEXT[m.id].en + '</span><span class="lang-zh">' + MTEXT[m.id].zh + '</span></span></label>';
+  cLn = document.getElementById("cLn");
+  cLn.addEventListener("change", function(ev){ if (!RUNNING){ STATE.ln = ev.target.checked; syncControls(); reset(); } });
+
+  cmpEl.innerHTML = CMP.map(function(c){
+    return '<label for="cmp-' + c.id + '"><input type="radio" name="cmp" id="cmp-' + c.id + '" value="' + c.id + '"' +
+      (c.id === STATE.cmp ? " checked" : "") + '><span><span class="lang-en">' + c.en + '</span><span class="lang-zh">' + c.zh + '</span></span></label>';
   }).join("");
-  mechEl.addEventListener("change", function(ev){
+  cmpEl.addEventListener("change", function(ev){
     if (!ev.target.value || RUNNING) return;
-    STATE.mech = ev.target.value;
-    syncAffine(); reset();
+    STATE.cmp = ev.target.value;
+    if (STATE.cmp !== "none") STATE.ln = false, cLn.checked = false;
+    syncControls(); reset();
+  });
+  document.getElementById("lnRow").addEventListener("click", function(ev){
+    if (ev.target.tagName !== "INPUT") { cLn.checked = !cLn.checked; cLn.dispatchEvent(new Event("change")); }
   });
 
   cGam.addEventListener("change", function(ev){ STATE.useGam = ev.target.checked; reset(); });
@@ -1166,7 +1190,7 @@ function initLab(){
   runBtn.addEventListener("click", trainAll);
   stopBtn.addEventListener("click", stopRun);
 
-  paintPresets(); syncAffine(); reset();
+  paintPresets(); syncControls(); reset();
 }
 
 /* ---------------- views, slides, language ---------------- */
@@ -1217,16 +1241,17 @@ function initDeepLink(){
   if (q.get("lang") === "zh") document.documentElement.setAttribute("data-lang", "zh");
   if (q.get("preset") !== null){
     var p = parseInt(q.get("preset"), 10);
-    if (isFinite(p) && p >= 0 && p < PRESETS.length) STATE.preset = p;
+    if (isFinite(p) && p >= 0 && p < SETTINGS.length) STATE.preset = p;
   }
-  if (q.get("mech")){
-    var m = q.get("mech");
-    for (var i = 0; i < MECHS.length; i++) if (MECHS[i].id === m) STATE.mech = m;
-  }
+  if (q.get("ln") === "1") STATE.ln = true;
+  var c = q.get("cmp");
+  if (c) for (var i = 0; i < CMP.length; i++) if (CMP[i].id === c) STATE.cmp = c;
+  if (STATE.cmp !== "none") STATE.ln = false;
   if (q.get("gam") === "0") STATE.useGam = false;
   if (q.get("bet") === "0") STATE.useBet = false;
+  document.getElementById("cLn").checked = STATE.ln;
   cGam.checked = STATE.useGam; cBet.checked = STATE.useBet;
-  paintPresets(); syncAffine();
+  paintPresets(); syncControls();
 }
 function init(){
   initLab();

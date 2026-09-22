@@ -110,9 +110,10 @@ variance of the activations those rows produce.
 # The in-page replica: the four settings, and why they are these ones
 
 `index.html` runs its **own** training loop (vanilla JS, no server, no network).
-The student picks one of four settings, picks one mechanism, and presses Train.
-The page's job is to make one contrast legible: **on this data, plain ReLU + He
-does not train, and adding LayerNorm does.**
+The student picks one of four settings, then chooses what to add: LayerNorm — or,
+instead of it, one of the two weight-side mechanisms. ReLU + He init is the fixed
+baseline, not one of the choices. The page's job is to make one contrast legible:
+**on this data, plain ReLU + He does not train, and adding LayerNorm does.**
 
 That is a claim about the replica, not a consequence of the code compiling — so
 it was checked against the page's own maths before shipping. Constants:

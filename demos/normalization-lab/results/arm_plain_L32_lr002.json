@@ -1,0 +1,259 @@
+{
+ "config": {
+  "data": "/Users/ruoyusun/Desktop/\u91cd\u8981\u7814\u7a76\u9879\u76ee_2022\u8d77/0_\u4e34\u65f6_Teaching \u6559\u5b66/2026_Fall_ME2605_DDA6204_LLM_training_\u5f53\u524d\u8bfe\u7a0b/Week 1/Lab Session/ME2605_Week1_Lab_Package/data/mnist.npz",
+  "layers": 32,
+  "width": 128,
+  "steps": 2000,
+  "batch": 128,
+  "lr": 0.02,
+  "momentum": 0.0,
+  "train": 20000,
+  "val": 2000,
+  "every": 500,
+  "seed": 0,
+  "methods": [
+   "none",
+   "ln",
+   "bn",
+   "rms",
+   "proj",
+   "reg",
+   "wn"
+  ],
+  "quick": false,
+  "out": "/tmp/m_L32_lr002_all.json"
+ },
+ "runs": [
+  {
+   "method": "none",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.8415
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.907
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.9165
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.929
+    }
+   ],
+   "best_val_acc": 0.929,
+   "final_val_acc": 0.929,
+   "fwd_scale_last": 3.9498,
+   "fwd_scale_first": 0.6209,
+   "seconds": 5.3
+  },
+  {
+   "method": "ln",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.79
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.882
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.9235
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.914
+    }
+   ],
+   "best_val_acc": 0.9235,
+   "final_val_acc": 0.914,
+   "fwd_scale_last": 1.023,
+   "fwd_scale_first": 1.0023,
+   "seconds": 27.8
+  },
+  {
+   "method": "bn",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.748
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.8315
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.8775
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.894
+    }
+   ],
+   "best_val_acc": 0.894,
+   "final_val_acc": 0.894,
+   "fwd_scale_last": 1.1287,
+   "fwd_scale_first": 0.9986,
+   "seconds": 29.2
+  },
+  {
+   "method": "rms",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.833
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.897
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.9235
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.941
+    }
+   ],
+   "best_val_acc": 0.941,
+   "final_val_acc": 0.941,
+   "fwd_scale_last": 1.0185,
+   "fwd_scale_first": 1.0007,
+   "seconds": 14.7
+  },
+  {
+   "method": "proj",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.8325
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.906
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.93
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.936
+    }
+   ],
+   "best_val_acc": 0.936,
+   "final_val_acc": 0.936,
+   "fwd_scale_last": 3.7794,
+   "fwd_scale_first": 0.6181,
+   "seconds": 7.3
+  },
+  {
+   "method": "reg",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.7755
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.897
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.9265
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.9295
+    }
+   ],
+   "best_val_acc": 0.9295,
+   "final_val_acc": 0.9295,
+   "fwd_scale_last": 3.8527,
+   "fwd_scale_first": 0.6119,
+   "seconds": 10.6
+  },
+  {
+   "method": "wn",
+   "lr": 0.02,
+   "momentum": 0.0,
+   "layers": 32,
+   "width": 128,
+   "steps": 2000,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 500,
+     "val_acc": 0.8305
+    },
+    {
+     "step": 1000,
+     "val_acc": 0.906
+    },
+    {
+     "step": 1500,
+     "val_acc": 0.916
+    },
+    {
+     "step": 2000,
+     "val_acc": 0.929
+    }
+   ],
+   "best_val_acc": 0.929,
+   "final_val_acc": 0.929,
+   "fwd_scale_last": 3.7341,
+   "fwd_scale_first": 0.6279,
+   "seconds": 14.5
+  }
+ ]
+}

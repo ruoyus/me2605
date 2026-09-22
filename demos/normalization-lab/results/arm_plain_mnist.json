@@ -1,0 +1,261 @@
+{
+ "config": {
+  "data": "/Users/ruoyusun/Desktop/\u91cd\u8981\u7814\u7a76\u9879\u76ee_2022\u8d77/0_\u4e34\u65f6_Teaching \u6559\u5b66/2026_Fall_ME2605_DDA6204_LLM_training_\u5f53\u524d\u8bfe\u7a0b/Week 1/Lab Session/ME2605_Week1_Lab_Package/data/mnist.npz",
+  "layers": 16,
+  "width": 128,
+  "steps": 1200,
+  "batch": 128,
+  "lr": 0.05,
+  "momentum": 0.0,
+  "feature_scale": 0.0,
+  "standardize_input": false,
+  "train": 20000,
+  "val": 2000,
+  "every": 300,
+  "seed": 0,
+  "methods": [
+   "none",
+   "ln",
+   "bn",
+   "rms",
+   "proj",
+   "reg",
+   "wn"
+  ],
+  "quick": false,
+  "out": "/tmp/plain_mnist.json"
+ },
+ "runs": [
+  {
+   "method": "none",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.8755
+    },
+    {
+     "step": 600,
+     "val_acc": 0.9225
+    },
+    {
+     "step": 900,
+     "val_acc": 0.923
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.933
+    }
+   ],
+   "best_val_acc": 0.933,
+   "final_val_acc": 0.933,
+   "fwd_scale_last": 2.7814,
+   "fwd_scale_first": 0.6847,
+   "seconds": 1.7
+  },
+  {
+   "method": "ln",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.8875
+    },
+    {
+     "step": 600,
+     "val_acc": 0.922
+    },
+    {
+     "step": 900,
+     "val_acc": 0.9455
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.939
+    }
+   ],
+   "best_val_acc": 0.9455,
+   "final_val_acc": 0.939,
+   "fwd_scale_last": 1.0246,
+   "fwd_scale_first": 1.0,
+   "seconds": 8.3
+  },
+  {
+   "method": "bn",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.885
+    },
+    {
+     "step": 600,
+     "val_acc": 0.913
+    },
+    {
+     "step": 900,
+     "val_acc": 0.9145
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.9275
+    }
+   ],
+   "best_val_acc": 0.9275,
+   "final_val_acc": 0.9275,
+   "fwd_scale_last": 1.0425,
+   "fwd_scale_first": 0.9887,
+   "seconds": 8.5
+  },
+  {
+   "method": "rms",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.897
+    },
+    {
+     "step": 600,
+     "val_acc": 0.9195
+    },
+    {
+     "step": 900,
+     "val_acc": 0.932
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.935
+    }
+   ],
+   "best_val_acc": 0.935,
+   "final_val_acc": 0.935,
+   "fwd_scale_last": 1.0208,
+   "fwd_scale_first": 0.9995,
+   "seconds": 3.9
+  },
+  {
+   "method": "proj",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.8745
+    },
+    {
+     "step": 600,
+     "val_acc": 0.91
+    },
+    {
+     "step": 900,
+     "val_acc": 0.935
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.9145
+    }
+   ],
+   "best_val_acc": 0.935,
+   "final_val_acc": 0.9145,
+   "fwd_scale_last": 2.7158,
+   "fwd_scale_first": 0.6709,
+   "seconds": 1.9
+  },
+  {
+   "method": "reg",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.8855
+    },
+    {
+     "step": 600,
+     "val_acc": 0.907
+    },
+    {
+     "step": 900,
+     "val_acc": 0.9235
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.9385
+    }
+   ],
+   "best_val_acc": 0.9385,
+   "final_val_acc": 0.9385,
+   "fwd_scale_last": 2.6136,
+   "fwd_scale_first": 0.6603,
+   "seconds": 2.8
+  },
+  {
+   "method": "wn",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.8895
+    },
+    {
+     "step": 600,
+     "val_acc": 0.9255
+    },
+    {
+     "step": 900,
+     "val_acc": 0.9205
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.929
+    }
+   ],
+   "best_val_acc": 0.929,
+   "final_val_acc": 0.929,
+   "fwd_scale_last": 2.3784,
+   "fwd_scale_first": 0.6637,
+   "seconds": 4.0
+  }
+ ]
+}

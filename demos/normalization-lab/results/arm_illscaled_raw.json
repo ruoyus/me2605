@@ -1,0 +1,210 @@
+{
+ "config": {
+  "data": "/Users/ruoyusun/Desktop/\u91cd\u8981\u7814\u7a76\u9879\u76ee_2022\u8d77/0_\u4e34\u65f6_Teaching \u6559\u5b66/2026_Fall_ME2605_DDA6204_LLM_training_\u5f53\u524d\u8bfe\u7a0b/Week 1/Lab Session/ME2605_Week1_Lab_Package/data/mnist.npz",
+  "layers": 16,
+  "width": 128,
+  "steps": 1200,
+  "batch": 128,
+  "lr": 0.05,
+  "momentum": 0.0,
+  "feature_scale": 2.0,
+  "standardize_input": false,
+  "train": 20000,
+  "val": 2000,
+  "every": 300,
+  "seed": 0,
+  "methods": [
+   "none",
+   "ln",
+   "bn",
+   "rms",
+   "proj",
+   "reg",
+   "wn"
+  ],
+  "quick": false,
+  "out": "/tmp/ill_nostd.json"
+ },
+ "runs": [
+  {
+   "method": "none",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": true,
+   "curve": [],
+   "best_val_acc": null,
+   "final_val_acc": null,
+   "fwd_scale_last": NaN,
+   "fwd_scale_first": NaN,
+   "seconds": 0.0
+  },
+  {
+   "method": "ln",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.7725
+    },
+    {
+     "step": 600,
+     "val_acc": 0.819
+    },
+    {
+     "step": 900,
+     "val_acc": 0.8065
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.8715
+    }
+   ],
+   "best_val_acc": 0.8715,
+   "final_val_acc": 0.8715,
+   "fwd_scale_last": 1.0188,
+   "fwd_scale_first": 0.9983,
+   "seconds": 8.0
+  },
+  {
+   "method": "bn",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.755
+    },
+    {
+     "step": 600,
+     "val_acc": 0.8385
+    },
+    {
+     "step": 900,
+     "val_acc": 0.8605
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.882
+    }
+   ],
+   "best_val_acc": 0.882,
+   "final_val_acc": 0.882,
+   "fwd_scale_last": 1.0551,
+   "fwd_scale_first": 0.9803,
+   "seconds": 8.1
+  },
+  {
+   "method": "rms",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.7625
+    },
+    {
+     "step": 600,
+     "val_acc": 0.838
+    },
+    {
+     "step": 900,
+     "val_acc": 0.863
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.8825
+    }
+   ],
+   "best_val_acc": 0.8825,
+   "final_val_acc": 0.8825,
+   "fwd_scale_last": 1.0169,
+   "fwd_scale_first": 1.0027,
+   "seconds": 3.9
+  },
+  {
+   "method": "proj",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": false,
+   "curve": [
+    {
+     "step": 300,
+     "val_acc": 0.1035
+    },
+    {
+     "step": 600,
+     "val_acc": 0.0875
+    },
+    {
+     "step": 900,
+     "val_acc": 0.0875
+    },
+    {
+     "step": 1200,
+     "val_acc": 0.0875
+    }
+   ],
+   "best_val_acc": 0.1035,
+   "final_val_acc": 0.0875,
+   "fwd_scale_last": 3.9731,
+   "fwd_scale_first": 115.9478,
+   "seconds": 2.0
+  },
+  {
+   "method": "reg",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": true,
+   "curve": [],
+   "best_val_acc": null,
+   "final_val_acc": null,
+   "fwd_scale_last": NaN,
+   "fwd_scale_first": NaN,
+   "seconds": 0.0
+  },
+  {
+   "method": "wn",
+   "lr": 0.05,
+   "momentum": 0.0,
+   "layers": 16,
+   "width": 128,
+   "steps": 1200,
+   "seed": 0,
+   "diverged": true,
+   "curve": [],
+   "best_val_acc": null,
+   "final_val_acc": null,
+   "fwd_scale_last": NaN,
+   "fwd_scale_first": NaN,
+   "seconds": 0.0
+  }
+ ]
+}

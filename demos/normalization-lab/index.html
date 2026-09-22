@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Normalization Lab · ME2605 Lecture 3</title>
+<meta name="description" content="ME2605 Lecture 3, Part 2 — a deep network kept at scale. Constrain the parameters, or standardize the activations? A lab that runs the comparison in your browser.">
+<style>
+:root{
+  --bg:#ffffff; --fg:#1a1a1a; --muted:#5a5a5a; --accent:#1a5276;
+  --accent-soft:#eaf2f8; --border:#e2e2e2; --code-bg:#f6f8fa; --maxw:1120px;
+  --good:#1e8449; --low:#2471a3; --high:#b03a2e; --warn:#b7791f;
+  --c-none:#b03a2e; --c-ln:#1a5276; --c-bn:#1e8449; --c-rms:#6b46c1;
+  --c-proj:#b7791f; --c-reg:#a04000; --c-wn:#5d6d7e;
+  --panel:#fbfcfd;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-variant-numeric:tabular-nums;
+}
+html[data-lang="en"] .lang-zh{display:none}
+html[data-lang="zh"] .lang-en{display:none}
+a{color:var(--accent)}
+code,.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mono-block{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:15px; background:var(--code-bg); border:1px solid var(--border);
+  border-radius:6px; padding:9px 12px; display:inline-block; margin:6px 0 2px;
+}
+sub{font-size:.72em}
+sup{font-size:.72em}
+
+/* ---------- header ---------- */
+.site-header{
+  position:sticky; top:0; z-index:20; background:rgba(255,255,255,.94);
+  backdrop-filter:saturate(180%) blur(8px); border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:var(--maxw); margin:0 auto; padding:11px 20px;
+  display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
+}
+.brand{font-size:14.5px; color:var(--muted); text-decoration:none; letter-spacing:.01em}
+.brand .code{color:var(--accent); font-weight:600; font-family:ui-monospace,Menlo,monospace}
+.nav-links{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.nav-links button,.nav-links a{
+  font:inherit; font-size:14px; padding:6px 11px; border-radius:6px; border:1px solid transparent;
+  background:none; color:var(--muted); cursor:pointer; text-decoration:none;
+}
+.nav-links button:hover,.nav-links a:hover{background:var(--accent-soft); color:var(--accent)}
+.nav-links button.active{background:var(--accent-soft); color:var(--accent); border-color:#cfe2ee; font-weight:600}
+.lang-toggle{border:1px solid var(--border) !important; color:var(--fg) !important; min-width:56px}
+
+main{max-width:var(--maxw); margin:0 auto; padding:34px 20px 90px}
+h1{font-size:30px; line-height:1.28; margin:6px 0 12px; letter-spacing:-.01em}
+h2{font-size:21px; line-height:1.35; margin:0 0 12px; letter-spacing:-.005em}
+h3{font-size:16px; margin:0 0 8px}
+p{margin:0 0 12px}
+.lede{font-size:17.5px; color:var(--muted); max-width:760px; margin-bottom:26px}
+.muted{color:var(--muted)}
+.small{font-size:13.5px; line-height:1.55}
+
+/* ---------- intro slides ---------- */
+.slides{position:relative; border:1px solid var(--border); border-radius:12px; background:var(--panel); padding:26px 28px 78px; min-height:430px}
+.slide{display:none}
+.slide.on{display:block; animation:fade .28s ease}
+@keyframes fade{from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:none}}
+.slide .num{font-size:13px; letter-spacing:.09em; color:#8b97a3; text-transform:uppercase; margin-bottom:12px}
+.slide p{max-width:840px}
+.figure{margin:16px 0 8px}
+.cap{font-size:13.5px; color:var(--muted); margin-top:6px}
+.slide-nav{position:absolute; left:28px; right:28px; bottom:20px; display:flex; align-items:center; gap:14px}
+.dots{display:flex; gap:7px}
+.dots i{width:8px; height:8px; border-radius:50%; background:#cfd8de; display:block; cursor:pointer}
+.dots i.on{background:var(--accent)}
+.slide-nav .spacer{flex:1}
+.btn{
+  font:inherit; font-size:14.5px; padding:8px 15px; border-radius:7px; cursor:pointer;
+  border:1px solid var(--border); background:#fff; color:var(--fg);
+}
+.btn:hover{background:var(--accent-soft); border-color:#cfe2ee}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+.btn.primary:hover{background:#143f5c}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+
+/* ---------- lab ---------- */
+.labgrid{display:grid; grid-template-columns:298px minmax(0,1fr); gap:22px; align-items:start}
+@media (max-width:900px){.labgrid{grid-template-columns:1fr}}
+.card{border:1px solid var(--border); border-radius:12px; background:var(--panel); padding:18px 20px; margin-bottom:20px}
+.card > h3{font-size:15px; letter-spacing:.02em; color:var(--muted); text-transform:uppercase; margin-bottom:14px}
+.ctl{margin-bottom:16px}
+.ctl:last-child{margin-bottom:0}
+.ctl label{display:block; font-size:14px; margin-bottom:5px}
+.ctl .val{float:right; font-family:ui-monospace,Menlo,monospace; font-size:13.5px; color:var(--accent)}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.checks{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px}
+.checks label{display:flex; align-items:center; gap:7px; font-size:14px; cursor:pointer; margin:0}
+.checks input{accent-color:var(--accent)}
+.swatch{width:11px; height:11px; border-radius:2.5px; display:inline-block; flex:none}
+.row{display:flex; gap:10px; align-items:center}
+.row .btn{flex:1}
+.btn.preset{font-size:12.5px; padding:5px 6px; font-weight:500; line-height:1.25}
+.btn.preset.on{border-color:var(--accent); color:var(--accent); background:var(--accent-soft); font-weight:600}
+.progress{height:5px; border-radius:3px; background:#e8edf1; overflow:hidden; margin-top:12px}
+.progress i{display:block; height:100%; width:0; background:var(--accent); transition:width .12s linear}
+.wait{font-size:13.5px; color:var(--muted); margin-top:8px; min-height:20px}
+
+.dash h3{font-size:15px; color:var(--muted); text-transform:uppercase; letter-spacing:.02em}
+.legend{display:flex; flex-wrap:wrap; gap:6px 16px; margin:2px 0 10px; font-size:13.5px}
+.legend span{display:flex; align-items:center; gap:6px}
+.chart{width:100%; height:auto; display:block}
+.chart text{font-family:inherit}
+
+table{border-collapse:collapse; width:100%; font-size:14px}
+th,td{text-align:right; padding:7px 9px; border-bottom:1px solid var(--border); white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-weight:600; color:var(--muted); font-size:13px; border-bottom:1.5px solid #cfd8de}
+tbody tr.hi td{background:var(--accent-soft)}
+td.dash{color:#b7c0c8}
+tbody th{text-align:left; font-weight:600}
+.scroll{overflow-x:auto}
+
+footer{max-width:var(--maxw); margin:0 auto; padding:0 20px 60px; color:var(--muted); font-size:13.5px}
+figure{margin:0}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="nav-inner">
+    <a class="brand" href="../index.html?lang=unused"><span class="code">ME2605</span> · <span class="lang-en">Lecture 3 · Part 2 — Normalization Lab</span><span class="lang-zh">第 3 讲 · 第 2 部分 — 归一化实验室</span></a>
+    <nav class="nav-links">
+      <button id="nav-intro" class="active" type="button"><span class="lang-en">Background</span><span class="lang-zh">背景</span></button>
+      <button id="nav-lab" type="button"><span class="lang-en">The Lab</span><span class="lang-zh">实验台</span></button>
+      <a href="../nn-signal-lab/"><span class="lang-en">← Signal Propagation Lab</span><span class="lang-zh">← 信号传播实验室</span></a>
+      <a href="../index.html"><span class="lang-en">Course site</span><span class="lang-zh">课程网站</span></a>
+      <button class="lang-toggle" id="langBtn" type="button">中文</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ===================== 1. BACKGROUND ===================== -->
+<section id="view-intro">
+  <h1><span class="lang-en">Keep a deep network at scale: constrain the weights, or standardize the activations?</span>
+      <span class="lang-zh">让深层网络保持在合适的尺度：约束权重，还是标准化激活？</span></h1>
+  <p class="lede">
+    <span class="lang-en">Five slides of background, then a lab that trains the comparison in your browser: one deep network, a baseline and six mechanisms, and an input whose feature scales you control.</span>
+    <span class="lang-zh">先看五页背景，然后进入实验台：同一套深层网络、一个基线加六种机制，输入特征的尺度由你控制，训练就在浏览器里跑。</span>
+  </p>
+
+  <div class="slides" id="slides">
+
+    <!-- 1 -->
+    <div class="slide on">
+      <div class="num">1 / 5</div>
+      <h2><span class="lang-en">A scale requirement can be imposed in two places</span>
+          <span class="lang-zh">「尺度要求」可以加在两个地方</span></h2>
+      <p><span class="lang-en">A network is a stack of maps. If you want every layer to stay at a controlled size, you can act on the <b>parameters</b> <span class="code">W<sub>l</sub></span> — or on the <b>activations</b> <span class="code">z<sub>l</sub></span> that those parameters produce. The two are not the same intervention, and they are not equally effective.</span>
+         <span class="lang-zh">网络是一串映射。想让每一层保持在可控的大小上，你可以对<b>参数</b> <span class="code">W<sub>l</sub></span> 动手，也可以对参数造出来的<b>激活</b> <span class="code">z<sub>l</sub></span> 动手。这是两种不同的干预，效果也不一样。</span></p>
+      <div class="figure">
+        <svg viewBox="0 0 820 260" width="100%" role="img" aria-label="Two places to impose a scale requirement: on the weights, on the activations">
+          <rect x="0" y="0" width="820" height="260" fill="#ffffff"/>
+          <!-- left: weights -->
+          <g>
+            <text x="24" y="30" font-size="15" font-weight="600" fill="#1a5276">A · the parameters</text>
+            <g stroke="#adb8c2" stroke-width="1.4" fill="none">
+              <line x1="70" y1="80" x2="180" y2="60"/><line x1="70" y1="80" x2="180" y2="105"/><line x1="70" y1="80" x2="180" y2="150"/>
+              <line x1="70" y1="140" x2="180" y2="60"/><line x1="70" y1="140" x2="180" y2="105"/><line x1="70" y1="140" x2="180" y2="150"/>
+            </g>
+            <g fill="#ffffff" stroke="#1a5276" stroke-width="1.6">
+              <circle cx="70" cy="80" r="13"/><circle cx="70" cy="140" r="13"/>
+              <circle cx="180" cy="60" r="13"/><circle cx="180" cy="105" r="13"/><circle cx="180" cy="150" r="13"/>
+            </g>
+            <line x1="205" y1="45" x2="205" y2="175" stroke="#b03a2e" stroke-width="2.4"/>
+            <line x1="199" y1="45" x2="211" y2="45" stroke="#b03a2e" stroke-width="2.4"/>
+            <line x1="199" y1="175" x2="211" y2="175" stroke="#b03a2e" stroke-width="2.4"/>
+            <text x="222" y="95" font-size="15" fill="#b03a2e">keep ‖w‖ at a target</text>
+            <text x="222" y="118" font-size="13.5" fill="#5a5a5a">projection · regularizer · constraint · reparametrization</text>
+          </g>
+          <line x1="430" y1="24" x2="430" y2="236" stroke="#e8edf1" stroke-width="1.4"/>
+          <!-- right: activations -->
+          <g>
+            <text x="466" y="30" font-size="15" font-weight="600" fill="#1e8449">B · the activations</text>
+            <g stroke="#adb8c2" stroke-width="1.4" fill="none">
+              <line x1="510" y1="80" x2="600" y2="60"/><line x1="510" y1="80" x2="600" y2="105"/><line x1="510" y1="80" x2="600" y2="150"/>
+              <line x1="510" y1="140" x2="600" y2="60"/><line x1="510" y1="140" x2="600" y2="105"/><line x1="510" y1="140" x2="600" y2="150"/>
+            </g>
+            <g fill="#ffffff" stroke="#1a5276" stroke-width="1.6">
+              <circle cx="510" cy="80" r="13"/><circle cx="510" cy="140" r="13"/>
+            </g>
+            <g fill="#eafaf0" stroke="#1e8449" stroke-width="1.8">
+              <circle cx="600" cy="60" r="13"/><circle cx="600" cy="105" r="13"/><circle cx="600" cy="150" r="13"/>
+            </g>
+            <line x1="632" y1="38" x2="632" y2="172" stroke="#1e8449" stroke-width="2.4"/>
+            <line x1="626" y1="38" x2="638" y2="38" stroke="#1e8449" stroke-width="2.4"/>
+            <line x1="626" y1="172" x2="638" y2="172" stroke="#1e8449" stroke-width="2.4"/>
+            <text x="650" y="82" font-size="15" fill="#1e8449">standardize z</text>
+            <text x="650" y="105" font-size="13.5" fill="#5a5a5a">zero mean, unit scale</text>
+            <text x="650" y="126" font-size="13.5" fill="#5a5a5a">then scale and shift back</text>
+          </g>
+        </svg>
+      </div>
+      <p class="cap"><span class="lang-en">Same goal — keep the signal from drifting — reached by two different interventions. This lab measures which one survives a hard input.</span>
+         <span class="lang-zh">同一个目标——不让信号漂走——两种干预方式。这个实验台测量的就是：碰上困难的输入，哪一种能撑住。</span></p>
+    </div>
+
+    <!-- 2 -->
+    <div class="slide">
+      <div class="num">2 / 5</div>
+      <h2><span class="lang-en">Conditioning: identical data, two sets of feature scales</span>
+          <span class="lang-zh">条件数：同一批数据，两套特征尺度</span></h2>
+      <p><span class="lang-en">A least-squares fit of house price on <b>two</b> features — floor area and number of rooms. The two columns are in different units, so one is numerically large and one is small. The eigenvalues of <span class="code">XX<sup>T</sup></span> separate: <span class="mono-block">(0.0004, 1.856) — κ ≈ 4640</span>. Rescale the two columns and the same fit has <span class="mono-block">(0.4, 18.45) — κ ≈ 46</span>.</span>
+         <span class="lang-zh">用<b>两个</b>特征——面积和房间数——做房价的最小二乘拟合。两列的单位不同，一列数值大、一列小，<span class="code">XX<sup>T</sup></span> 的特征值就分开了：<span class="mono-block">(0.0004, 1.856) — κ ≈ 4640</span>。把两列重新缩放，同一个拟合变成 <span class="mono-block">(0.4, 18.45) — κ ≈ 46</span>。</span></p>
+      <div class="figure">
+        <svg viewBox="0 0 820 250" width="100%" role="img" aria-label="Two contour ellipses for the same regression problem, differing in condition number">
+          <rect x="0" y="0" width="820" height="250" fill="#ffffff"/>
+          <g>
+            <text x="40" y="28" font-size="14.5" font-weight="600" fill="#b03a2e">κ ≈ 4640</text>
+            <ellipse cx="185" cy="140" rx="150" ry="26" fill="none" stroke="#b03a2e" stroke-width="1.7"/>
+            <ellipse cx="185" cy="140" rx="96" ry="16" fill="none" stroke="#e0a9a0" stroke-width="1.5"/>
+            <ellipse cx="185" cy="140" rx="42" ry="7" fill="none" stroke="#eecfc9" stroke-width="1.4"/>
+            <path d="M185 140 L172 96 L150 92 L112 118 L96 111 L74 133 L69 128 L62 138" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="62" cy="138" r="4" fill="#1a1a1a"/>
+            <text x="40" y="232" font-size="13.5" fill="#5a5a5a">gradient descent zig-zags down the narrow valley</text>
+          </g>
+          <line x1="410" y1="20" x2="410" y2="228" stroke="#e8edf1" stroke-width="1.4"/>
+          <g>
+            <text x="470" y="28" font-size="14.5" font-weight="600" fill="#1e8449">κ ≈ 46</text>
+            <ellipse cx="615" cy="140" rx="105" ry="82" fill="none" stroke="#1e8449" stroke-width="1.7"/>
+            <ellipse cx="615" cy="140" rx="68" ry="53" fill="none" stroke="#a9d8bd" stroke-width="1.5"/>
+            <ellipse cx="615" cy="140" rx="30" ry="23" fill="none" stroke="#d6ecdf" stroke-width="1.4"/>
+            <path d="M615 140 L588 100 L556 108 L522 134 L508 131 L493 141 L489 139 L486 140" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="486" cy="140" r="4" fill="#1a1a1a"/>
+            <text x="470" y="232" font-size="13.5" fill="#5a5a5a">the same descent, from the same start, arrives</text>
+          </g>
+        </svg>
+      </div>
+      <p class="cap"><span class="lang-en">Nothing about the task changed — only the units. The conditioning is a property of how the input is scaled, not of the model.</span>
+         <span class="lang-zh">任务本身没变，变的只是单位。条件数是输入如何被缩放的属性，不是模型的属性。</span></p>
+    </div>
+
+    <!-- 3 -->
+    <div class="slide">
+      <div class="num">3 / 5</div>
+      <h2><span class="lang-en">Centering and rescaling is a preconditioner — and not a universal one</span>
+          <span class="lang-zh">中心化 + 重新缩放是一种预条件——但不是万能的</span></h2>
+      <p><span class="lang-en">Subtract the column mean, divide each column by its norm: that is <b>Jacobi preconditioning</b>. It is cheap and it often tightens the eigenvalues a great deal. It is not a theorem: Sun &amp; Ye (2019) give matrices for which the preconditioned system is <i>worse</i> conditioned than the original.</span>
+         <span class="lang-zh">减掉列均值、再把每列除以自己的范数：这就是 <b>Jacobi 预条件</b>。它很便宜，经常能把特征值收紧很多。但它不是定理：Sun &amp; Ye (2019) 给出了预条件之后条件数反而<i>更差</i>的矩阵。</span></p>
+      <div class="figure">
+        <svg viewBox="0 0 820 190" width="100%" role="img" aria-label="Three steps: raw columns, centered, normalized">
+          <rect x="0" y="0" width="820" height="190" fill="#ffffff"/>
+          <g fill="none" stroke="#adb8c2" stroke-width="1.6">
+            <ellipse cx="120" cy="95" rx="74" ry="16" transform="rotate(-24 120 95)"/>
+            <ellipse cx="120" cy="95" rx="46" ry="10" transform="rotate(-24 120 95)"/>
+          </g>
+          <text x="120" y="166" font-size="13.5" fill="#5a5a5a" text-anchor="middle">X · raw</text>
+          <path d="M214 95 L246 95" stroke="#8b97a3" stroke-width="1.8" marker-end="url(#ar)"/>
+          <g fill="none" stroke="#adb8c2" stroke-width="1.6">
+            <ellipse cx="330" cy="95" rx="74" ry="16"/>
+            <ellipse cx="330" cy="95" rx="46" ry="10"/>
+          </g>
+          <text x="330" y="166" font-size="13.5" fill="#5a5a5a" text-anchor="middle">X − μ · centered</text>
+          <path d="M424 95 L456 95" stroke="#8b97a3" stroke-width="1.8" marker-end="url(#ar)"/>
+          <g fill="none" stroke="#1e8449" stroke-width="1.8">
+            <circle cx="582" cy="95" r="60"/>
+            <circle cx="582" cy="95" r="37"/>
+          </g>
+          <text x="582" y="166" font-size="13.5" fill="#5a5a5a" text-anchor="middle">÷ column norm</text>
+          <text x="700" y="90" font-size="13.5" fill="#5a5a5a">each axis now costs</text>
+          <text x="700" y="109" font-size="13.5" fill="#5a5a5a">the same per unit step</text>
+          <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#8b97a3"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="slide">
+      <div class="num">4 / 5</div>
+      <h2><span class="lang-en">Acting once, on the input, only fixes layer 0</span>
+          <span class="lang-zh">只在输入上做一次，只能修好第 0 层</span></h2>
+      <p><span class="lang-en">Standardizing <span class="code">X</span> before the network hands layer 0 a well-scaled input. But layer <span class="code">l</span> does not see <span class="code">X</span>; it sees <span class="code">Z<sub>l−1</sub></span>, which the previous layer produced and which moves at every step.</span>
+         <span class="lang-zh">在网络之前把 <span class="code">X</span> 标准化，第 0 层拿到一个尺度良好的输入。但第 <span class="code">l</span> 层看到的不是 <span class="code">X</span>，而是 <span class="code">Z<sub>l−1</sub></span>——上一层的输出，每一步都在变。</span></p>
+      <p><span class="lang-en">So the target moves inside the network: standardize <span class="code">Z<sub>l</sub></span> itself, at every layer — the rows of the activation matrix, one row per sample.</span>
+         <span class="lang-zh">所以目标要挪到网络内部：在每一层直接标准化 <span class="code">Z<sub>l</sub></span>——激活矩阵的每一行，一行一个样本。</span></p>
+      <div class="figure">
+        <svg viewBox="0 0 820 200" width="100%" role="img" aria-label="Layer 0 receives a standardized input; every later layer receives a drifting activation">
+          <rect x="0" y="0" width="820" height="200" fill="#ffffff"/>
+          <g>
+            <rect x="36" y="52" width="132" height="96" rx="8" fill="#eafaf0" stroke="#1e8449" stroke-width="1.6"/>
+            <text x="102" y="86" font-size="14.5" text-anchor="middle" fill="#1e8449">layer 0</text>
+            <text x="102" y="108" font-size="13" text-anchor="middle" fill="#5a5a5a">sees X</text>
+            <text x="102" y="128" font-size="13" text-anchor="middle" fill="#5a5a5a">standardized ✓</text>
+          </g>
+          <g>
+            <rect x="300" y="52" width="132" height="96" rx="8" fill="#fdf3e7" stroke="#b7791f" stroke-width="1.6"/>
+            <text x="366" y="86" font-size="14.5" text-anchor="middle" fill="#b7791f">layer 1</text>
+            <text x="366" y="108" font-size="13" text-anchor="middle" fill="#5a5a5a">sees Z₀</text>
+            <text x="366" y="128" font-size="13" text-anchor="middle" fill="#5a5a5a">moves every step</text>
+          </g>
+          <g>
+            <rect x="564" y="52" width="132" height="96" rx="8" fill="#fdf3e7" stroke="#b7791f" stroke-width="1.6"/>
+            <text x="630" y="86" font-size="14.5" text-anchor="middle" fill="#b7791f">layer l</text>
+            <text x="630" y="108" font-size="13" text-anchor="middle" fill="#5a5a5a">sees Z₍ₗ₋₁₎</text>
+            <text x="630" y="128" font-size="13" text-anchor="middle" fill="#5a5a5a">moves every step</text>
+          </g>
+          <g fill="none" stroke="#adb8c2" stroke-width="1.8">
+            <line x1="170" y1="100" x2="296" y2="100" marker-end="url(#ar2)"/>
+            <line x1="434" y1="100" x2="560" y2="100" marker-end="url(#ar2)"/>
+          </g>
+          <text x="233" y="176" font-size="12.5" text-anchor="middle" fill="#8b97a3">unchanged by preprocessing</text>
+          <text x="497" y="176" font-size="12.5" text-anchor="middle" fill="#8b97a3">unchanged by preprocessing</text>
+          <defs><marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 z" fill="#adb8c2"/></marker></defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="slide">
+      <div class="num">5 / 5</div>
+      <h2><span class="lang-en">The four parameter-side fixes all cost something</span>
+          <span class="lang-zh">四种「权重侧」的修法都要付出代价</span></h2>
+      <p><span class="lang-en">Take a toy problem: find <span class="code">w</span> with <span class="code">‖w‖ ≈ 1</span>. There are four standard ways to force it, and each one damages what the network can represent.</span>
+         <span class="lang-zh">拿一个玩具问题：求 <span class="code">w</span>，要求 <span class="code">‖w‖ ≈ 1</span>。有四种标准做法，每一种都会损伤网络的表达能力。</span></p>
+      <div class="figure">
+        <svg viewBox="0 0 820 216" width="100%" role="img" aria-label="Four parameter-side fixes and their drawbacks">
+          <rect x="0" y="0" width="820" height="216" fill="#ffffff"/>
+          <g>
+            <rect x="26" y="26" width="180" height="112" rx="9" fill="#fbfcfd" stroke="#e2e2e2" stroke-width="1.4"/>
+            <text x="44" y="54" font-size="14.5" font-weight="600" fill="#1a5276">Projection</text>
+            <text x="44" y="78" font-size="13" fill="#5a5a5a">rescale after</text>
+            <text x="44" y="97" font-size="13" fill="#5a5a5a">every step</text>
+            <text x="44" y="122" font-size="13" fill="#b03a2e">the step is thrown away</text>
+          </g>
+          <g>
+            <rect x="222" y="26" width="180" height="112" rx="9" fill="#fbfcfd" stroke="#e2e2e2" stroke-width="1.4"/>
+            <text x="240" y="54" font-size="14.5" font-weight="600" fill="#1a5276">Regularizer</text>
+            <text x="240" y="78" font-size="13" fill="#5a5a5a">penalize</text>
+            <text x="240" y="97" font-size="13" fill="#5a5a5a">(‖w‖ − 1)²</text>
+            <text x="240" y="122" font-size="13" fill="#b03a2e">the constraint is only soft</text>
+          </g>
+          <g>
+            <rect x="418" y="26" width="180" height="112" rx="9" fill="#fbfcfd" stroke="#e2e2e2" stroke-width="1.4"/>
+            <text x="436" y="54" font-size="14.5" font-weight="600" fill="#1a5276">Constraint</text>
+            <text x="436" y="78" font-size="13" fill="#5a5a5a">optimize on</text>
+            <text x="436" y="97" font-size="13" fill="#5a5a5a">the sphere</text>
+            <text x="436" y="122" font-size="13" fill="#b03a2e">projection again, in disguise</text>
+          </g>
+          <g>
+            <rect x="614" y="26" width="180" height="112" rx="9" fill="#fbfcfd" stroke="#e2e2e2" stroke-width="1.4"/>
+            <text x="632" y="54" font-size="14.5" font-weight="600" fill="#1a5276">Reparametrize</text>
+            <text x="632" y="78" font-size="13" fill="#5a5a5a">w = v/‖v‖,</text>
+            <text x="632" y="97" font-size="13" fill="#5a5a5a">learn v</text>
+            <text x="632" y="122" font-size="13" fill="#b03a2e">a norm is now a free direction</text>
+          </g>
+          <text x="26" y="178" font-size="14" fill="#1a1a1a">Standardizing the activations is a fifth option: it acts on z, not on w,</text>
+          <text x="26" y="199" font-size="14" fill="#1a1a1a">and the two free parameters that come with it (a scale γ and a shift β) are what give back the expressiveness.</text>
+        </svg>
+      </div>
+      <p class="cap"><span class="lang-en">The lab below keeps the four parameter-side mechanisms at their best starting point, so that a failure cannot be blamed on the initialization.</span>
+         <span class="lang-zh">下面的实验台让四种权重侧机制都从「已经满足自身约束」的位置出发，这样失败就不能归咎于初始化。</span></p>
+    </div>
+
+  </div>
+
+  <div class="slide-nav">
+    <button class="btn" id="prevBtn" type="button">←</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn" id="nextBtn" type="button">→</button>
+    <div class="spacer"></div>
+    <button class="btn primary" id="goLab" type="button"><span class="lang-en">Go to the lab</span><span class="lang-zh">进入实验台</span></button>
+  </div>
+</section>
+
+<!-- ===================== 2. THE LAB ===================== -->
+<section id="view-lab" style="display:none">
+  <h1><span class="lang-en">Normalization Lab</span><span class="lang-zh">归一化实验室</span></h1>
+  <p class="lede">
+    <span class="lang-en">One network, a baseline and six mechanisms, and an input whose feature scales you choose. Training runs here, in the page.</span>
+    <span class="lang-zh">一套网络、一个基线加六种机制，输入特征的尺度由你选。训练就在这个页面里跑。</span>
+  </p>
+
+  <div class="labgrid">
+
+    <aside>
+      <div class="card">
+        <h3><span class="lang-en">Controls</span><span class="lang-zh">控制项</span></h3>
+
+        <div class="ctl">
+          <label for="sSpread"><span class="lang-en">Feature-scale spread</span><span class="lang-zh">特征尺度跨度</span> <span class="val" id="vSpread">±10²</span></label>
+          <input type="range" id="sSpread" min="0" max="2" step="1" value="2">
+        </div>
+
+        <div class="ctl">
+          <label for="sDepth"><span class="lang-en">Hidden layers L</span><span class="lang-zh">隐层数 L</span> <span class="val" id="vDepth">8</span></label>
+          <input type="range" id="sDepth" min="2" max="16" step="2" value="8">
+          <div class="row" style="margin-top:8px">
+            <button class="btn preset" type="button" data-L="2">L = 2</button>
+            <button class="btn preset" type="button" data-L="8">L = 8</button>
+            <button class="btn preset" type="button" data-L="16">L = 16</button>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <label for="sLr"><span class="lang-en">Step size η</span><span class="lang-zh">步长 η</span> <span class="val" id="vLr">0.200</span></label>
+          <input type="range" id="sLr" min="-2" max="0" step="0.05" value="-0.69897">
+        </div>
+
+        <div class="ctl">
+          <label style="display:flex;align-items:center;gap:8px" for="cStd">
+            <input type="checkbox" id="cStd">
+            <span><span class="lang-en">Standardize the inputs first</span><span class="lang-zh">先把输入标准化</span></span>
+          </label>
+        </div>
+
+        <div class="ctl">
+          <label><span class="lang-en">Mechanisms</span><span class="lang-zh">机制</span></label>
+          <div class="checks" id="checks"></div>
+        </div>
+
+        <div class="ctl">
+          <label><span class="lang-en">Affine pair of the normalization</span><span class="lang-zh">归一化的仿射对</span></label>
+          <div class="checks">
+            <label for="cGam"><input type="checkbox" id="cGam" checked>
+              <span><span class="lang-en">learn γ (the scale)</span><span class="lang-zh">学 γ（缩放）</span></span></label>
+            <label for="cBet"><input type="checkbox" id="cBet" checked>
+              <span><span class="lang-en">learn β (the shift)</span><span class="lang-zh">学 β（平移）</span></span></label>
+          </div>
+          <p class="small muted" style="margin:8px 0 0">
+            <span class="lang-en">Switch either off and train again: γ and β are what can undo the standardization. RMSNorm keeps the scale and has no shift.</span>
+            <span class="lang-zh">关掉其中一个再训一遍：γ 与 β 正是能把标准化抵消掉的参数。RMSNorm 保留缩放、没有平移。</span>
+          </p>
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <button class="btn primary" id="runBtn" type="button"><span class="lang-en">Train</span><span class="lang-zh">开始训练</span></button>
+          <button class="btn" id="stopBtn" type="button" disabled><span class="lang-en">Stop</span><span class="lang-zh">停止</span></button>
+        </div>
+        <div class="progress"><i id="bar"></i></div>
+        <div class="wait" id="wait"></div>
+      </div>
+
+      <div class="card">
+        <h3><span class="lang-en">What you can change</span><span class="lang-zh">能改的</span></h3>
+        <ul class="small" style="margin:0;padding-left:18px">
+          <li><span class="lang-en">The feature-scale spread, the depth (three presets, or the slider), the step size, whether the inputs get standardized, whether the normalization keeps its γ and β, and which mechanisms are shown.</span><span class="lang-zh">特征尺度跨度、深度（三个预设或滑杆）、步长、是否先标准化输入、归一化是否保留 γ 与 β、以及显示哪几种机制。</span></li>
+          <li><span class="lang-en">Train as many times as you like; the seed is fixed, so the same settings give the same run.</span><span class="lang-zh">想跑多少遍都行；随机种子固定，同样的设置给同样的结果。</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3><span class="lang-en">What is fixed</span><span class="lang-zh">固定的</span></h3>
+        <ul class="small" style="margin:0;padding-left:18px">
+          <li><span class="lang-en">Width 32, no biases, ReLU, plain SGD, batch 24, 200 steps, 1 536 train / 512 test samples, 48 inputs.</span><span class="lang-zh">宽度 32、无偏置、ReLU、纯 SGD、批大小 24、200 步、训练 1 536 / 测试 512 个样本、48 维输入。</span></li>
+          <li><span class="lang-en">Weights start at He: <span class="code">W ~ N(0, 2/fan_in)</span>.</span><span class="lang-zh">权重的起点是 He：<span class="code">W ~ N(0, 2/fan_in)</span>。</span></li>
+          <li><span class="lang-en">The three weight-side mechanisms aim at row norm <span class="code">√2</span> — the value He initialization already gives, so they start at a point that satisfies their own constraint.</span><span class="lang-zh">三种权重侧机制的目标行范数都是 <span class="code">√2</span>——正是 He 初始化已经给的值，所以它们起点就满足自己的约束。</span></li>
+          <li><span class="lang-en">The regularizer strength is 1.0; the normalization ε is 1e-5. γ starts at 1 and β starts at 0, one entry per feature of the layer output, and both are learned by the same SGD step as the weights — unless you switch them off.</span><span class="lang-zh">正则强度 1.0；归一化的 ε 取 1e-5。γ 初值 1、β 初值 0，每个输出特征一个分量，和权重走同一个 SGD 步一起学习——除非你把它关掉。</span></li>
+          <li><span class="lang-en">At evaluation, batch statistics are used too — this page keeps no running averages.</span><span class="lang-zh">评估时同样用当前批的统计量——这个页面不维护滑动平均。</span></li>
+        </ul>
+        <p class="small muted" style="margin:12px 0 0">
+          <span class="lang-en">This page does not say which settings work. That is the thing to find out.</span>
+          <span class="lang-zh">这个页面不告诉你哪种设置 work。那正是要你自己找的东西。</span>
+        </p>
+      </div>
+    </aside>
+
+    <div>
+      <div class="card dash">
+        <h3><span class="lang-en">A · Scale of what enters the activation, layer by layer</span><span class="lang-zh">A · 进入激活函数之前的尺度，逐层</span></h3>
+        <div class="legend" id="legendA"></div>
+        <div id="chartA"></div>
+        <p class="small muted" style="margin:8px 0 0">
+          <span class="lang-en">√mean of the squares of what enters the activation, after that layer's own mechanism has acted, measured on the test batch. Each curve starts at the initialization and is replaced by the running network's measurement as training proceeds. The three mechanisms that standardize the activations hold this at 1 by construction, so their curves do not move; nothing constrains this quantity for the other four.</span>
+          <span class="lang-zh">进入激活函数之前的均方根（在该层自己的机制作用之后），在测试批上测量。每条曲线从初始化出发，训练推进时被当前网络的测量值替换。做激活标准化的三种机制按构造把它钉在 1，所以它们的曲线不动；另外四种机制没有任何东西在约束这个量。</span>
+        </p>
+      </div>
+
+      <div class="card dash">
+        <h3><span class="lang-en">B · Test error while training</span><span class="lang-zh">B · 训练过程中的测试错误率</span></h3>
+        <div class="legend" id="legendB"></div>
+        <div id="chartB"></div>
+        <p class="small muted" style="margin:8px 0 0">
+          <span class="lang-en">Misclassification rate. A curve that stops is a run whose gradient stopped being finite — that is a result, not a missing point. One difference from the table below is worth naming: there the projection arm collapses, and on this replica it still makes some progress. A 48-input, 32-wide, 200-step replica is not the same experiment; the table is the one the lecture quotes.</span>
+          <span class="lang-zh">误分类率。曲线中断表示这一次运行的梯度不再是有限值——那是一个结果，不是一个缺失的数据点。这里与下表有一处差异值得点名：下表里投影那一臂崩了，而这个复制品上它还有点进展。48 维输入、宽 32、200 步的复制品不是同一个实验；讲义引用的是下表。</span>
+        </p>
+      </div>
+
+      <div class="card">
+        <h3><span class="lang-en">C · The same comparison on MNIST, measured</span><span class="lang-zh">C · 同样的对比，在 MNIST 上实测</span></h3>
+        <p class="small muted" style="margin:0 0 12px">
+          <span class="lang-en">The page above is a small replica. This is the lecture's own experiment: 16 hidden layers of width 128, He init, ReLU, plain SGD, 20 000 training images, 1 200 steps. Validation accuracy, measured once, for the same seven mechanisms. Nothing here is simulated.</span>
+          <span class="lang-zh">上面的页面是一个缩小的复刻。这里是讲义本身的实验：16 个隐层、宽度 128、He 初始化、ReLU、纯 SGD、20 000 张训练图、1 200 步。下表是同样的七种机制实测一次的正确率。没有任何一项是模拟出来的。</span>
+        </p>
+        <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="lang-en">Input</span><span class="lang-zh">输入</span></th>
+              <th>none</th><th>ln</th><th>bn</th><th>rms</th><th>proj</th><th>reg</th><th>wn</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th><span class="lang-en">plain MNIST</span><span class="lang-zh">普通 MNIST</span></th>
+              <td>0.933</td><td>0.945</td><td>0.928</td><td>0.935</td><td>0.935</td><td>0.939</td><td>0.929</td>
+            </tr>
+            <tr class="hi">
+              <th><span class="lang-en">features scaled 10⁻²…10²</span><span class="lang-zh">特征缩放 10⁻²…10²</span></th>
+              <td class="dash">—</td><td>0.872</td><td>0.882</td><td>0.883</td><td>0.104</td><td class="dash">—</td><td class="dash">—</td>
+            </tr>
+            <tr>
+              <th><span class="lang-en">…then standardized</span><span class="lang-zh">…然后标准化</span></th>
+              <td>0.936</td><td>0.929</td><td>0.932</td><td>0.935</td><td>0.925</td><td>0.932</td><td>0.928</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="small muted" style="margin:10px 0 0">
+          <span class="lang-en">“—” means the run became non-finite before the end. Scale of the pre-activation entering the first and the last hidden layer, same runs:</span>
+          <span class="lang-zh">「—」表示这次运行在结束前就变成非有限值。同几组运行里，进入第一个和最后一个隐层的激活尺度：</span>
+        </p>
+        <div class="scroll" style="margin-top:8px">
+        <table>
+          <thead><tr><th></th><th>none</th><th>ln</th><th>bn</th><th>rms</th><th>proj</th><th>reg</th><th>wn</th></tr></thead>
+          <tbody>
+            <tr><th><span class="lang-en">first hidden layer</span><span class="lang-zh">第一个隐层</span></th><td class="dash">—</td><td>0.998</td><td>0.980</td><td>1.003</td><td>115.9</td><td class="dash">—</td><td class="dash">—</td></tr>
+            <tr><th><span class="lang-en">last hidden layer</span><span class="lang-zh">最后一个隐层</span></th><td class="dash">—</td><td>1.019</td><td>1.055</td><td>1.017</td><td>3.97</td><td class="dash">—</td><td class="dash">—</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="small muted" style="margin:12px 0 0">
+          <span class="lang-en">Two things this experiment does not show, stated up front: it does not show that LayerNorm beats BatchNorm (they are within a point of each other and the ordering flips with the seed and the step size), and it does not rescue depth 64 — at 64 layers even the normalizing mechanisms sit near 0.12–0.20, because pinning the forward scale does not repair the backward signal.</span>
+          <span class="lang-zh">这个实验有两件事<i>没有</i>证明，先说清楚：它没有证明 LayerNorm 胜过 BatchNorm（两者相差不到一个百分点，谁高谁低随种子和步长翻转）；它也救不了深度 64——到 64 层，连做归一化的机制也只有 0.12–0.20，因为把前向尺度钉住并不能修好反向信号。</span>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p><span class="lang-en">ME2605 · Neural Network Training — Lecture 3, Part 2. Runs entirely in this page: no server, no downloads, no network.</span>
+     <span class="lang-zh">ME2605 · 神经网络训练 — 第 3 讲第 2 部分。全部在这个页面里运行：没有服务器、不下载数据、不联网。</span></p>
+</footer>
+
+<script>
+/* =====================================================================
+   1. numeric core — no DOM in this block
+   ===================================================================== */
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function gauss(r){
+  var u = 0, v = 0;
+  while (u === 0) u = r();
+  while (v === 0) v = r();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function fillHe(r, W, rows, cols){
+  var sd = Math.sqrt(2 / cols);
+  for (var i = 0; i < rows * cols; i++) W[i] = gauss(r) * sd;
+}
+function fillV(r, V, rows, cols){
+  var sd = Math.sqrt(1 / cols);              /* ‖v_row‖ ≈ 1, so ‖w_row‖ ≈ √2 */
+  for (var i = 0; i < rows * cols; i++) V[i] = gauss(r) * sd;
+}
+
+/* --- data: a linear teacher, with per-feature scales we control --- */
+function buildData(seed, nin, nTrain, nTest, spread){
+  var r = mulberry32(seed), i, k;
+  var scale = new Float64Array(nin), w = new Float64Array(nin);
+  for (i = 0; i < nin; i++) scale[i] = Math.pow(10, (r() * 2 - 1) * spread);
+  for (i = 0; i < nin; i++) w[i] = gauss(r);
+  function gen(n){
+    var X = new Float64Array(n * nin), y = new Float64Array(n);
+    for (k = 0; k < n; k++){
+      var s = 0;
+      for (i = 0; i < nin; i++){
+        var v = gauss(r) * scale[i];
+        X[k * nin + i] = v; s += v * w[i];
+      }
+      y[k] = s >= 0 ? 1 : 0;
+    }
+    return {X: X, y: y, n: n};
+  }
+  return {train: gen(nTrain), test: gen(nTest), nin: nin, scale: scale};
+}
+function standardize(data, nin){
+  var d, i, k, n = data.train.n;
+  var mu = new Float64Array(nin), sd = new Float64Array(nin);
+  for (k = 0; k < n; k++) for (i = 0; i < nin; i++) mu[i] += data.train.X[k * nin + i];
+  for (i = 0; i < nin; i++) mu[i] /= n;
+  for (k = 0; k < n; k++) for (i = 0; i < nin; i++){
+    var v = data.train.X[k * nin + i] - mu[i]; sd[i] += v * v;
+  }
+  for (i = 0; i < nin; i++) sd[i] = Math.sqrt(sd[i] / n) + 1e-8;
+  [data.train, data.test].forEach(function(D){
+    for (k = 0; k < D.n; k++) for (i = 0; i < nin; i++){
+      D.X[k * nin + i] = (D.X[k * nin + i] - mu[i]) / sd[i];
+    }
+  });
+}
+
+/* --- the network --- */
+var ARMS = ["none", "ln", "bn", "rms", "proj", "reg", "wn"];
+var ARM_LABEL = {
+  none: "none", ln: "ln (LayerNorm)", bn: "bn (BatchNorm)", rms: "rms (RMSNorm)",
+  proj: "proj (projection)", reg: "reg (regularizer)", wn: "wn (reparameterization)"
+};
+function makeNet(L, width, nin, arm, r){
+  var dims = [nin], i;
+  for (i = 0; i < L; i++) dims.push(width);
+  dims.push(1);
+  var isNorm = arm === "ln" || arm === "bn" || arm === "rms";
+  var layers = [];
+  for (var m = 0; m < dims.length - 1; m++){
+    var nIn = dims[m], nOut = dims[m + 1];
+    var ly = {nin: nIn, nout: nOut, W: new Float64Array(nOut * nIn), gW: new Float64Array(nOut * nIn)};
+    if (arm === "wn"){ ly.V = new Float64Array(nOut * nIn); ly.gV = new Float64Array(nOut * nIn); fillV(r, ly.V, nOut, nIn); }
+    else fillHe(r, ly.W, nOut, nIn);
+    /* The affine pair of the normalization, one entry per feature of the layer
+       output: γ starts at 1, β starts at 0, and the page can switch either off.
+       The output layer is not normalized, so it carries no pair. */
+    if (isNorm && m < L){
+      ly.gam  = new Float64Array(nOut); ly.gam.fill(1);
+      ly.bet  = new Float64Array(nOut);
+      ly.ggam = new Float64Array(nOut); ly.gbet = new Float64Array(nOut);
+    }
+    layers.push(ly);
+  }
+  return {layers: layers, L: L, width: width, nin: nin, arm: arm};
+}
+function effW(net, m){
+  var ly = net.layers[m];
+  if (net.arm !== "wn") return ly.W;
+  var nOut = ly.nout, nIn = ly.nin, W = new Float64Array(nOut * nIn), S = Math.SQRT2;
+  for (var o = 0; o < nOut; o++){
+    var nrm = 0, i;
+    for (i = 0; i < nIn; i++){ var v = ly.V[o * nIn + i]; nrm += v * v; }
+    nrm = Math.sqrt(nrm) + 1e-12;
+    for (i = 0; i < nIn; i++) W[o * nIn + i] = S * ly.V[o * nIn + i] / nrm;
+  }
+  return W;
+}
+
+/* --- forward + backward over a batch; returns loss and the per-layer scale --- */
+var EPS = 1e-5;
+function runBatch(net, D, idx, B, train, opt){
+  var L = net.L, d = net.width, nin = net.nin;
+  var Z = [], P = [], H = [], N = [];
+  Z[0] = B * nin;
+  var zbuf = new Float64Array(B * nin);
+  for (var b = 0; b < B; b++) for (var i = 0; i < nin; i++) zbuf[b * nin + i] = D.X[idx[b] * nin + i];
+  Z[0] = zbuf;
+
+  for (var m = 0; m < L; m++){
+    var ly = net.layers[m], W = effW(net, m), dd = (m === 0 ? nin : d);
+    var h = new Float64Array(B * d);
+    for (var b2 = 0; b2 < B; b2++){
+      var zoff = b2 * dd;
+      for (var o = 0; o < d; o++){
+        var s = 0, woff = o * dd;
+        for (var j = 0; j < dd; j++) s += W[woff + j] * Z[m][zoff + j];
+        h[b2 * d + o] = s;
+      }
+    }
+    var p = h, nrm = null;
+    if (net.arm === "ln" || net.arm === "bn" || net.arm === "rms"){
+      if (ly.gam){ ly.ggam.fill(0); ly.gbet.fill(0); }
+      nrm = normForward(net.arm, h, B, d, ly);
+      p = nrm.out;
+    }
+    H[m] = h; N[m] = nrm;
+    var z = new Float64Array(B * d);
+    for (var q = 0; q < B * d; q++) z[q] = p[q] > 0 ? p[q] : 0;
+    P[m] = p; Z[m + 1] = z;
+  }
+  /* output layer */
+  var lw = net.layers[L], Wc = effW(net, L);
+  var zL = Z[L], out = new Float64Array(B), loss = 0, err = 0;
+  for (b = 0; b < B; b++){
+    var o2 = 0;
+    for (j = 0; j < d; j++) o2 += Wc[j] * zL[b * d + j];
+    out[b] = o2;
+    var yb = D.y[idx[b]];
+    var p1 = 1 / (1 + Math.exp(-o2));
+    loss += -(yb * Math.log(p1 + 1e-12) + (1 - yb) * Math.log(1 - p1 + 1e-12));
+    err += ((p1 >= 0.5 ? 1 : 0) !== yb) ? 1 : 0;
+  }
+  loss /= B; err /= B;
+
+  /* per-layer scale of what entered the activation */
+  var scale = [];
+  for (m = 0; m < L; m++){
+    s = 0;
+    for (q = 0; q < B * d; q++) s += P[m][q] * P[m][q];
+    scale.push(Math.sqrt(s / (B * d)));
+  }
+  if (opt && opt.scaleOnly) return {loss: loss, err: err, scale: scale};
+
+  /* ---- backward ---- */
+  for (m = 0; m < net.layers.length; m++){ net.layers[m].gW.fill(0); if (net.arm === "wn") net.layers[m].gV.fill(0); }
+  var dOut = new Float64Array(B);
+  for (b = 0; b < B; b++){
+    var pb = 1 / (1 + Math.exp(-out[b]));
+    dOut[b] = (pb - D.y[idx[b]]) / B;
+  }
+  var gWlast = net.layers[L].gW;
+  for (b = 0; b < B; b++) for (j = 0; j < d; j++) gWlast[j] += dOut[b] * zL[b * d + j];
+  var dZ = new Float64Array(B * d);
+  for (b = 0; b < B; b++) for (j = 0; j < d; j++) dZ[b * d + j] = dOut[b] * Wc[j];
+
+  for (m = L - 1; m >= 0; m--){
+    var ly2 = net.layers[m], dd2 = (m === 0 ? nin : d);
+    var dP = new Float64Array(B * d);
+    for (q = 0; q < B * d; q++) dP[q] = P[m][q] > 0 ? dZ[q] : 0;
+    var dH = dP;
+    if (N[m]) dH = normBackward(net.arm, dP, N[m], B, d, net, m);
+    var gWm = ly2.gW;
+    for (b = 0; b < B; b++){
+      var zo = b * dd2;
+      for (var o3 = 0; o3 < d; o3++){
+        var go = dH[b * d + o3];
+        if (go === 0) continue;
+        var wof = o3 * dd2, base = b * dd2;
+        for (j = 0; j < dd2; j++) gWm[wof + j] += go * Z[m][base + j];
+      }
+    }
+    if (m > 0){
+      var Wm = effW(net, m), dZprev = new Float64Array(B * dd2);
+      for (b = 0; b < B; b++) for (j = 0; j < dd2; j++){
+        var s2 = 0;
+        for (o3 = 0; o3 < d; o3++) s2 += dH[b * d + o3] * Wm[o3 * dd2 + j];
+        dZprev[b * dd2 + j] = s2;
+      }
+      dZ = dZprev;
+    }
+  }
+  return {loss: loss, err: err, scale: scale};
+}
+
+function normForward(arm, h, B, d, ly){
+  var useG = !!(ly && ly.gam) && STATE.useGam, useB = !!(ly && ly.bet) && STATE.useBet;
+  if (arm === "rms"){
+    var out = new Float64Array(B * d), raw = new Float64Array(B * d), inv = new Float64Array(B);
+    for (var b = 0; b < B; b++){
+      var s = 0;
+      for (var i = 0; i < d; i++){ var v = h[b * d + i]; s += v * v; }
+      inv[b] = 1 / Math.sqrt(s / d + EPS);
+      for (i = 0; i < d; i++){
+        var rv = h[b * d + i] * inv[b];
+        raw[b * d + i] = rv;
+        out[b * d + i] = useG ? ly.gam[i] * rv : rv;
+      }
+    }
+    /* RMSNorm keeps the scale and has no shift, so β never applies here */
+    return {out: out, raw: raw, inv: inv, h: h, useG: useG, useB: false};
+  }
+  var mu = new Float64Array(arm === "ln" ? B : d), inv2 = new Float64Array(arm === "ln" ? B : d);
+  var o2 = new Float64Array(B * d), r2 = new Float64Array(B * d), i2, k;
+  if (arm === "ln"){
+    for (b = 0; b < B; b++){
+      var m1 = 0;
+      for (i2 = 0; i2 < d; i2++) m1 += h[b * d + i2];
+      m1 /= d; mu[b] = m1;
+      var v1 = 0;
+      for (i2 = 0; i2 < d; i2++){ var t = h[b * d + i2] - m1; v1 += t * t; }
+      inv2[b] = 1 / Math.sqrt(v1 / d + EPS);
+      for (i2 = 0; i2 < d; i2++){
+        var rv1 = (h[b * d + i2] - m1) * inv2[b];
+        r2[b * d + i2] = rv1;
+        o2[b * d + i2] = (useG ? ly.gam[i2] * rv1 : rv1) + (useB ? ly.bet[i2] : 0);
+      }
+    }
+  } else {                                   /* bn: statistics down each column */
+    for (i2 = 0; i2 < d; i2++){
+      var m2 = 0;
+      for (b = 0; b < B; b++) m2 += h[b * d + i2];
+      m2 /= B; mu[i2] = m2;
+      var v2 = 0;
+      for (b = 0; b < B; b++){ var t2 = h[b * d + i2] - m2; v2 += t2 * t2; }
+      inv2[i2] = 1 / Math.sqrt(v2 / B + EPS);
+      for (b = 0; b < B; b++){
+        var rv2 = (h[b * d + i2] - m2) * inv2[i2];
+        r2[b * d + i2] = rv2;
+        o2[b * d + i2] = (useG ? ly.gam[i2] * rv2 : rv2) + (useB ? ly.bet[i2] : 0);
+      }
+    }
+  }
+  return {out: o2, raw: r2, mu: mu, inv: inv2, h: h, axis: arm === "ln" ? "row" : "col",
+          useG: useG, useB: useB};
+}
+function normBackward(arm, dOut, N, B, d, net, m){
+  var g = new Float64Array(B * d), dY = dOut, b, i;
+  var ly = net.layers[m];
+  /* The pair sits between the standardization and everything above it, so its
+     own gradients are elementwise and the rest of the rule sees dOut ⊙ γ. */
+  if (ly && ly.gam && (N.useG || N.useB)){
+    if (N.useG){
+      for (b = 0; b < B; b++) for (i = 0; i < d; i++)
+        ly.ggam[i] += dOut[b * d + i] * N.raw[b * d + i];
+      dY = new Float64Array(B * d);
+      for (b = 0; b < B; b++) for (i = 0; i < d; i++)
+        dY[b * d + i] = dOut[b * d + i] * ly.gam[i];
+    }
+    if (N.useB && arm !== "rms"){
+      for (b = 0; b < B; b++) for (i = 0; i < d; i++) ly.gbet[i] += dOut[b * d + i];
+    }
+  }
+  if (arm === "rms"){
+    for (b = 0; b < B; b++){
+      var hd = 0, s = 0;
+      for (i = 0; i < d; i++){ hd += N.h[b * d + i] * dY[b * d + i]; s += N.h[b * d + i] * N.h[b * d + i]; }
+      var inv = N.inv[b], inv3 = inv * inv * inv;
+      for (i = 0; i < d; i++)
+        g[b * d + i] = dY[b * d + i] * inv - N.h[b * d + i] * hd * inv3 / d;
+    }
+    return g;
+  }
+  if (N.axis === "row"){
+    for (b = 0; b < B; b++){
+      var s1 = 0, s2 = 0;
+      for (i = 0; i < d; i++){ s1 += dY[b * d + i]; s2 += dY[b * d + i] * N.raw[b * d + i]; }
+      s1 /= d; s2 /= d;
+      for (i = 0; i < d; i++)
+        g[b * d + i] = (dY[b * d + i] - s1 - N.raw[b * d + i] * s2) * N.inv[b];
+    }
+    return g;
+  }
+  for (i = 0; i < d; i++){
+    var c1 = 0, c2 = 0;
+    for (b = 0; b < B; b++){ c1 += dY[b * d + i]; c2 += dY[b * d + i] * N.raw[b * d + i]; }
+    c1 /= B; c2 /= B;
+    for (b = 0; b < B; b++)
+      g[b * d + i] = (dY[b * d + i] - c1 - N.raw[b * d + i] * c2) * N.inv[i];
+  }
+  return g;
+}
+
+/* --- one SGD step, including the mechanism --- */
+var REG_LAMBDA = 1.0, REG_TARGET = Math.SQRT2;
+function sgdStep(net, D, idx, B, eta){
+  var res = runBatch(net, D, idx, B, true, null);
+  var layers = net.layers;
+  for (var m = 0; m < layers.length; m++){
+    var ly = layers[m], nOut = ly.nout, nIn = ly.nin, o, i;
+    /* the affine pair of the normalization, updated like any other parameter */
+    if (ly.gam){
+      if (STATE.useGam) for (i = 0; i < nOut; i++) ly.gam[i] -= eta * ly.ggam[i];
+      if (STATE.useBet) for (i = 0; i < nOut; i++) ly.bet[i] -= eta * ly.gbet[i];
+    }
+    if (net.arm === "wn"){
+      var W = effW(net, m);
+      for (o = 0; o < nOut; o++){
+        var nrm = 0;
+        for (i = 0; i < nIn; i++){ var v = ly.V[o * nIn + i]; nrm += v * v; }
+        nrm = Math.sqrt(nrm) + 1e-12;
+        var dot = 0;
+        for (i = 0; i < nIn; i++) dot += ly.gW[o * nIn + i] * ly.V[o * nIn + i];
+        for (i = 0; i < nIn; i++){
+          var u = ly.V[o * nIn + i] / nrm;
+          var gr = (Math.SQRT2 / nrm) * (ly.gW[o * nIn + i] - u * (dot / nrm));
+          ly.V[o * nIn + i] -= eta * gr;
+        }
+      }
+      continue;
+    }
+    for (o = 0; o < nOut; o++){
+      var rowNrm = 0;
+      for (i = 0; i < nIn; i++){ var w2 = ly.W[o * nIn + i]; rowNrm += w2 * w2; }
+      rowNrm = Math.sqrt(rowNrm) + 1e-12;
+      for (i = 0; i < nIn; i++){
+        var gr2 = ly.gW[o * nIn + i];
+        if (net.arm === "reg") gr2 += 2 * REG_LAMBDA * (rowNrm - REG_TARGET) * ly.W[o * nIn + i] / rowNrm;
+        ly.W[o * nIn + i] -= eta * gr2;
+      }
+      if (net.arm === "proj"){
+        var nn = 0;
+        for (i = 0; i < nIn; i++){ var w3 = ly.W[o * nIn + i]; nn += w3 * w3; }
+        nn = Math.sqrt(nn) + 1e-12;
+        for (i = 0; i < nIn; i++) ly.W[o * nIn + i] *= REG_TARGET / nn;
+      }
+    }
+  }
+  return res;
+}
+/* =====================================================================
+   2. the page
+   ===================================================================== */
+var NIN = 48, WIDTH = 32, BATCH = 24, STEPS = 200, EVAL_N = 256, EVAL_EVERY = 20;
+var COLOR = {none:"#b03a2e", ln:"#1a5276", bn:"#1e8449", rms:"#6b46c1",
+             proj:"#b7791f", reg:"#a04000", wn:"#5d6d7e"};
+var STATE = {arm:{}, spread:2, depth:8, lr:0.2, std:false, useGam:true, useBet:true};
+var RUNS = [], TIMER = null, RUNNING = false;
+
+/* Build the data once and one network per enabled mechanism, and measure the
+   scale of what enters each activation straight away — that measurement needs
+   no training, so chart A is filled before the first press of Train. */
+function prepare(){
+  if (RUNNING) return;
+  var data = buildData(7, NIN, 1536, 512, STATE.spread);
+  if (STATE.std) standardize(data, NIN);
+  var tidx = new Int32Array(EVAL_N);
+  for (var i = 0; i < EVAL_N; i++) tidx[i] = i % data.test.n;
+  RUNS = ARMS.filter(function(a){ return STATE.arm[a]; }).map(function(arm){
+    var net = makeNet(STATE.depth, WIDTH, NIN, arm, mulberry32(12345));
+    var sc = runBatch(net, data.test, tidx, EVAL_N, false, {scaleOnly:true}).scale;
+    return {arm:arm, net:net, data:data, tidx:tidx, step:0, diverged:false, done:false,
+            hist:[], idx:new Int32Array(BATCH), err:null, scale:sc, finalScale:null};
+  });
+}
+function drawIdx(run){
+  var r = mulberry32(9001 + run.step);
+  for (var i = 0; i < BATCH; i++) run.idx[i] = Math.floor(r() * run.data.train.n);
+}
+function evalQuick(run){
+  return runBatch(run.net, run.data.test, run.tidx, EVAL_N, false, {scaleOnly:true});
+}
+function trainAll(){
+  if (RUNNING) return;
+  prepare();
+  if (!RUNS.length) return;
+  RUNNING = true;
+  labRunBtn.disabled = true; labStopBtn.disabled = false;
+  labWait.textContent = "";
+  var qi = 0;
+  function tick(){
+    var run = RUNS[qi], t0 = Date.now();
+    while (Date.now() - t0 < 26){
+      if (run.step >= STEPS) break;
+      drawIdx(run);
+      var res = sgdStep(run.net, run.data.train, run.idx, BATCH, STATE.lr);
+      run.step++;
+      if (!isFinite(res.loss)){ run.diverged = true; run.hist.push({s:run.step - 1, e:NaN}); break; }
+      if (run.step % EVAL_EVERY === 0){
+        var q = evalQuick(run);
+        run.err = q.err; run.finalScale = q.scale;
+        run.hist.push({s:run.step, e:q.err});
+      }
+    }
+    if (run.step >= STEPS || run.diverged){
+      if (!run.diverged){ var fin = evalQuick(run); run.err = fin.err; run.finalScale = fin.scale; }
+      run.done = true;
+      qi++;
+    }
+    renderLab(qi, timesDone());
+    if (qi >= RUNS.length){ RUNNING = false; labRunBtn.disabled = false; labStopBtn.disabled = true; labWait.textContent = ""; }
+    else TIMER = setTimeout(tick, 0);
+  }
+  function timesDone(){ return RUNS.filter(function(r){ return r.done; }).length; }
+  TIMER = setTimeout(tick, 0);
+}
+function stopRun(){
+  if (TIMER) clearTimeout(TIMER);
+  TIMER = null; RUNNING = false;
+  RUNS.forEach(function(r){ r.done = true; });
+  labRunBtn.disabled = false; labStopBtn.disabled = true;
+  labWait.textContent = "stopped";
+}
+
+function legendHTML(id){
+  var arms = RUNS.length ? RUNS.map(function(r){ return r.arm; }) : ARMS.filter(function(a){ return STATE.arm[a]; });
+  var html = arms.map(function(a){
+    return '<span><i class="swatch" style="background:' + COLOR[a] + '"></i>' + ARM_LABEL[a] + '</span>';
+  }).join("");
+  id.innerHTML = html;
+}
+function drawScaleChart(){
+  var w = 900, h = 250, pad = {l:56, r:16, t:14, b:34};
+  var iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  var L = STATE.depth;
+  var lo = -3, hi = 3;
+  var s = ['<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Scale of the pre-activation, layer by layer">'];
+  s.push('<rect x="0" y="0" width="' + w + '" height="' + h + '" fill="#ffffff"/>');
+  for (var pow = lo; pow <= hi; pow++){
+    var y = pad.t + ih * (hi - pow) / (hi - lo);
+    s.push('<line x1="' + pad.l + '" y1="' + y.toFixed(1) + '" x2="' + (w - pad.r) + '" y2="' + y.toFixed(1) + '" stroke="' + (pow === 0 ? "#c9d3da" : "#eef2f5") + '" stroke-width="1"/>');
+    s.push('<text x="' + (pad.l - 8) + '" y="' + (y + 4).toFixed(1) + '" font-size="12.5" fill="#8b97a3" text-anchor="end">10<tspan baseline-shift="super" font-size="9">' + (pow === 0 ? "0" : pow) + '</tspan></text>');
+  }
+  s.push('<text x="' + (pad.l + iw / 2) + '" y="' + (h - 8) + '" font-size="13" fill="#5a5a5a" text-anchor="middle">layer</text>');
+  s.push('<text x="12" y="' + (pad.t + ih / 2) + '" font-size="13" fill="#5a5a5a" transform="rotate(-90 12 ' + (pad.t + ih / 2) + ')">scale</text>');
+  for (var l = 0; l <= L; l++){
+    var x = pad.l + (iw * (l + 0.5)) / (L + 1);
+    s.push('<text x="' + x.toFixed(1) + '" y="' + (h - 22) + '" font-size="12" fill="#8b97a3" text-anchor="middle">' + l + '</text>');
+  }
+  RUNS.forEach(function(run){
+    /* One curve per mechanism: the scale at initialization, replaced by the scale
+       of the running network as training proceeds.  The three that standardize the
+       activations sit flat on 1 and never move; the parameter-side ones are free
+       to leave the picture.  Drawing the initialization curve as well made the
+       panel a nest of overlapping dashes -- watching one curve leave its starting
+       position says the same thing and is legible. */
+    var vals = run.finalScale || run.scale;
+    if (!vals) return;
+    var segs = [], cur = [];
+    vals.forEach(function(v, l){
+      if (!isFinite(v) || v <= 0){ if (cur.length > 1) segs.push(cur); cur = []; return; }
+      var vv = Math.max(lo, Math.min(hi, Math.log10(v)));
+      cur.push((pad.l + (iw * (l + 0.5)) / (L + 1)).toFixed(1) + ',' +
+               (pad.t + ih * (hi - vv) / (hi - lo)).toFixed(1));
+    });
+    if (cur.length > 1) segs.push(cur);
+    segs.forEach(function(p){
+      s.push('<polyline points="' + p.join(" ") + '" fill="none" stroke="' + COLOR[run.arm] + '" stroke-width="2.4" stroke-linejoin="round"/>');
+    });
+    vals.forEach(function(v, l){
+      if (!isFinite(v) || v <= 0) return;
+      var x = pad.l + (iw * (l + 0.5)) / (L + 1);
+      var vv = Math.max(lo, Math.min(hi, Math.log10(v)));
+      var y = pad.t + ih * (hi - vv) / (hi - lo);
+      s.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.1" fill="' + COLOR[run.arm] + '"/>');
+    });
+  });
+  if (!RUNS.some(function(r){ return r.scale; })){
+    s.push('<text x="' + (pad.l + iw / 2) + '" y="' + (pad.t + ih / 2) + '" font-size="14" fill="#8b97a3" text-anchor="middle">press Train</text>');
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+function drawErrChart(){
+  var w = 900, h = 250, pad = {l:56, r:16, t:14, b:34};
+  var iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  var s = ['<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Test error against training step">'];
+  s.push('<rect x="0" y="0" width="' + w + '" height="' + h + '" fill="#ffffff"/>');
+  for (var e = 0; e <= 100; e += 20){
+    var y = pad.t + ih * (1 - e / 100);
+    s.push('<line x1="' + pad.l + '" y1="' + y.toFixed(1) + '" x2="' + (w - pad.r) + '" y2="' + y.toFixed(1) + '" stroke="' + (e === 0 ? "#c9d3da" : "#eef2f5") + '" stroke-width="1"/>');
+    s.push('<text x="' + (pad.l - 8) + '" y="' + (y + 4).toFixed(1) + '" font-size="12.5" fill="#8b97a3" text-anchor="end">' + e + '%</text>');
+  }
+  s.push('<text x="' + (pad.l + iw / 2) + '" y="' + (h - 8) + '" font-size="13" fill="#5a5a5a" text-anchor="middle">step</text>');
+  for (var st = 0; st <= STEPS; st += 50){
+    var x = pad.l + iw * st / STEPS;
+    s.push('<text x="' + x.toFixed(1) + '" y="' + (h - 22) + '" font-size="12" fill="#8b97a3" text-anchor="middle">' + st + '</text>');
+  }
+  RUNS.forEach(function(run){
+    if (!run.hist.length) return;
+    var seg = [], all = [];
+    run.hist.forEach(function(p){
+      if (!isFinite(p.e)){ if (seg.length > 1) all.push(seg); seg = []; return; }
+      var x = pad.l + iw * Math.min(p.s, STEPS) / STEPS;
+      var y = pad.t + ih * (1 - Math.max(0, Math.min(1, p.e)));
+      seg.push(x.toFixed(1) + ',' + y.toFixed(1));
+      if (run.diverged) seg = seg.slice(0, 0);
+    });
+    if (seg.length > 1) all.push(seg);
+    all.forEach(function(p){
+      s.push('<polyline points="' + p.join(" ") + '" fill="none" stroke="' + COLOR[run.arm] + '" stroke-width="2.2" stroke-linejoin="round"/>');
+    });
+    var last = null;
+    run.hist.forEach(function(p){ if (isFinite(p.e)) last = p; });
+    if (last){
+      var x = pad.l + iw * Math.min(last.s, STEPS) / STEPS;
+      var y = pad.t + ih * (1 - Math.max(0, Math.min(1, last.e)));
+      s.push('<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.1" fill="' + COLOR[run.arm] + '"/>');
+    }
+    if (run.diverged){
+      var xd = pad.l + iw * Math.min(run.step, STEPS) / STEPS;
+      s.push('<line x1="' + xd.toFixed(1) + '" y1="' + pad.t + '" x2="' + xd.toFixed(1) + '" y2="' + (pad.t + ih) + '" stroke="' + COLOR[run.arm] + '" stroke-width="1.2" stroke-dasharray="3 3"/>');
+      s.push('<text x="' + (xd + 5).toFixed(1) + '" y="' + (pad.t + 14) + '" font-size="12" fill="' + COLOR[run.arm] + '">non-finite</text>');
+    }
+  });
+  if (!RUNS.length){
+    s.push('<text x="' + (pad.l + iw / 2) + '" y="' + (pad.t + ih / 2) + '" font-size="14" fill="#8b97a3" text-anchor="middle">press Train</text>');
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+function renderLab(activeIdx, done){
+  document.getElementById("chartA").innerHTML = drawScaleChart();
+  document.getElementById("chartB").innerHTML = drawErrChart();
+  legendHTML(document.getElementById("legendA"));
+  legendHTML(document.getElementById("legendB"));
+  var total = RUNS.length || ARMS.filter(function(a){ return STATE.arm[a]; }).length;
+  var frac = total ? (done + (RUNS[activeIdx] && !RUNS[activeIdx].done && RUNS.length ? RUNS[activeIdx].step / STEPS : 0)) / total : 0;
+  labBar.style.width = Math.min(100, frac * 100).toFixed(1) + "%";
+  if (RUNNING && RUNS[activeIdx]) labWait.textContent = ARM_LABEL[RUNS[activeIdx].arm].split(" ")[0] + " · step " + RUNS[activeIdx].step + " / " + STEPS;
+}
+
+/* ---------------- wiring ---------------- */
+var labRunBtn, labStopBtn, labBar, labWait;
+function initLab(){
+  labRunBtn = document.getElementById("runBtn");
+  labStopBtn = document.getElementById("stopBtn");
+  labBar = document.getElementById("bar");
+  labWait = document.getElementById("wait");
+  ARMS.forEach(function(a){ STATE.arm[a] = a !== "wn"; });
+  STATE.arm.wn = true;
+  var html = ARMS.map(function(a){
+    return '<label><input type="checkbox" data-arm="' + a + '"' + (STATE.arm[a] ? " checked" : "") + '>' +
+           '<i class="swatch" style="background:' + COLOR[a] + '"></i>' + a + '</label>';
+  }).join("");
+  document.getElementById("checks").innerHTML = html;
+  document.getElementById("checks").addEventListener("change", function(ev){
+    var a = ev.target.getAttribute("data-arm");
+    if (a) STATE.arm[a] = ev.target.checked;
+  });
+  function bindRange(id, out, fn, fmtf){
+    var el = document.getElementById(id);
+    el.addEventListener("input", function(){ fn(parseFloat(el.value)); out.textContent = fmtf(); reset(); });
+    return el;
+  }
+  bindRange("sSpread", document.getElementById("vSpread"), function(v){ STATE.spread = v; },
+            function(){ return STATE.spread === 0 ? "off" : "±10" + ["", "¹", "²"][STATE.spread]; });
+  bindRange("sDepth", document.getElementById("vDepth"), function(v){ STATE.depth = v; },
+            function(){ return String(STATE.depth); });
+  document.getElementById("sDepth").addEventListener("input", paintPresets);
+  bindRange("sLr", document.getElementById("vLr"), function(v){ STATE.lr = Math.pow(10, v); },
+            function(){ return STATE.lr.toFixed(3); });
+  document.getElementById("cStd").addEventListener("change", function(ev){ STATE.std = ev.target.checked; reset(); });
+  document.getElementById("cGam").addEventListener("change", function(ev){ STATE.useGam = ev.target.checked; reset(); });
+  document.getElementById("cBet").addEventListener("change", function(ev){ STATE.useBet = ev.target.checked; reset(); });
+  var presetBtns = document.querySelectorAll("button.preset");
+  function paintPresets(){
+    Array.prototype.forEach.call(presetBtns, function(b){
+      b.classList.toggle("on", parseInt(b.getAttribute("data-L"), 10) === STATE.depth);
+    });
+  }
+  Array.prototype.forEach.call(presetBtns, function(b){
+    b.addEventListener("click", function(){
+      var d = parseInt(b.getAttribute("data-L"), 10);
+      if (!isFinite(d)) return;
+      STATE.depth = d;
+      document.getElementById("sDepth").value = STATE.depth;
+      document.getElementById("vDepth").textContent = String(STATE.depth);
+      paintPresets(); reset();
+    });
+  });
+  paintPresets();
+  labRunBtn.addEventListener("click", trainAll);
+  labStopBtn.addEventListener("click", stopRun);
+  function reset(){ if (!RUNNING){ prepare(); renderLab(0, 0); labWait.textContent = ""; labBar.style.width = "0"; } }
+  reset();
+}
+
+/* ---------------- views, slides, language ---------------- */
+function showLab(go){
+  document.getElementById("view-intro").style.display = go ? "none" : "";
+  document.getElementById("view-lab").style.display = go ? "" : "none";
+  document.getElementById("nav-lab").classList.toggle("active", go);
+  document.getElementById("nav-intro").classList.toggle("active", !go);
+  if (go) renderLab(0, 0);
+  window.scrollTo(0, 0);
+}
+function initSlides(){
+  var slides = document.querySelectorAll("#slides .slide");
+  var dots = document.getElementById("dots");
+  var cur = 0;
+  dots.innerHTML = Array.prototype.map.call(slides, function(){ return "<i></i>"; }).join("");
+  var dotsArr = dots.querySelectorAll("i");
+  function paint(){
+    Array.prototype.forEach.call(slides, function(s, i){ s.classList.toggle("on", i === cur); });
+    Array.prototype.forEach.call(dotsArr, function(d, i){ d.classList.toggle("on", i === cur); });
+  }
+  dots.addEventListener("click", function(ev){
+    var i = Array.prototype.indexOf.call(dotsArr, ev.target);
+    if (i >= 0){ cur = i; paint(); }
+  });
+  document.getElementById("prevBtn").addEventListener("click", function(){ cur = (cur + slides.length - 1) % slides.length; paint(); });
+  document.getElementById("nextBtn").addEventListener("click", function(){ cur = (cur + 1) % slides.length; paint(); });
+  document.getElementById("goLab").addEventListener("click", function(){ showLab(true); });
+  document.getElementById("nav-lab").addEventListener("click", function(){ showLab(true); });
+  document.getElementById("nav-intro").addEventListener("click", function(){ showLab(false); });
+  paint();
+}
+function initLang(){
+  var btn = document.getElementById("langBtn");
+  function paint(){
+    var zh = document.documentElement.getAttribute("data-lang") === "zh";
+    btn.textContent = zh ? "EN" : "中文";
+  }
+  btn.addEventListener("click", function(){
+    var zh = document.documentElement.getAttribute("data-lang") === "zh";
+    document.documentElement.setAttribute("data-lang", zh ? "en" : "zh");
+    paint();
+  });
+  paint();
+}
+function initDeepLink(){
+  var q = new URLSearchParams(window.location.search);
+  if (q.get("lang") === "zh") document.documentElement.setAttribute("data-lang", "zh");
+  if (q.get("std") === "1"){ STATE.std = true; var c = document.getElementById("cStd"); if (c) c.checked = true; }
+  if (q.get("spread")){ STATE.spread = parseInt(q.get("spread"), 10) || 0; var e = document.getElementById("sSpread"); if (e) e.value = STATE.spread; }
+  if (q.get("L")){ STATE.depth = parseInt(q.get("L"), 10) || 8; var e2 = document.getElementById("sDepth"); if (e2) e2.value = STATE.depth; }
+  if (q.get("eta")){ STATE.lr = parseFloat(q.get("eta")) || 0.05; var e3 = document.getElementById("sLr"); if (e3) e3.value = Math.log10(STATE.lr); }
+  if (q.get("arms")){
+    var keep = q.get("arms").split(",");
+    ARMS.forEach(function(a){ STATE.arm[a] = keep.indexOf(a) >= 0; });
+    var boxes = document.querySelectorAll("#checks input");
+    Array.prototype.forEach.call(boxes, function(b){ b.checked = STATE.arm[b.getAttribute("data-arm")]; });
+  }
+}
+function init(){
+  initLab();
+  initSlides();
+  initLang();
+  initDeepLink();
+  document.getElementById("vSpread").textContent = STATE.spread === 0 ? "off" : "±10" + ["", "¹", "²"][STATE.spread];
+  document.getElementById("vDepth").textContent = String(STATE.depth);
+  document.getElementById("vLr").textContent = STATE.lr.toFixed(3);
+  prepare();
+  renderLab(0, 0);
+  if (new URLSearchParams(window.location.search).get("view") === "lab") showLab(true);
+  if (new URLSearchParams(window.location.search).get("run") === "1") trainAll();
+}
+init();
+</script>
+</body>
+</html>

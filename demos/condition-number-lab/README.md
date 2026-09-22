@@ -41,10 +41,11 @@ With this data the two scalings reproduce the numbers on the slides:
 `F* = 267.86` in both cases: the two runs solve the same problem, and only the speed
 changes. After the lecture's 1,000 steps the first run is at 2,944, i.e. 11× above `F*`.
 
-The slide's own λ pair for the first try (0.0004, 1.856) does not come from any scaling of
+The 2014 slide's λ pair for the first try, (0.0004, 1.856), does not come from any scaling of
 this data — a 100× rescaling of the area column changes κ by ≈100 here, not by 10⁴ — so the
-figures and the demo use the computed values above. The κ values agree with the slide
-(4,640 → 46).
+figures and the demo use the computed pair above. The slide's κ for the same two runs
+(4,640 and 46) agrees with the computed 4,530 and 44.4 to within 3%, and the lecture now
+quotes the computed pair on the diagnosis page and in this table.
 
 ## Regenerating the figures from the same data
 `Lecture_3_SP_2026/build/make_house_figs.py` writes `objective_bad/good.png`,

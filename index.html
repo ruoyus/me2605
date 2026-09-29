@@ -128,11 +128,10 @@
             <span class="lang-zh">深度与归一化：深度为何难训——方差分析、深度–宽度比、宽网情形；对权重施加要求的四种方法；归一化操作、LayerNorm（Pre-LN/Post-LN）、RMSNorm</span></td>
         <td>
           <a href="slides/lecture_3.pdf"><span class="lang-en">Lecture 3 notes (PDF)</span><span class="lang-zh">讲义 3（PDF）</span></a><br>
-          <a href="demos/deep-train-lab/"><span class="lang-en">Demo 1 &middot; Deep Train Lab</span><span class="lang-zh">Demo 1 &middot; 深度训练实验室</span></a><br>
-          <a href="demos/normalization-lab/"><span class="lang-en">Demo 2 &middot; Normalization Lab</span><span class="lang-zh">Demo 2 &middot; 归一化实验室</span></a>
+          <a href="demos/deep-train-lab/"><span class="lang-en">Demo 1 &middot; Deep Train Lab</span><span class="lang-zh">Demo 1 &middot; 深度训练实验室</span></a>
         </td>
-        <td><span class="lang-en">Push the depth far past the range that was tuned, and watch the training loss; then run the normalization lab and compare mechanisms on ill-scaled inputs</span>
-            <span class="lang-zh">把深度推到此前调参范围之外，看训练 loss 的变化；再运行归一化实验室，在病态尺度的输入上比较各种机制</span></td>
+        <td><span class="lang-en">Push the depth far past the range that was tuned, and watch the training loss</span>
+            <span class="lang-zh">把深度推到此前调参范围之外，看训练 loss 的变化</span></td>
       </tr>
 
       <tr><td colspan="5" class="sub holiday"><span class="lang-en">Oct 5 &mdash; National Day holiday, no class</span><span class="lang-zh">10 月 5 日 &mdash; 国庆假期，停课</span></td></tr>
@@ -143,10 +142,11 @@
         <td><span class="lang-en">Convergence theory and explaining normalization: convergence of gradient descent, the condition number; data preprocessing and Jacobi preconditioning; why normalization lowers the condition number; the BatchNorm family and the gradient of a normalization layer</span>
             <span class="lang-zh">收敛理论与归一化的解释：梯度下降的收敛性、条件数；数据预处理与 Jacobi 预条件；归一化为何降低条件数；BatchNorm 家族与归一化层的梯度</span></td>
         <td>
-          <a href="demos/condition-number-lab/"><span class="lang-en">Condition Number Lab</span><span class="lang-zh">条件数实验室</span></a>
+          <a href="demos/condition-number-lab/"><span class="lang-en">Condition Number Lab</span><span class="lang-zh">条件数实验室</span></a><br>
+          <a href="demos/normalization-lab/"><span class="lang-en">Normalization Lab</span><span class="lang-zh">归一化实验室</span></a>
         </td>
-        <td><span class="lang-en">Measure the condition number before and after normalization</span>
-            <span class="lang-zh">测量归一化前后的条件数</span></td>
+        <td><span class="lang-en">Measure the condition number before and after normalization; then run the normalization lab and compare no normalization, LayerNorm and BatchNorm</span>
+            <span class="lang-zh">测量归一化前后的条件数；再运行归一化实验室，比较无归一化、LayerNorm 与 BatchNorm</span></td>
       </tr>
 
       <tr>

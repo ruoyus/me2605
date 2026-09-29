@@ -1,0 +1,36 @@
+// Run against the repo's local HTTP server; requires Playwright.
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8765/demos/normalization-lab/');
+ await page.getByLabel('Other samples in the mini-batch').selectOption('b');
+ assert.ok((await page.locator('#axis-result').innerText()).includes('LN → [-1.069, -0.267, 1.336]'));
+ await page.getByLabel('Other samples in the mini-batch').selectOption('single');
+ assert.ok((await page.locator('#axis-result').innerText()).includes('BN → [0.000, 0.000, 0.000]'));
+ await page.getByLabel('Other samples in the mini-batch').selectOption('a');
+ await page.getByRole('button',{name:'Run comparison',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Finished'),{},{timeout:60000});
+ assert.deepEqual(await page.locator('.metric').allTextContents(),['93.4%','98.4%','99.2%']);
+ const downloadPromise=page.waitForEvent('download');
+ await page.getByRole('button',{name:'Export settings + results'}).click();
+ const download=await downloadPromise;assert.ok(download.suggestedFilename().endsWith('.json'));
+ await page.screenshot({path:'/private/tmp/normalization-lab-desktop.png',fullPage:true});
+ await page.getByRole('button',{name:'3. Small mini-batches'}).click();
+ await page.getByRole('button',{name:'Run comparison',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Finished'),{},{timeout:60000});
+ assert.deepEqual(await page.locator('.metric').allTextContents(),['90.2%','94.9%','87.1%']);
+ await page.getByRole('button',{name:'Switch language'}).click();
+ assert.ok((await page.locator('h1').innerText()).includes('同一个网络'));
+ await page.setViewportSize({width:390,height:844});
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+ await page.screenshot({path:'/private/tmp/normalization-lab-mobile.png',fullPage:true});
+ await page.getByLabel('SGD 更新次数').selectOption('600');
+ await page.getByRole('button',{name:'运行对比',exact:true}).click();
+ await page.getByRole('button',{name:'停止',exact:true}).click();
+ assert.equal(await page.getByRole('button',{name:'运行对比',exact:true}).isEnabled(),true);
+ assert.deepEqual(errors,[]);console.log('PASS: matrix controls, real training (2 presets), export, language switch, mobile overflow, stop, no browser errors.');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1);});

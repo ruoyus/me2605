@@ -1,17 +1,22 @@
 'use strict';
 const $=id=>document.getElementById(id), E=NormEngine;
 let language='en',worker=null,active=null,result=null,points=[],maps={},running=false;
-const colors={none:'#d8543d',ln:'#3262ed',bn:'#008577'}, names={none:'No normalization',ln:'LayerNorm',bn:'BatchNorm'}, namesZh={none:'无归一化',ln:'LayerNorm',bn:'BatchNorm'}, arms=['none','ln','bn'];
+const colors={none:'#d8543d',ln:'#3262ed',bn:'#008577',wn:'#7c3aed'}, names={none:'No normalization',ln:'LayerNorm',bn:'BatchNorm',wn:'Weight norm'}, namesZh={none:'无归一化',ln:'LayerNorm',bn:'BatchNorm',wn:'权重范数'}, arms=['none','ln','bn','wn'];
 const t=(en,zh)=>language==='zh'?zh:en;
 function selectedArms(){return arms.filter(a=>{const el=$('arm-'+a);return !el||el.checked;});}
 /** Arms of the run whose results are on screen; falls back to the current selection before any run. */
 function shownArms(){return active?active.arms:(result?result.models.map(m=>m.arm):selectedArms());}
 const presets={control:{depth:4,width:16,batch:32,lr:0.05,scale:1,steps:600},scale:{depth:8,width:16,batch:32,lr:0.05,scale:100,steps:600},batch:{depth:4,width:16,batch:2,lr:0.05,scale:1,steps:600}};
 let preset='control';
-function config(){return {depth:+$('depth').value,width:+$('width').value,batch:+$('batch').value,lr:+$('lr').value,scale:+$('scale').value,steps:+$('steps').value,seed:+$('seed').value,placement:$('placement').value,affine:$('affine').value==='yes',arms:selectedArms()};}
+function config(){
+  const arms=selectedArms(),shapeOK=arms.includes('ln')||arms.includes('wn');
+  return {depth:+$('depth').value,width:+$('width').value,batch:+$('batch').value,lr:+$('lr').value,scale:+$('scale').value,steps:+$('steps').value,seed:+$('seed').value,placement:$('placement').value,affine:$('affine').value==='yes',gammaShape:shapeOK?$('gshape').value:'vector',arms};
+}
+function refreshGammaShape(){$('gshape').disabled=running||!(selectedArms().includes('ln')||selectedArms().includes('wn'));}
 function explain(){
   const c=config();
-  $('architecture').textContent=c.placement==='post'?'x → [W, b → ReLU → Norm] × '+c.depth+' → linear → loss':'x → [W, b → Norm → ReLU] × '+c.depth+' → linear → loss';
+  const onlyWn=c.arms.length===1&&c.arms[0]==='wn';
+  $('architecture').textContent=onlyWn?'x → [W = g·v/‖v‖, b → ReLU] × '+c.depth+' → linear → loss':(c.placement==='post'?'x → [W, b → ReLU → Norm] × '+c.depth+' → linear → loss':'x → [W, b → Norm → ReLU] × '+c.depth+' → linear → loss');
   $('exp-title').textContent=c.arms.length===0?t('Choose at least one model.','至少选择一个模型。'):c.arms.length===1?t('Train the selected model on its own.','只训练选中的这一个模型。'):c.arms.length===2?t('Train two models, side by side.','并排训练两个模型。'):t('Train three models, side by side.','并排训练三个模型。');
   const questions={control:t('Predict: on a modest network with well-scaled inputs, do we need normalization to learn? Try learning rates 0.01 and 0.1 after the first run.','预测：网络不深、输入尺度适中时，不用归一化能学好吗？首次运行后再试学习率 0.01 和 0.1。'),scale:t('Predict: what changes when one input coordinate is 100× larger? Run this setting, then change ONLY input scale to 1. Next change ONLY depth.','预测：一个输入坐标放大 100 倍后会怎样？先运行，再只将输入尺度改为 1，然后再只改变层数。'),batch:t('Predict: with only 2 samples per batch, how noisy are BN statistics? Compare BN’s two evaluation rules below. Then change ONLY batch size to 32.','预测：每批只有 2 个样本，BN 的统计量有多不稳定？比较下方的两种 BN 推理规则，再只将批大小改为 32。')};
   $('hypothesis').textContent=questions[preset];
@@ -45,8 +50,8 @@ function chart(id,series,xMax,yMin,yMax,log,yLabel,xLabel){
 function map(arm){
   const {ctx:g,w,h}=canvas('map-'+arm),data=maps[arm];
   if(!data) return;
-  for(let j=0;j<28;j++)for(let i=0;i<40;i++){const t=1/(1+Math.exp(-data[j*40+i]/3));g.fillStyle='rgb('+Math.round(219+34*t)+','+Math.round(234-10*t)+','+Math.round(254-53*t)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
-  for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(2.25-p[1])/4*h,3.4,0,7);g.fillStyle=p[2]?'#e0590e':'#1d4ed8';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.9;g.stroke();}
+  for(let j=0;j<28;j++)for(let i=0;i<40;i++){const t=1/(1+Math.exp(-data[j*40+i]/3));g.fillStyle='rgb('+Math.round(243+12*t)+','+Math.round(246-4*t)+','+Math.round(253-22*t)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
+  for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(2.25-p[1])/4*h,3.6,0,7);g.fillStyle=p[2]?'#d9480f':'#1e40af';g.fill();g.strokeStyle='#ffffff';g.lineWidth=1.1;g.stroke();}
 }
 function render(){
   const models=result?result.models:[],shown=shownArms(),steps=active?active.steps:config().steps;
@@ -76,7 +81,7 @@ function render(){
     $('inference-result').innerHTML='<table><tr><th>'+t('BN evaluation rule','BN 推理规则')+'</th><th>'+t('Accuracy','准确率')+'</th><th>'+t('Loss','损失')+'</th></tr><tr><td>'+t('Stored training statistics','存储的训练统计量')+'</td><td>'+ (100*bn.latest.accuracy).toFixed(1)+'%</td><td>'+bn.latest.loss.toFixed(3)+'</td></tr><tr><td>'+t('Current test-batch statistics','当前测试批统计量')+'</td><td>'+ (100*bn.diagnostic.accuracy).toFixed(1)+'%</td><td>'+bn.diagnostic.loss.toFixed(3)+'</td></tr></table><p class="small">'+t('At update 0, stored BN means are 0 and variances are 1; the running estimates have not been trained.','更新次数为 0 时，BN 存储均值为 0、方差为 1，尚未学习运行统计量。')+'</p>';
   } else $('inference-result').textContent=bn&&bn.failed?t('BN diverged; no valid final inference comparison.','BN 已发散，无法进行有效的最终推理比较。'):t('Run an experiment to compare the two rules.','先运行实验，再比较两种规则。');
 }
-function setRunning(value){running=value;$('run').disabled=value;$('stop').disabled=!value;document.querySelectorAll('.controls select,.controls input,[data-preset]').forEach(el=>el.disabled=value);}
+function setRunning(value){running=value;$('run').disabled=value;$('stop').disabled=!value;document.querySelectorAll('.controls select,.controls input,[data-preset]').forEach(el=>el.disabled=value);refreshGammaShape();}
 function run(){
   const c=config();if(!Number.isInteger(c.seed)||c.seed<1||c.seed>99999){$('status').textContent=t('Seed must be an integer from 1 to 99999.','种子必须是 1–99999 的整数。');return;}
   if(!c.arms.length){$('status').textContent=t('Select at least one model to train.','至少勾选一个模型再训练。');return;}
@@ -101,4 +106,4 @@ document.querySelectorAll('[data-preset]').forEach(button=>button.onclick=()=>{p
 document.querySelectorAll('.controls select,.controls input').forEach(el=>el.addEventListener('change',()=>{explain();if(result)$('status').textContent=t('Settings changed. Displayed results still use the previous run settings.','设置已改变。当前结果仍使用上次运行的设置。');else render();}));
 $('companions').onchange=sandbox;
 $('lang').onclick=()=>{language=language==='en'?'zh':'en';document.documentElement.lang=language==='en'?'en':'zh-CN';document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[language]);$('lang').textContent=language==='en'?'中文':'English';sandbox();explain();render();$('status').textContent=running?t('Training…','训练中……'):result?t('Displayed results: update ','当前结果：更新次数 ')+result.step:t('Ready. Choose a question, then run.','准备就绪。选择问题后运行。');};
-sandbox();explain();render();
+sandbox();explain();refreshGammaShape();render();

@@ -76,7 +76,9 @@ function makeNet(L, width, nin, arm, r){
     var nIn = dims[m], nOut = dims[m + 1];
     var ly = {nin: nIn, nout: nOut, W: new Float64Array(nOut * nIn), gW: new Float64Array(nOut * nIn),
               b: new Float64Array(nOut), gb: new Float64Array(nOut)};
-    if (arm === "wn"){ ly.V = new Float64Array(nOut * nIn); ly.gV = new Float64Array(nOut * nIn); fillV(r, ly.V, nOut, nIn); }
+    if (arm === "wn"){ ly.V = new Float64Array(nOut * nIn); fillV(r, ly.V, nOut, nIn);
+      /* the learned magnitude g of weight norm, one per output neuron (√2 ≈ He scale) */
+      ly.gV = new Float64Array(nOut).fill(Math.SQRT2); }
     else fillHe(r, ly.W, nOut, nIn);
     /* The affine pair of the normalization, one entry per feature of the layer
        output: γ starts at 1, β starts at 0, and the page can switch either off.
@@ -94,12 +96,14 @@ function makeNet(L, width, nin, arm, r){
 function effW(net, m){
   var ly = net.layers[m];
   if (net.arm !== "wn") return ly.W;
-  var nOut = ly.nout, nIn = ly.nin, W = new Float64Array(nOut * nIn), S = Math.SQRT2;
+  var nOut = ly.nout, nIn = ly.nin, W = new Float64Array(nOut * nIn);
   for (var o = 0; o < nOut; o++){
+    /* w_row = g_row · v_row / ‖v_row‖; a scalar-γ run keeps one shared g. */
+    var gv = ly.gV.length === 1 ? ly.gV[0] : ly.gV[o];
     var nrm = 0, i;
     for (i = 0; i < nIn; i++){ var v = ly.V[o * nIn + i]; nrm += v * v; }
     nrm = Math.sqrt(nrm) + 1e-12;
-    for (i = 0; i < nIn; i++) W[o * nIn + i] = S * ly.V[o * nIn + i] / nrm;
+    for (i = 0; i < nIn; i++) W[o * nIn + i] = gv * ly.V[o * nIn + i] / nrm;
   }
   return W;
 }
@@ -172,7 +176,8 @@ function runBatch(net, D, idx, B, train, opt){
   if (opt && opt.scaleOnly) return {loss: loss, err: err, scale: scale, logits: out};
 
   /* ---- backward ---- */
-  for (m = 0; m < net.layers.length; m++){ net.layers[m].gW.fill(0); net.layers[m].gb.fill(0); if (net.arm === "wn") net.layers[m].gV.fill(0); }
+  /* gV is the learned magnitude of weight norm — a parameter, never a scratch gradient. */
+  for (m = 0; m < net.layers.length; m++){ net.layers[m].gW.fill(0); net.layers[m].gb.fill(0); }
   var dOut = new Float64Array(B);
   for (b = 0; b < B; b++){
     var pb = 1 / (1 + Math.exp(-out[b]));
@@ -249,7 +254,7 @@ function normForward(arm, h, B, d, ly, train, batchStats){
       for (i2 = 0; i2 < d; i2++){
         var rv1 = (h[b * d + i2] - m1) * inv2[b];
         r2[b * d + i2] = rv1;
-        o2[b * d + i2] = (useG ? ly.gam[i2] * rv1 : rv1) + (useB ? ly.bet[i2] : 0);
+        o2[b * d + i2] = (useG ? ly.gam[i2 % ly.gam.length] * rv1 : rv1) + (useB ? ly.bet[i2 % ly.bet.length] : 0);
       }
     }
   } else { /* Internal storage: sample-major. The classroom matrix is its transpose. */
@@ -273,7 +278,7 @@ function normForward(arm, h, B, d, ly, train, batchStats){
       for (b = 0; b < B; b++){
         var rv2 = (h[b * d + i2] - m2) * inv2[i2];
         r2[b * d + i2] = rv2;
-        o2[b * d + i2] = (useG ? ly.gam[i2] * rv2 : rv2) + (useB ? ly.bet[i2] : 0);
+        o2[b * d + i2] = (useG ? ly.gam[i2 % ly.gam.length] * rv2 : rv2) + (useB ? ly.bet[i2 % ly.bet.length] : 0);
       }
     }
   }
@@ -288,13 +293,13 @@ function normBackward(arm, dOut, N, B, d, net, m){
   if (ly && ly.gam && (N.useG || N.useB)){
     if (N.useG){
       for (b = 0; b < B; b++) for (i = 0; i < d; i++)
-        ly.ggam[i] += dOut[b * d + i] * N.raw[b * d + i];
+        ly.ggam[i % ly.gam.length] += dOut[b * d + i] * N.raw[b * d + i];
       dY = new Float64Array(B * d);
       for (b = 0; b < B; b++) for (i = 0; i < d; i++)
-        dY[b * d + i] = dOut[b * d + i] * ly.gam[i];
+        dY[b * d + i] = dOut[b * d + i] * ly.gam[i % ly.gam.length];
     }
     if (N.useB && arm !== "rms"){
-      for (b = 0; b < B; b++) for (i = 0; i < d; i++) ly.gbet[i] += dOut[b * d + i];
+      for (b = 0; b < B; b++) for (i = 0; i < d; i++) ly.gbet[i % ly.bet.length] += dOut[b * d + i];
     }
   }
   if (arm === "rms"){
@@ -336,13 +341,14 @@ function sgdStep(net, D, idx, B, eta){
     var ly = layers[m], nOut = ly.nout, nIn = ly.nin, o, i;
     /* the affine pair of the normalization, updated like any other parameter */
     if (ly.gam){
-      if (ly.useGam !== false) for (i = 0; i < nOut; i++) ly.gam[i] -= eta * ly.ggam[i];
-      if (ly.useBet !== false) for (i = 0; i < nOut; i++) ly.bet[i] -= eta * ly.gbet[i];
+      if (ly.useGam !== false) for (i = 0; i < ly.gam.length; i++) ly.gam[i] -= eta * ly.ggam[i];
+      if (ly.useBet !== false) for (i = 0; i < ly.bet.length; i++) ly.bet[i] -= eta * ly.gbet[i];
     }
     for (i = 0; i < nOut; i++) ly.b[i] -= eta * ly.gb[i];
     if (net.arm === "wn"){
-      var W = effW(net, m);
+      var scalarG = ly.gV.length === 1;
       for (o = 0; o < nOut; o++){
+        var gv = scalarG ? ly.gV[0] : ly.gV[o];
         var nrm = 0;
         for (i = 0; i < nIn; i++){ var v = ly.V[o * nIn + i]; nrm += v * v; }
         nrm = Math.sqrt(nrm) + 1e-12;
@@ -350,9 +356,12 @@ function sgdStep(net, D, idx, B, eta){
         for (i = 0; i < nIn; i++) dot += ly.gW[o * nIn + i] * ly.V[o * nIn + i];
         for (i = 0; i < nIn; i++){
           var u = ly.V[o * nIn + i] / nrm;
-          var gr = (Math.SQRT2 / nrm) * (ly.gW[o * nIn + i] - u * (dot / nrm));
+          var gr = (gv / nrm) * (ly.gW[o * nIn + i] - u * (dot / nrm));
           ly.V[o * nIn + i] -= eta * gr;
         }
+        /* dL/dg = u · gW（= dot/‖v‖），标量模式累加到共享的那一份 */
+        if (scalarG) ly.gV[0] -= eta * dot / nrm;
+        else ly.gV[o] -= eta * dot / nrm;
       }
       continue;
     }
@@ -381,6 +390,18 @@ function create(config, arm) {
   var net = makeNet(config.depth, config.width, 2, arm, mulberry32(config.seed + 1000));
   net.placement = config.placement;
   net.layers.forEach(function(ly){ ly.useGam = config.affine !== false; ly.useBet = config.affine !== false; });
+  /* The scalar-γ option is offered for LN and weight norm only: LN's γ (and β with it)
+     collapses to one value per layer, and WN's magnitude g to one value per layer.
+     BN keeps its per-feature pair regardless. */
+  if (config.affine !== false && config.gammaShape === "scalar"){
+    net.layers.forEach(function(ly){
+      if (arm === "ln" && ly.gam){
+        ly.gam = new Float64Array([1]); ly.ggam = new Float64Array(1);
+        ly.bet = new Float64Array([0]); ly.gbet = new Float64Array(1);
+      }
+      if (arm === "wn" && ly.gV) ly.gV = new Float64Array([Math.SQRT2]);
+    });
+  }
   return net;
 }
 function moons(seed, count, scale) {

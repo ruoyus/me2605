@@ -3,7 +3,7 @@ importScripts('engine.js');
 self.onmessage = function(event){
   const c=event.data, E=NormEngine;
   const train=E.moons(c.seed,768,c.scale), test=E.moons(c.seed+100,256,c.scale);
-  const arms=(c.arms&&c.arms.length?c.arms:['none','ln','bn']).filter(arm=>['none','ln','bn'].includes(arm));
+  const arms=(c.arms&&c.arms.length?c.arms:['none','ln','bn']).filter(arm=>['none','ln','bn','wn'].includes(arm));
   const models=arms.map(arm=>({arm,net:E.create(c,arm),history:[],failed:false,lastTrain:null}));
   const grid={X:new Float64Array(40*28*2),y:new Float64Array(40*28),n:40*28};
   for(let j=0;j<28;j++) for(let i=0;i<40;i++){

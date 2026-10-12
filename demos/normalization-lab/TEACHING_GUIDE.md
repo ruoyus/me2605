@@ -1,6 +1,6 @@
 # Normalization II: classroom lab
 
-The updated `index.html` is the Lecture 4 lab. The previous experiment is preserved in `legacy.html`; `RESULTS.md` and `experiment.py` describe that older experiment, not the new two-moons runs.
+The updated `index.html` is the Lecture 4 lab. Page order: the three-model comparison comes first; the fixed-sample review of BN versus LN sits at the bottom under *Review BN and LN*; the old weight-constraint experiment is preserved in `legacy.html`, and `RESULTS.md` and `experiment.py` describe that older experiment. *Models to compare* offers four models — no normalization, LayerNorm, BatchNorm and, switched off by default, weight norm (direction plus one learned magnitude per neuron). The *Scale γ (LN) / g (WN)* switch offers a per-feature scale (vector) or one scale per layer (scalar) and applies to LN and weight norm only; BN keeps its per-feature pair.
 
 ## Suggested 20–30 minute sequence
 
@@ -27,6 +27,8 @@ Optional: use *Models to compare* to switch a model off. It is then not trained 
 | Small batch | 11 | 77.3% | 81.6% | 55.9% | 47.3% |
 | Small batch | 23 | 70.7% | 83.6% | 60.5% | 60.2% |
 
+Weight norm on the gentle baseline (same settings, 600 updates): 96.9% / 84.8% / 88.7% across seeds 7 / 11 / 23 — usable here, and worth comparing against LN because its per-neuron magnitude plays the role of LN's γ.
+
 Each preset now disqualifies a different method. On the gentle baseline every model is usable. Under depth 8 with one input coordinate 100× larger, no normalization and LN both collapse to near chance while BN stays the most useful: BN standardizes each feature across the batch, so its first layer can undo a per-coordinate input scale, while LN normalizes within a sample and cannot — consistent with the invariance table of Ba et al. (2016): LN is invariant to rescaling a whole sample, not to rescaling a single coordinate. On B = 2 the ranking flips: BN's batch statistics become too noisy and LN is the best normalized method.
 
 These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 96 held-out points; metrics use all 256. Maps show initialization during training and are replaced by final predictions at completion; the background shading is the model score through a fixed softening (sigmoid of the logit over 3), not the raw probability, so a saturated network still shows a gradient near its boundary. Inference and map generation never update running statistics. A table row is unchanged if the other models are switched off in *Models to compare*; only the number of charts and cards changes.
@@ -40,7 +42,7 @@ node test-engine.cjs
 node benchmark.cjs
 ```
 
-The numerical test checks 286 finite differences covering W, linear bias, feature-wise γ and β for no normalization, LN and BN, in both placements. A centered difference there is compared against the backward pass re-evaluated at v±h, which also covers the case where a sample kills an entire layer and a bias sits exactly on the ReLU kink — there the centered difference is the average of the two one-sided slopes. It also checks shared initialization, the BN running-variance update, immutable evaluation, singleton inference and data scaling. Largest measured absolute gradient discrepancy: 2.10 × 10⁻⁸.
+The numerical test checks 368 finite differences covering W, linear bias, feature-wise γ and β for no normalization, LN and BN in both placements, plus the scalar-γ option for LN. A centered difference there is compared against the backward pass re-evaluated at v±h, which also covers the case where a sample kills an entire layer and a bias sits exactly on the ReLU kink — there the centered difference is the average of the two one-sided slopes. It also checks shared initialization, the BN running-variance update, immutable evaluation, singleton inference and data scaling. Largest measured absolute gradient discrepancy: 2.10 × 10⁻⁸.
 
 Serve the repository root over HTTP on port 8765 and run `node demos/normalization-lab/test-browser.cjs` with Playwright available. Optionally set `CHROME_PATH` to an installed Chrome executable. This checks both the default and small-batch numerical results, matrix controls, the *Models to compare* picker (a two-model and a one-model run reproduce the per-model numbers of the three-model run; an empty selection trains nothing and reports it), stop, JSON export, English/Chinese switching, mobile overflow and browser errors. Browser workers require HTTP; opening `index.html` directly with a file URL is not supported.
 
@@ -51,6 +53,7 @@ Serve the repository root over HTTP on port 8765 and run `node demos/normalizati
 - `worker.js`: actual training outside the UI thread; it trains the models selected in the UI (all three by default), and those share sampled batch indices.
 - `lab.js`, `lab.css`: interactive teaching UI, curves, decision maps and export.
 - BN uses ε = 10⁻⁵ and EMA coefficient 0.1. Training forward uses the population batch variance; running variance receives the unbiased estimate. Inference normally uses stored statistics.
+- Weight norm sets each row to w = g·v/‖v‖ with one learned g per neuron (√2 at init); the scalar switch shares one g per layer. The engine-level test covers it with a training smoke run rather than finite differences.
 - LN uses each sample's current feature statistics in both modes. Neither method learns separate parameters for individual samples.
 
 References: [PyTorch BatchNorm1d](https://docs.pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html), [PyTorch LayerNorm](https://docs.pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html), [Batch Normalization](https://arxiv.org/abs/1502.03167), [Layer Normalization](https://arxiv.org/abs/1607.06450).

@@ -385,16 +385,16 @@ function create(config, arm) {
 }
 function moons(seed, count, scale) {
   var r=mulberry32(seed), X=new Float64Array(count*2), y=new Float64Array(count);
-  /* The classic interlocking moons, rotated 60 degrees about the figure's centroid (0.5, 0.25):
-     after the rotation a threshold on a single input coordinate cannot exceed ~65% accuracy,
-     so a degenerate one-dimensional rule no longer scores well on this problem. */
-  var CR=0.5, SR=0.8660254037844386, CX=0.5, CY=0.25;
+  /* Two spiral strands winding 1.25 turns around a shared centre, offset by half a turn:
+     the strands interlock deeply, and a threshold on a single input coordinate cannot
+     exceed ~60% held-out accuracy. (The export keeps the historical name `moons`.) */
+  var CX=0.5, CY=0.25, TURNS=1.25, R0=0.12, R1=1.5, SIGMA=0.05;
   for(var k=0;k<count;k++){
-    var cls=k%2, t=r()*Math.PI, dx, dy;
-    if(cls){dx=1-Math.cos(t)-CX; dy=0.5-Math.sin(t)-CY;}
-    else   {dx=Math.cos(t)-CX;     dy=Math.sin(t)-CY;}
-    X[2*k]=CX+CR*dx-SR*dy+0.12*gauss(r);
-    X[2*k+1]=(CY+SR*dx+CR*dy+0.12*gauss(r))*scale;
+    var cls=k%2, u=r();
+    var ang=u*2*TURNS*Math.PI+cls*Math.PI;
+    var rad=R0+(R1-R0)*u;
+    X[2*k]=CX+rad*Math.cos(ang)+SIGMA*gauss(r);
+    X[2*k+1]=(CY+rad*Math.sin(ang)+SIGMA*gauss(r))*scale;
     y[k]=cls;
   }
   // Shuffle rather than forcing each size-2 test batch to contain both classes.

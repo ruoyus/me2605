@@ -6,7 +6,7 @@ const t=(en,zh)=>language==='zh'?zh:en;
 function selectedArms(){return arms.filter(a=>{const el=$('arm-'+a);return !el||el.checked;});}
 /** Arms of the run whose results are on screen; falls back to the current selection before any run. */
 function shownArms(){return active?active.arms:(result?result.models.map(m=>m.arm):selectedArms());}
-const presets={control:{depth:4,width:16,batch:32,lr:0.03,scale:1,steps:300},scale:{depth:8,width:16,batch:32,lr:0.03,scale:100,steps:300},batch:{depth:4,width:16,batch:2,lr:0.03,scale:1,steps:300}};
+const presets={control:{depth:4,width:16,batch:32,lr:0.05,scale:1,steps:600},scale:{depth:8,width:16,batch:32,lr:0.05,scale:100,steps:600},batch:{depth:4,width:16,batch:2,lr:0.05,scale:1,steps:600}};
 let preset='control';
 function config(){return {depth:+$('depth').value,width:+$('width').value,batch:+$('batch').value,lr:+$('lr').value,scale:+$('scale').value,steps:+$('steps').value,seed:+$('seed').value,placement:$('placement').value,affine:$('affine').value==='yes',arms:selectedArms()};}
 function explain(){
@@ -45,8 +45,8 @@ function chart(id,series,xMax,yMin,yMax,log,yLabel,xLabel){
 function map(arm){
   const {ctx:g,w,h}=canvas('map-'+arm),data=maps[arm];
   if(!data) return;
-  for(let j=0;j<28;j++)for(let i=0;i<40;i++){const t=1/(1+Math.exp(-data[j*40+i]/3));g.fillStyle='rgb('+Math.round(230-90*t)+','+Math.round(235-30*t)+','+Math.round(253-64*t)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
-  for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(2.25-p[1])/4*h,2.8,0,7);g.fillStyle=p[2]?'#007b72':'#37499d';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.7;g.stroke();}
+  for(let j=0;j<28;j++)for(let i=0;i<40;i++){const t=1/(1+Math.exp(-data[j*40+i]/3));g.fillStyle='rgb('+Math.round(219+34*t)+','+Math.round(234-10*t)+','+Math.round(254-53*t)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
+  for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(2.25-p[1])/4*h,3.4,0,7);g.fillStyle=p[2]?'#e0590e':'#1d4ed8';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.9;g.stroke();}
 }
 function render(){
   const models=result?result.models:[],shown=shownArms(),steps=active?active.steps:config().steps;
@@ -65,7 +65,7 @@ function render(){
     map(arm);
     if(maps[arm]) {
       const caption=document.createElement('p');caption.className='small';
-      caption.textContent=result&&result.done?t('Final decision map · dots: held-out labels; background shading: model score, darker teal = more confidently class 1. Axes show unscaled inputs.','最终分类图 · 点为留出标签；背景深浅为模型输出分数，越偏深绿越确信是类别 1。坐标轴使用缩放前的输入。'):t('Initial decision map (updates after training). Dots: held-out labels.','初始化分类图（训练完成后更新）。点为留出标签。');
+      caption.textContent=result&&result.done?t('Final decision map · dots: held-out labels (blue = class 0, orange = class 1); background shading: model score. Axes show unscaled inputs.','最终分类图 · 点为留出标签（蓝 = 类别 0，橙 = 类别 1）；背景深浅为模型输出分数。坐标轴使用缩放前的输入。'):t('Initial decision map (updates after training). Dots: held-out labels.','初始化分类图（训练完成后更新）。点为留出标签。');
       $('map-'+arm).after(caption);
     }
   }
@@ -96,7 +96,7 @@ function run(){
 }
 $('run').onclick=run;
 $('stop').onclick=()=>{if(worker)worker.terminate();worker=null;setRunning(false);$('export').disabled=!result;$('status').textContent=t('Stopped. Curves show the last completed checkpoint. Run starts fresh.','已停止。曲线保留最后完成的检查点。再次运行将从头开始。');};
-$('export').onclick=()=>{if(!result)return;const payload={version:1,config:active,completed:!!result.done,step:result.step,protocol:'768 training / 256 held-out two moons; matched initialization and mini-batches; BN standard evaluation uses running statistics',models:result.models.map(m=>({arm:m.arm,failed:m.failed,failedAt:m.failedAt,history:m.history,latest:m.latest,batchStatisticsDiagnostic:m.diagnostic}))};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='normalization-seed-'+active.seed+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('export').onclick=()=>{if(!result)return;const payload={version:1,config:active,completed:!!result.done,step:result.step,protocol:'768 training / 256 held-out interlocked spiral strands; matched initialization and mini-batches; BN standard evaluation uses running statistics',models:result.models.map(m=>({arm:m.arm,failed:m.failed,failedAt:m.failedAt,history:m.history,latest:m.latest,batchStatisticsDiagnostic:m.diagnostic}))};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='normalization-seed-'+active.seed+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 document.querySelectorAll('[data-preset]').forEach(button=>button.onclick=()=>{preset=button.dataset.preset;Object.entries(presets[preset]).forEach(([key,value])=>$(key).value=value);$('placement').value='post';$('affine').value='yes';document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('selected',b===button));explain();if(!result)render();else $('status').textContent=t('Settings changed. Run to replace the previous results.','设置已改变。点击运行以替换之前的结果。');});
 document.querySelectorAll('.controls select,.controls input').forEach(el=>el.addEventListener('change',()=>{explain();if(result)$('status').textContent=t('Settings changed. Displayed results still use the previous run settings.','设置已改变。当前结果仍使用上次运行的设置。');else render();}));
 $('companions').onchange=sandbox;

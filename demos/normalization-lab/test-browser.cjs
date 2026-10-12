@@ -31,6 +31,22 @@ const assert=require('node:assert/strict');
  await page.getByRole('button',{name:'运行对比',exact:true}).click();
  await page.getByRole('button',{name:'停止',exact:true}).click();
  assert.equal(await page.getByRole('button',{name:'运行对比',exact:true}).isEnabled(),true);
- assert.deepEqual(errors,[]);console.log('PASS: matrix controls, real training (2 presets), export, language switch, mobile overflow, stop, no browser errors.');
+ // Models-to-compare picker: a subset must reproduce the per-model numbers of a full run.
+ await page.getByRole('button',{name:'1. 温和的基线'}).click();
+ await page.locator('#arm-bn').uncheck();
+ assert.ok((await page.locator('#legend').innerText()).includes('无归一化'));
+ assert.ok(!(await page.locator('#legend').innerText()).includes('BatchNorm'));
+ assert.equal(await page.locator('.model-card').count(),2);
+ await page.getByRole('button',{name:'运行对比',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('完成'),{},{timeout:60000});
+ assert.deepEqual(await page.locator('.metric').allTextContents(),['93.4%','98.4%']);
+ assert.ok((await page.locator('#inference-result').innerText()).includes('没有勾选 BatchNorm'));
+ // An empty selection must train nothing and keep the previous results.
+ await page.locator('#arm-none').uncheck();
+ await page.locator('#arm-ln').uncheck();
+ await page.getByRole('button',{name:'运行对比',exact:true}).click();
+ assert.ok((await page.locator('#status').innerText()).includes('至少勾选一个模型'));
+ assert.deepEqual(await page.locator('.metric').allTextContents(),['93.4%','98.4%']);
+ assert.deepEqual(errors,[]);console.log('PASS: matrix controls, real training (2 presets + a two-model subset), model picker, empty-selection guard, export, language switch, mobile overflow, stop, no browser errors.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1);});

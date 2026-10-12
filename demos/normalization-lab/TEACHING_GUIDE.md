@@ -5,11 +5,11 @@ The updated `index.html` is the Lecture 4 lab. The previous experiment is preser
 ## Suggested 20–30 minute sequence
 
 1. **One fixed sample (5 min).** Change Batch A to Batch B. LN's output for Sample 1 stays fixed; training BN's output changes. Then choose B = 1. The centered BN values become zero and the affine output is β, not one. Standard fully connected BN training rejects this case; stored-statistics inference can process a single sample. Point out that computed μ and σ are not learned γ and β.
-2. **Gentle baseline (5 min).** Ask whether the unnormalized network can learn. Run all three models with identical initial weights and batch indices. Read the held-out loss, accuracy, and final decision maps. Normalization is not necessary to obtain useful performance in this setting.
+2. **Gentle baseline (5 min).** Ask whether the unnormalized network can learn. All three models are selected by default in *Models to compare*; run them with identical initial weights and batch indices. Read the held-out loss, accuracy, and final decision maps. Normalization is not necessary to obtain useful performance in this setting.
 3. **Batch-size experiment (5–10 min).** Switch to the small-batch preset, which changes only B from 32 to 2 relative to the baseline. Ask why BN is more sensitive. Compare the two BN inference rules. Same number of updates does not mean the same number of training examples processed: B × updates differs. This caveat applies when comparing across presets, not between models within a run.
 4. **Scale/depth experiment (5–10 min).** The stress preset changes both depth and input scale. Do not attribute their combined effect to either one alone. Then change only scale, or only depth, to isolate a factor. Repeat with seeds 11 and 23 and a different learning rate. A method need not win every run.
 
-Optional: turn learned affine parameters off, change placement, or reduce width to 2. This is an MLP before/after-activation convention, not Transformer pre-LN/post-LN. Narrow-layer results are not representative of wide LLM layers.
+Optional: use *Models to compare* to switch a model off. It is then not trained at all, so the run is shorter and the curves are sparser; a kept model reproduces the same numbers it has in a full three-model run, because each model draws its own initial weights and batch indices from the same seed and never reads another model's state. Turn learned affine parameters off, change placement, or reduce width to 2. This is an MLP before/after-activation convention, not Transformer pre-LN/post-LN. Narrow-layer results are not representative of wide LLM layers.
 
 ## Measured checkpoints
 
@@ -27,7 +27,7 @@ Optional: turn learned affine parameters off, change placement, or reduce width 
 | Small batch | 11 | 84.0% | 96.9% | 79.7% | 67.6% |
 | Small batch | 23 | 91.8% | 95.3% | 64.5% | 74.6% |
 
-These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 96 held-out points; metrics use all 256. Maps show initialization during training and are replaced by final predictions at completion. Inference and map generation never update running statistics.
+These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 96 held-out points; metrics use all 256. Maps show initialization during training and are replaced by final predictions at completion. Inference and map generation never update running statistics. A table row is unchanged if the other models are switched off in *Models to compare*; only the number of charts and cards changes.
 
 ## Numerical and browser checks
 
@@ -40,13 +40,13 @@ node benchmark.cjs
 
 The numerical test checks 286 finite differences covering W, linear bias, feature-wise γ and β for no normalization, LN and BN, in both placements. It also checks shared initialization, the BN running-variance update, immutable evaluation, singleton inference and data scaling. Largest measured absolute gradient discrepancy: 2.11 × 10⁻¹⁰.
 
-Serve the repository root over HTTP on port 8765 and run `node demos/normalization-lab/test-browser.cjs` with Playwright available. Optionally set `CHROME_PATH` to an installed Chrome executable. This checks both the default and small-batch numerical results, matrix controls, stop, JSON export, English/Chinese switching, mobile overflow and browser errors. Browser workers require HTTP; opening `index.html` directly with a file URL is not supported.
+Serve the repository root over HTTP on port 8765 and run `node demos/normalization-lab/test-browser.cjs` with Playwright available. Optionally set `CHROME_PATH` to an installed Chrome executable. This checks both the default and small-batch numerical results, matrix controls, the *Models to compare* picker (a two-model and a one-model run reproduce the per-model numbers of the three-model run; an empty selection trains nothing and reports it), stop, JSON export, English/Chinese switching, mobile overflow and browser errors. Browser workers require HTTP; opening `index.html` directly with a file URL is not supported.
 
 ## Implementation boundaries
 
 - No external ML runtime, CDN, backend, analytics or downloaded dataset.
 - `engine.js`: double-precision forward/backward computations, SGD, synthetic data, evaluation.
-- `worker.js`: actual training outside the UI thread; all methods share sampled batch indices.
+- `worker.js`: actual training outside the UI thread; it trains the models selected in the UI (all three by default), and those share sampled batch indices.
 - `lab.js`, `lab.css`: interactive teaching UI, curves, decision maps and export.
 - BN uses ε = 10⁻⁵ and EMA coefficient 0.1. Training forward uses the population batch variance; running variance receives the unbiased estimate. Inference normally uses stored statistics.
 - LN uses each sample's current feature statistics in both modes. Neither method learns separate parameters for individual samples.

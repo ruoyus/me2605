@@ -1,14 +1,18 @@
 'use strict';
 const $=id=>document.getElementById(id), E=NormEngine;
 let language='en',worker=null,active=null,result=null,points=[],maps={},running=false;
-const colors={none:'#d8543d',ln:'#3262ed',bn:'#008577'}, names={none:'No normalization',ln:'LayerNorm',bn:'BatchNorm'};
+const colors={none:'#d8543d',ln:'#3262ed',bn:'#008577'}, names={none:'No normalization',ln:'LayerNorm',bn:'BatchNorm'}, namesZh={none:'无归一化',ln:'LayerNorm',bn:'BatchNorm'}, arms=['none','ln','bn'];
 const t=(en,zh)=>language==='zh'?zh:en;
+function selectedArms(){return arms.filter(a=>{const el=$('arm-'+a);return !el||el.checked;});}
+/** Arms of the run whose results are on screen; falls back to the current selection before any run. */
+function shownArms(){return active?active.arms:(result?result.models.map(m=>m.arm):selectedArms());}
 const presets={control:{depth:4,width:16,batch:32,lr:0.03,scale:1,steps:300},scale:{depth:8,width:16,batch:32,lr:0.03,scale:100,steps:300},batch:{depth:4,width:16,batch:2,lr:0.03,scale:1,steps:300}};
 let preset='control';
-function config(){return {depth:+$('depth').value,width:+$('width').value,batch:+$('batch').value,lr:+$('lr').value,scale:+$('scale').value,steps:+$('steps').value,seed:+$('seed').value,placement:$('placement').value,affine:$('affine').value==='yes'};}
+function config(){return {depth:+$('depth').value,width:+$('width').value,batch:+$('batch').value,lr:+$('lr').value,scale:+$('scale').value,steps:+$('steps').value,seed:+$('seed').value,placement:$('placement').value,affine:$('affine').value==='yes',arms:selectedArms()};}
 function explain(){
   const c=config();
   $('architecture').textContent=c.placement==='post'?'x → [W, b → ReLU → Norm] × '+c.depth+' → linear → loss':'x → [W, b → Norm → ReLU] × '+c.depth+' → linear → loss';
+  $('exp-title').textContent=c.arms.length===0?t('Choose at least one model.','至少选择一个模型。'):c.arms.length===1?t('Train the selected model on its own.','只训练选中的这一个模型。'):c.arms.length===2?t('Train two models, side by side.','并排训练两个模型。'):t('Train three models, side by side.','并排训练三个模型。');
   const questions={control:t('Predict: on a modest network with well-scaled inputs, do we need normalization to learn? Try learning rates 0.01 and 0.1 after the first run.','预测：网络不深、输入尺度适中时，不用归一化能学好吗？首次运行后再试学习率 0.01 和 0.1。'),scale:t('Predict: what changes when one input coordinate is 100× larger? Run this setting, then change ONLY input scale to 1. Next change ONLY depth.','预测：一个输入坐标放大 100 倍后会怎样？先运行，再只将输入尺度改为 1，然后再只改变层数。'),batch:t('Predict: with only 2 samples per batch, how noisy are BN statistics? Compare BN’s two evaluation rules below. Then change ONLY batch size to 32.','预测：每批只有 2 个样本，BN 的统计量有多不稳定？比较下方的两种 BN 推理规则，再只将批大小改为 32。')};
   $('hypothesis').textContent=questions[preset];
   if(c.width===2) $('hypothesis').textContent+=' '+t('Width 2 is a stress test: LN can remove most within-sample information (exactly so when ε = 0).','宽度 2 是极端测试：LN 可能移除大部分样本内信息（ε = 0 时尤其明显）。');
@@ -45,18 +49,19 @@ function map(arm){
   for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(1.7-p[1])/3*h,2.8,0,7);g.fillStyle=p[2]?'#007b72':'#37499d';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.7;g.stroke();}
 }
 function render(){
-  const models=result?result.models:[],steps=active?active.steps:config().steps;
+  const models=result?result.models:[],shown=shownArms(),steps=active?active.steps:config().steps;
+  $('legend').innerHTML=shown.map(a=>'<span class="'+a+'">● '+t(names[a],namesZh[a])+'</span>').join('');
   const losses=models.flatMap(m=>m.history.map(p=>p.loss)).filter(v=>v>0&&Number.isFinite(v));
   const min=losses.length?Math.min(.1,...losses):.1,max=losses.length?Math.max(1,...losses):1;
   chart('loss',models.map(m=>({arm:m.arm,data:m.history.map(p=>[p.step,p.loss])})),steps,min,max,true,'loss',t('SGD updates','SGD 更新次数'));
   chart('accuracy',models.map(m=>({arm:m.arm,data:m.history.map(p=>[p.step,p.accuracy])})),steps,0,1,false,'accuracy',t('SGD updates','SGD 更新次数'));
   const scales=models.filter(m=>m.latest&&!m.failed).flatMap(m=>m.latest.scale).filter(v=>v>0&&Number.isFinite(v));
   chart('signal',models.filter(m=>m.latest&&!m.failed).map(m=>({arm:m.arm,data:m.latest.scale.map((v,i)=>[i+1,v])})),active?active.depth:config().depth,Math.min(.1,...scales),Math.max(2,...scales),true,'RMS',t('Hidden layer','隐藏层'));
-  $('cards').innerHTML=['none','ln','bn'].map(arm=>{
+  $('cards').innerHTML=shown.map(arm=>{
     const m=models.find(a=>a.arm===arm),v=m&&m.latest;
-    return '<article class="model-card" style="--color:'+colors[arm]+'"><h3>'+names[arm]+'</h3><div class="metric">'+(m&&m.failed?t('Diverged','发散'):v?(100*v.accuracy).toFixed(1)+'%':'—')+'</div><p class="small">'+(m&&m.failed?t('Non-finite values at step ','第 ')+m.failedAt+t('',' 步出现非有限值'):t('Held-out accuracy','留出集准确率'))+'</p><canvas class="map" id="map-'+arm+'" width="280" height="196" role="img" aria-label="'+names[arm]+' decision map"></canvas><p class="small">'+(m&&m.failed?t('Curve stops at the last finite evaluation.','曲线停在最后一个有限评估值。'):v?t('Held-out loss: ','留出集损失：')+v.loss.toFixed(3):t('Decision map appears when training starts.','开始训练后显示分类图。'))+'</p><p class="small">'+(m&&Number.isFinite(m.trainLoss)?t('Last training batch loss: ','最近训练批损失：')+m.trainLoss.toFixed(3):'')+'</p></article>';
+    return '<article class="model-card" style="--color:'+colors[arm]+'"><h3>'+t(names[arm],namesZh[arm])+'</h3><div class="metric">'+(m&&m.failed?t('Diverged','发散'):v?(100*v.accuracy).toFixed(1)+'%':'—')+'</div><p class="small">'+(m&&m.failed?t('Non-finite values at step ','第 ')+m.failedAt+t('',' 步出现非有限值'):t('Held-out accuracy','留出集准确率'))+'</p><canvas class="map" id="map-'+arm+'" width="280" height="196" role="img" aria-label="'+t(names[arm],namesZh[arm])+' decision map"></canvas><p class="small">'+(m&&m.failed?t('Curve stops at the last finite evaluation.','曲线停在最后一个有限评估值。'):v?t('Held-out loss: ','留出集损失：')+v.loss.toFixed(3):t('Decision map appears when training starts.','开始训练后显示分类图。'))+'</p><p class="small">'+(m&&Number.isFinite(m.trainLoss)?t('Last training batch loss: ','最近训练批损失：')+m.trainLoss.toFixed(3):'')+'</p></article>';
   }).join('');
-  for(const arm of ['none','ln','bn']) {
+  for(const arm of shown) {
     map(arm);
     if(maps[arm]) {
       const caption=document.createElement('p');caption.className='small';
@@ -65,15 +70,18 @@ function render(){
     }
   }
   const bn=models.find(m=>m.arm==='bn');
-  if(bn&&bn.latest&&!bn.failed){
+  if(!shown.includes('bn')){
+    $('inference-result').textContent=t('BatchNorm is switched off in this comparison, so its two evaluation rules are not available. Switch it back on and run again.','本轮没有勾选 BatchNorm，因此没有 BN 的两种推理规则可比。重新勾选后再运行一次。');
+  } else if(bn&&bn.latest&&!bn.failed){
     $('inference-result').innerHTML='<table><tr><th>'+t('BN evaluation rule','BN 推理规则')+'</th><th>'+t('Accuracy','准确率')+'</th><th>'+t('Loss','损失')+'</th></tr><tr><td>'+t('Stored training statistics','存储的训练统计量')+'</td><td>'+ (100*bn.latest.accuracy).toFixed(1)+'%</td><td>'+bn.latest.loss.toFixed(3)+'</td></tr><tr><td>'+t('Current test-batch statistics','当前测试批统计量')+'</td><td>'+ (100*bn.diagnostic.accuracy).toFixed(1)+'%</td><td>'+bn.diagnostic.loss.toFixed(3)+'</td></tr></table><p class="small">'+t('At update 0, stored BN means are 0 and variances are 1; the running estimates have not been trained.','更新次数为 0 时，BN 存储均值为 0、方差为 1，尚未学习运行统计量。')+'</p>';
   } else $('inference-result').textContent=bn&&bn.failed?t('BN diverged; no valid final inference comparison.','BN 已发散，无法进行有效的最终推理比较。'):t('Run an experiment to compare the two rules.','先运行实验，再比较两种规则。');
 }
 function setRunning(value){running=value;$('run').disabled=value;$('stop').disabled=!value;document.querySelectorAll('.controls select,.controls input,[data-preset]').forEach(el=>el.disabled=value);}
 function run(){
   const c=config();if(!Number.isInteger(c.seed)||c.seed<1||c.seed>99999){$('status').textContent=t('Seed must be an integer from 1 to 99999.','种子必须是 1–99999 的整数。');return;}
+  if(!c.arms.length){$('status').textContent=t('Select at least one model to train.','至少勾选一个模型再训练。');return;}
   if(worker)worker.terminate();active=c;result=null;maps={};points=[];setRunning(true);$('export').disabled=true;
-  $('progress').max=c.steps;$('progress').value=0;$('status').textContent=t('Training three matched models…','正在训练三个对照模型……');render();
+  $('progress').max=c.steps;$('progress').value=0;$('status').textContent=t('Training '+c.arms.length+' matched model'+(c.arms.length>1?'s':'')+'…','正在训练 '+c.arms.length+' 个对照模型……');render();
   worker=new Worker('worker.js');
   worker.onerror=event=>{setRunning(false);$('status').textContent=t('Training could not run: ','无法运行训练：')+event.message;worker.terminate();};
   worker.onmessage=event=>{
@@ -90,7 +98,7 @@ $('run').onclick=run;
 $('stop').onclick=()=>{if(worker)worker.terminate();worker=null;setRunning(false);$('export').disabled=!result;$('status').textContent=t('Stopped. Curves show the last completed checkpoint. Run starts fresh.','已停止。曲线保留最后完成的检查点。再次运行将从头开始。');};
 $('export').onclick=()=>{if(!result)return;const payload={version:1,config:active,completed:!!result.done,step:result.step,protocol:'768 training / 256 held-out two moons; matched initialization and mini-batches; BN standard evaluation uses running statistics',models:result.models.map(m=>({arm:m.arm,failed:m.failed,failedAt:m.failedAt,history:m.history,latest:m.latest,batchStatisticsDiagnostic:m.diagnostic}))};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='normalization-seed-'+active.seed+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 document.querySelectorAll('[data-preset]').forEach(button=>button.onclick=()=>{preset=button.dataset.preset;Object.entries(presets[preset]).forEach(([key,value])=>$(key).value=value);$('placement').value='post';$('affine').value='yes';document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('selected',b===button));explain();if(!result)render();else $('status').textContent=t('Settings changed. Run to replace the previous results.','设置已改变。点击运行以替换之前的结果。');});
-document.querySelectorAll('.controls select,.controls input').forEach(el=>el.addEventListener('change',()=>{explain();if(result)$('status').textContent=t('Settings changed. Displayed results still use the previous run settings.','设置已改变。当前结果仍使用上次运行的设置。');}));
+document.querySelectorAll('.controls select,.controls input').forEach(el=>el.addEventListener('change',()=>{explain();if(result)$('status').textContent=t('Settings changed. Displayed results still use the previous run settings.','设置已改变。当前结果仍使用上次运行的设置。');else render();}));
 $('companions').onchange=sandbox;
 $('lang').onclick=()=>{language=language==='en'?'zh':'en';document.documentElement.lang=language==='en'?'en':'zh-CN';document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[language]);$('lang').textContent=language==='en'?'中文':'English';sandbox();explain();render();$('status').textContent=running?t('Training…','训练中……'):result?t('Displayed results: update ','当前结果：更新次数 ')+result.step:t('Ready. Choose a question, then run.','准备就绪。选择问题后运行。');};
 sandbox();explain();render();

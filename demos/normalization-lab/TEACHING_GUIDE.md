@@ -13,21 +13,23 @@ Optional: use *Models to compare* to switch a model off. It is then not trained 
 
 ## Measured checkpoints
 
-300 SGD updates, width 16, learning rate 0.03, post-activation normalization, learned feature-wise γ and β. Values are held-out accuracy using standard evaluation, not fabricated curves. The UI computes these again from scratch.
+300 SGD updates, width 16, learning rate 0.03, post-activation normalization, learned feature-wise γ and β. The two moons are rotated 60° about the figure's centroid, so the best possible threshold on a single input coordinate reaches only about 65% held-out accuracy (measured 65 / 65 / 67 across seeds 7 / 11 / 23) — a one-dimensional rule can no longer score well here. Values are held-out accuracy using standard evaluation, not fabricated curves. The UI computes these again from scratch.
 
 | Preset | Seed | No normalization | LN | BN (stored statistics) | BN (test-batch diagnostic) |
 |---|---:|---:|---:|---:|---:|
-| Gentle baseline | 7 | 93.4% | 98.4% | 99.2% | 98.8% |
-| Gentle baseline | 11 | 89.1% | 98.0% | 100.0% | 99.6% |
-| Gentle baseline | 23 | 92.6% | 96.5% | 98.8% | 98.8% |
-| Scale + depth | 7 | 85.2% | 83.2% | 87.1% | 85.9% |
-| Scale + depth | 11 | Diverged | 83.2% | 83.2% | 86.3% |
-| Scale + depth | 23 | 89.8% | 87.1% | 89.1% | 89.5% |
-| Small batch | 7 | 90.2% | 94.9% | 87.1% | 68.8% |
-| Small batch | 11 | 84.0% | 96.9% | 79.7% | 67.6% |
-| Small batch | 23 | 91.8% | 95.3% | 64.5% | 74.6% |
+| Gentle baseline | 7 | 95.7% | 97.3% | 99.2% | 97.7% |
+| Gentle baseline | 11 | 95.3% | 94.1% | 100.0% | 99.2% |
+| Gentle baseline | 23 | 98.0% | 98.8% | 99.2% | 98.8% |
+| Scale + depth | 7 | 50.0% | 50.0% | 76.2% | 79.3% |
+| Scale + depth | 11 | Diverged | 64.8% | 76.6% | 85.5% |
+| Scale + depth | 23 | 53.5% | 49.6% | 85.5% | 93.4% |
+| Small batch | 7 | 93.8% | 94.1% | 80.5% | 68.0% |
+| Small batch | 11 | 69.9% | 85.2% | 67.6% | 71.9% |
+| Small batch | 23 | 97.3% | 98.0% | 84.8% | 73.8% |
 
-These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 96 held-out points; metrics use all 256. Maps show initialization during training and are replaced by final predictions at completion; the background shading is the model score through a fixed softening (sigmoid of the logit over 3), not the raw probability, so a saturated network still shows a gradient near its boundary. Under the stress preset the LN boundary is in fact nearly horizontal — the trained network thresholds almost only on the scaled coordinate — so a two-band map there is the honest picture, not a drawing bug. Inference and map generation never update running statistics. A table row is unchanged if the other models are switched off in *Models to compare*; only the number of charts and cards changes.
+Read the scale/depth rows as the LN-versus-BN contrast the observe section sets up: BN normalizes each feature across the batch, so its first layer can undo a per-coordinate input scale; LN normalizes within a sample, which cannot, and under depth 8 with one coordinate 100× larger it drops to near chance while BN stays useful. This is consistent with the invariance table of Ba et al. (2016): LN is invariant to rescaling a whole sample, not to rescaling a single coordinate.
+
+These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 96 held-out points; metrics use all 256. Maps show initialization during training and are replaced by final predictions at completion; the background shading is the model score through a fixed softening (sigmoid of the logit over 3), not the raw probability, so a saturated network still shows a gradient near its boundary. Inference and map generation never update running statistics. A table row is unchanged if the other models are switched off in *Models to compare*; only the number of charts and cards changes.
 
 ## Numerical and browser checks
 
@@ -38,7 +40,7 @@ node test-engine.cjs
 node benchmark.cjs
 ```
 
-The numerical test checks 286 finite differences covering W, linear bias, feature-wise γ and β for no normalization, LN and BN, in both placements. It also checks shared initialization, the BN running-variance update, immutable evaluation, singleton inference and data scaling. Largest measured absolute gradient discrepancy: 2.11 × 10⁻¹⁰.
+The numerical test checks 286 finite differences covering W, linear bias, feature-wise γ and β for no normalization, LN and BN, in both placements. A centered difference there is compared against the backward pass re-evaluated at v±h: the rotated dataset contains a sample that kills the whole first layer, which puts a second-layer bias exactly on the ReLU kink, where the centered difference is the average of the two one-sided slopes. It also checks shared initialization, the BN running-variance update, immutable evaluation, singleton inference and data scaling. Largest measured absolute gradient discrepancy: 1.05 × 10⁻⁸.
 
 Serve the repository root over HTTP on port 8765 and run `node demos/normalization-lab/test-browser.cjs` with Playwright available. Optionally set `CHROME_PATH` to an installed Chrome executable. This checks both the default and small-batch numerical results, matrix controls, the *Models to compare* picker (a two-model and a one-model run reproduce the per-model numbers of the three-model run; an empty selection trains nothing and reports it), stop, JSON export, English/Chinese switching, mobile overflow and browser errors. Browser workers require HTTP; opening `index.html` directly with a file URL is not supported.
 

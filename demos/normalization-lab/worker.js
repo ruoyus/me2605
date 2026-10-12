@@ -7,7 +7,7 @@ self.onmessage = function(event){
   const models=arms.map(arm=>({arm,net:E.create(c,arm),history:[],failed:false,lastTrain:null}));
   const grid={X:new Float64Array(40*28*2),y:new Float64Array(40*28),n:40*28};
   for(let j=0;j<28;j++) for(let i=0;i<40;i++){
-    let k=j*40+i;grid.X[2*k]=-1.5+4*i/39;grid.X[2*k+1]=(1.7-3*j/27)*c.scale;
+    let k=j*40+i;grid.X[2*k]=-1.5+4*i/39;grid.X[2*k+1]=(2.25-4*j/27)*c.scale;
   }
   function report(step){
     const rows=models.map(m=>{

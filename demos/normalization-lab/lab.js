@@ -46,7 +46,7 @@ function map(arm){
   const {ctx:g,w,h}=canvas('map-'+arm),data=maps[arm];
   if(!data) return;
   for(let j=0;j<28;j++)for(let i=0;i<40;i++){const t=1/(1+Math.exp(-data[j*40+i]/3));g.fillStyle='rgb('+Math.round(230-90*t)+','+Math.round(235-30*t)+','+Math.round(253-64*t)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
-  for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(1.7-p[1])/3*h,2.8,0,7);g.fillStyle=p[2]?'#007b72':'#37499d';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.7;g.stroke();}
+  for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(2.25-p[1])/4*h,2.8,0,7);g.fillStyle=p[2]?'#007b72':'#37499d';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.7;g.stroke();}
 }
 function render(){
   const models=result?result.models:[],shown=shownArms(),steps=active?active.steps:config().steps;

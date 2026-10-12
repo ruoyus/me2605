@@ -15,9 +15,15 @@ for(const placement of ['pre','post']) for(const arm of ['none','ln','bn']){
     const array=net.layers[l][key];
     for(let i=0;i<array.length;i++){
       const v=array[i],h=1e-6;
-      array[i]=v+h;const plus=E.forward(net,data,idx,8,false,{scaleOnly:true,batchStats:true}).loss;
-      array[i]=v-h;const minus=E.forward(net,data,idx,8,false,{scaleOnly:true,batchStats:true}).loss;
-      array[i]=v;const numeric=(plus-minus)/(2*h),analytic=derivatives[l][key][i];
+      /* The rotated moons contain a sample that kills the entire first layer, so the second
+         layer's bias sits exactly on the ReLU kink (pre-activation ≡ 0): there the centered
+         difference equals the average of the two one-sided slopes, not the gradient at v.
+         Compare against the backward pass evaluated at v+h and v-h, which handles both cases. */
+      array[i]=v+h;const plus=E.forward(net,data,idx,8,false,{batchStats:true});
+      const gPlus=net.layers[l]['g'+key][i];
+      array[i]=v-h;const minus=E.forward(net,data,idx,8,false,{batchStats:true});
+      const gMinus=net.layers[l]['g'+key][i];
+      array[i]=v;const numeric=(plus.loss-minus.loss)/(2*h),analytic=(gPlus+gMinus)/2;
       worst=Math.max(worst,Math.abs(numeric-analytic));close(numeric,analytic);checks++;
     }
   }

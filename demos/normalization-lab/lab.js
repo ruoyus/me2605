@@ -45,7 +45,7 @@ function chart(id,series,xMax,yMin,yMax,log,yLabel,xLabel){
 function map(arm){
   const {ctx:g,w,h}=canvas('map-'+arm),data=maps[arm];
   if(!data) return;
-  for(let j=0;j<28;j++)for(let i=0;i<40;i++){const p=data[j*40+i];g.fillStyle='rgb('+Math.round(230-90*p)+','+Math.round(235-30*p)+','+Math.round(253-64*p)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
+  for(let j=0;j<28;j++)for(let i=0;i<40;i++){const t=1/(1+Math.exp(-data[j*40+i]/3));g.fillStyle='rgb('+Math.round(230-90*t)+','+Math.round(235-30*t)+','+Math.round(253-64*t)+')';g.fillRect(i*w/40,j*h/28,w/40+1,h/28+1);}
   for(const p of points){g.beginPath();g.arc((p[0]+1.5)/4*w,(1.7-p[1])/3*h,2.8,0,7);g.fillStyle=p[2]?'#007b72':'#37499d';g.fill();g.strokeStyle='#ffffff';g.lineWidth=.7;g.stroke();}
 }
 function render(){
@@ -65,7 +65,7 @@ function render(){
     map(arm);
     if(maps[arm]) {
       const caption=document.createElement('p');caption.className='small';
-      caption.textContent=result&&result.done?t('Final decision map · dots: held-out labels; background: predicted class probability. Axes show unscaled inputs.','最终分类图 · 点为留出标签，背景为预测类别概率。坐标轴使用缩放前的输入。'):t('Initial decision map (updates after training). Dots: held-out labels.','初始化分类图（训练完成后更新）。点为留出标签。');
+      caption.textContent=result&&result.done?t('Final decision map · dots: held-out labels; background shading: model score, darker teal = more confidently class 1. Axes show unscaled inputs.','最终分类图 · 点为留出标签；背景深浅为模型输出分数，越偏深绿越确信是类别 1。坐标轴使用缩放前的输入。'):t('Initial decision map (updates after training). Dots: held-out labels.','初始化分类图（训练完成后更新）。点为留出标签。');
       $('map-'+arm).after(caption);
     }
   }

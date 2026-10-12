@@ -21,7 +21,7 @@ self.onmessage = function(event){
       }
       let diagnostic=null, map=null;
       if(!m.failed && (step===0 || step===c.steps)){
-        map=Array.from(E.evaluate(m.net,grid,false).logits,v=>1/(1+Math.exp(-v)));
+        map=Array.from(E.evaluate(m.net,grid,false).logits);
       }
       if(!m.failed && m.arm==='bn'){
         const q=E.evaluate(m.net,test,true,c.batch);

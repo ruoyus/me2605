@@ -71,7 +71,7 @@ function render(){
   }
   const bn=models.find(m=>m.arm==='bn');
   if(!shown.includes('bn')){
-    $('inference-result').textContent=t('BatchNorm is switched off in this comparison, so its two evaluation rules are not available. Switch it back on and run again.','本轮没有勾选 BatchNorm，因此没有 BN 的两种推理规则可比。重新勾选后再运行一次。');
+    $('inference-result').textContent=t('BatchNorm is not in this run.','本轮未勾选 BatchNorm。');
   } else if(bn&&bn.latest&&!bn.failed){
     $('inference-result').innerHTML='<table><tr><th>'+t('BN evaluation rule','BN 推理规则')+'</th><th>'+t('Accuracy','准确率')+'</th><th>'+t('Loss','损失')+'</th></tr><tr><td>'+t('Stored training statistics','存储的训练统计量')+'</td><td>'+ (100*bn.latest.accuracy).toFixed(1)+'%</td><td>'+bn.latest.loss.toFixed(3)+'</td></tr><tr><td>'+t('Current test-batch statistics','当前测试批统计量')+'</td><td>'+ (100*bn.diagnostic.accuracy).toFixed(1)+'%</td><td>'+bn.diagnostic.loss.toFixed(3)+'</td></tr></table><p class="small">'+t('At update 0, stored BN means are 0 and variances are 1; the running estimates have not been trained.','更新次数为 0 时，BN 存储均值为 0、方差为 1，尚未学习运行统计量。')+'</p>';
   } else $('inference-result').textContent=bn&&bn.failed?t('BN diverged; no valid final inference comparison.','BN 已发散，无法进行有效的最终推理比较。'):t('Run an experiment to compare the two rules.','先运行实验，再比较两种规则。');

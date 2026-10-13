@@ -2,7 +2,7 @@
 importScripts('engine.js');
 self.onmessage = function(event){
   const c=event.data, E=NormEngine;
-  const train=E.moons(c.seed,768,c.scale), test=E.moons(c.seed+100,256,c.scale);
+  const train=E.moons(c.seed,1280,c.scale), test=E.moons(c.seed+100,384,c.scale);
   const arms=(c.arms&&c.arms.length?c.arms:['none','ln','bn']).filter(arm=>['none','ln','bn','wn'].includes(arm));
   const models=arms.map(arm=>({arm,net:E.create(c,arm),history:[],failed:false,lastTrain:null}));
   const grid={X:new Float64Array(40*28*2),y:new Float64Array(40*28),n:40*28};
@@ -30,7 +30,7 @@ self.onmessage = function(event){
       return {arm:m.arm,history:m.history,latest:m.latest,failed:m.failed,failedAt:m.failedAt,
         diagnostic,map,trainLoss:m.lastTrain};
     });
-    self.postMessage({step,done:step===c.steps,models:rows,points:step===0 ? Array.from({length:96},(_,i)=>[test.X[2*i],test.X[2*i+1]/c.scale,test.y[i]]) : null});
+    self.postMessage({step,done:step===c.steps,models:rows,points:step===0 ? Array.from({length:128},(_,i)=>[test.X[2*i],test.X[2*i+1]/c.scale,test.y[i]]) : null});
   }
   try{
     report(0);

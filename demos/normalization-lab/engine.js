@@ -410,8 +410,15 @@ function moons(seed, count, scale) {
      the strands interlock deeply, and a threshold on a single input coordinate cannot
      exceed ~60% held-out accuracy. (The export keeps the historical name `moons`.) */
   var CX=0.5, CY=0.25, TURNS=1.25, R0=0.12, R1=1.5, SIGMA=0.05;
+  /* u is drawn with density proportional to the radius, which makes the points uniform
+     per unit arc length (ds = r*dtheta along a strand) instead of uniform per unit angle:
+     without this the outer turns carry ~2.4x fewer points than the inner ones. */
+  function radiusFromUniform(v){
+    var D=R1-R0;
+    return (-R0+Math.sqrt(R0*R0+D*(R0+R1)*v))/D;
+  }
   for(var k=0;k<count;k++){
-    var cls=k%2, u=r();
+    var cls=k%2, u=radiusFromUniform(r());
     var ang=u*2*TURNS*Math.PI+cls*Math.PI;
     var rad=R0+(R1-R0)*u;
     X[2*k]=CX+rad*Math.cos(ang)+SIGMA*gauss(r);

@@ -13,25 +13,25 @@ Optional: use *Models to compare* to switch a model off. It is then not trained 
 
 ## Measured checkpoints
 
-600 SGD updates, width 16, learning rate 0.05, post-activation normalization, learned feature-wise γ and β. The data are two spiral strands winding 1¼ turns around a shared centre, deeply interlocked; the best possible threshold on a single input coordinate reaches only about 60% held-out accuracy (measured 60 / 60 / 63 across seeds 7 / 11 / 23). Values are held-out accuracy using standard evaluation, not fabricated curves. The UI computes these again from scratch.
+1280 training and 384 held-out points, laid uniformly per unit arc length along each strand; 600 SGD updates, width 16, learning rate 0.05, post-activation normalization, learned feature-wise γ and β. The data are two spiral strands winding 1¼ turns around a shared centre, deeply interlocked; the best possible threshold on a single input coordinate reaches only about 59% held-out accuracy (measured 59 / 58 / 59 across seeds 7 / 11 / 23). Values are held-out accuracy using standard evaluation, not fabricated curves. The UI computes these again from scratch.
 
 | Preset | Seed | No normalization | LN | BN (stored statistics) | BN (test-batch diagnostic) |
 |---|---:|---:|---:|---:|---:|
-| Gentle baseline | 7 | 84.8% | 99.6% | 100.0% | 97.3% |
-| Gentle baseline | 11 | 94.1% | 96.1% | 99.6% | 98.4% |
-| Gentle baseline | 23 | 89.5% | 93.4% | 100.0% | 97.3% |
-| Scale + depth | 7 | 50.0% | 55.1% | 75.4% | 72.7% |
-| Scale + depth | 11 | Diverged | 50.8% | 67.6% | 72.7% |
-| Scale + depth | 23 | 50.0% | 56.6% | 65.2% | 62.1% |
-| Small batch | 7 | 64.1% | 74.6% | 64.5% | 53.1% |
-| Small batch | 11 | 77.3% | 81.6% | 55.9% | 47.3% |
-| Small batch | 23 | 70.7% | 83.6% | 60.5% | 60.2% |
+| Gentle baseline | 7 | 97.1% | 100.0% | 100.0% | 99.5% |
+| Gentle baseline | 11 | 96.4% | 99.7% | 100.0% | 98.2% |
+| Gentle baseline | 23 | 96.4% | 99.2% | 99.7% | 98.2% |
+| Scale + depth | 7 | 50.0% | 48.7% | 54.7% | 67.7% |
+| Scale + depth | 11 | Diverged | 50.3% | 66.7% | 71.4% |
+| Scale + depth | 23 | 50.3% | 52.9% | 65.1% | 70.8% |
+| Small batch | 7 | 78.6% | 77.6% | 42.2% | 63.8% |
+| Small batch | 11 | 74.7% | 64.3% | 63.0% | 63.0% |
+| Small batch | 23 | 75.5% | 74.2% | 42.4% | 45.6% |
 
-Weight norm on the gentle baseline (same settings, 600 updates): 96.9% / 84.8% / 88.7% across seeds 7 / 11 / 23 — usable here, and worth comparing against LN because its per-neuron magnitude plays the role of LN's γ.
+Weight norm on the gentle baseline (same settings, 600 updates): 98.7% / 90.4% / 96.6% across seeds 7 / 11 / 23 — usable here, and worth comparing against LN because its per-neuron magnitude plays the role of LN's γ. On B = 2, batch norm can spike mid-training (one seed here reaches a training loss above 4000 before partially recovering), which the loss curves show directly.
 
 Each preset now disqualifies a different method. On the gentle baseline every model is usable. Under depth 8 with one input coordinate 100× larger, no normalization and LN both collapse to near chance while BN stays the most useful: BN standardizes each feature across the batch, so its first layer can undo a per-coordinate input scale, while LN normalizes within a sample and cannot — consistent with the invariance table of Ba et al. (2016): LN is invariant to rescaling a whole sample, not to rescaling a single coordinate. On B = 2 the ranking flips: BN's batch statistics become too noisy and LN is the best normalized method.
 
-These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 96 held-out points; metrics use all 256. Maps show initialization during training and are replaced by final predictions at completion; the background shading is the model score through a fixed softening (sigmoid of the logit over 3), not the raw probability, so a saturated network still shows a gradient near its boundary. Inference and map generation never update running statistics. A table row is unchanged if the other models are switched off in *Models to compare*; only the number of charts and cards changes.
+These are illustrative seeds, not a statistical benchmark. Test batches are deterministically shuffled, not forced to have balanced classes. The held-out set becomes a validation set if used repeatedly to choose hyperparameters. Decision-map dots show 128 held-out points; metrics use all 384. Maps show initialization during training and are replaced by final predictions at completion; the background shading is the model score through a fixed softening (sigmoid of the logit over 3), not the raw probability, so a saturated network still shows a gradient near its boundary. Inference and map generation never update running statistics. A table row is unchanged if the other models are switched off in *Models to compare*; only the number of charts and cards changes.
 
 ## Numerical and browser checks
 

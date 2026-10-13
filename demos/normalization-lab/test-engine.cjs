@@ -57,7 +57,7 @@ close(E.evaluate(nets[1],single,false).logits[0],E.evaluate(nets[1],data,false).
 assert.throws(()=>E.step(bn,single,Int32Array.of(0),1,.01),/at least two/);
 // Weight norm end to end: with the learned magnitude its loss must descend on the spiral data.
 {const c2={depth:4,width:16,batch:32,lr:0.05,scale:1,steps:300,seed:7,placement:'post',affine:true,gammaShape:'vector'};
-const train=E.moons(7,768,1),test=E.moons(107,256,1);
+const train=E.moons(7,1280,1),test=E.moons(107,384,1);
 const wn=E.create(c2,'wn');let first=NaN;
 for(let s=1;s<=300;s++){const idx2=E.indices(7,s,32,train.n);const l=E.step(wn,train,idx2,32,.05).loss;if(s===1)first=l;
   if(!Number.isFinite(l))throw new Error('weight norm diverged at step '+s);}

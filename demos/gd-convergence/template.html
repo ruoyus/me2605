@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GD convergence across data distributions — ME2605</title>
+<meta name="description" content="Gradient descent on least-squares problems drawn from eight probability distributions, run to a 1e-3 gradient or one million updates.">
+<style>
+:root{--ink:#17202a;--sub:#5b6b7b;--line:#e3e8ee;--paper:#fbfcfe;--blue:#1d4ed8;}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 "SF Pro Text",system-ui,-apple-system,"PingFang SC",sans-serif;color:var(--ink);background:var(--paper)}
+main{max-width:1060px;margin:0 auto;padding:40px 24px 64px}
+.brand{font-size:13px;letter-spacing:.14em;color:var(--sub);font-weight:650;margin-bottom:14px}
+h1{font-size:30px;line-height:1.2;margin:0 0 10px;font-weight:750}
+p.sub{color:var(--sub);margin:0 0 26px;font-size:15.5px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:18px 0}
+.panel h2{font-size:16px;margin:0 0 4px;font-weight:700}
+.panel p.note{color:var(--sub);font-size:13.5px;margin:2px 0 12px}
+svg{display:block;max-width:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:6px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h3{font-size:14px;margin:0 0 2px;font-weight:700}
+.card .note{color:var(--sub);font-size:12px;margin:0 0 8px;min-height:2.4em}
+.card .stats{font-size:12.5px;margin-top:8px;color:var(--ink)}
+.card .stats b{font-weight:700}
+.card .miss{color:#b3261e;font-weight:650}
+.method{font-size:14px;color:var(--ink)}
+.method dt{font-weight:700;margin-top:10px}
+.method dd{margin:2px 0 0;color:var(--sub)}
+footer{border-top:1px solid var(--line);margin-top:36px;padding-top:18px;color:var(--sub);font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;margin:6px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<main>
+<div class="brand">ME2605 / GD CONVERGENCE</div>
+<h1>How many updates does gradient descent need? The distribution decides.</h1>
+<p class="sub">Eight datasets drawn from different probability distributions, one fixed optimiser, run until the gradient norm reaches 10⁻³ — or one million updates, whichever comes first.</p>
+
+<div class="panel">
+<h2>Gradient norm vs updates</h2>
+<p class="note">Full-batch gradient descent, step size 1/L. The horizontal rule is the 10⁻³ target; the vertical rule is the 10⁶-update cap. The ×3000 run leaves the cap with its gradient still at 0.53.</p>
+<div id="gradchart"></div>
+<div class="legend" id="gradlegend"></div>
+</div>
+
+<div class="panel">
+<h2>Loss vs updates</h2>
+<p class="note">The four stretched-Gaussian runs converge to the <i>same</i> optimal loss 0.0818 as the unscaled blobs: stretching an input coordinate changes only the conditioning, not the answer.</p>
+<div id="losschart"></div>
+</div>
+
+<div class="panel">
+<h2>The eight distributions</h2>
+<p class="note">Each card: a 240-point view of the drawn dataset (stretched sets plotted with the stretch removed), its condition number κ, the resulting step size, and the number of updates to reach ‖∇L‖ ≤ 10⁻³.</p>
+<div class="cards" id="cards"></div>
+</div>
+
+<div class="panel">
+<h2>Method</h2>
+<dl class="method">
+<dt>Data</dt><dd>400 points per dataset (200 per class), one fixed seed (mulberry32, seed 7), drawn once and never resampled.</dd>
+<dt>Model</dt><dd>Linear least squares: features (1, x, y), target = the ±1 class label, loss L(w) = ‖Φw − t‖²/2n. Strictly convex and quadratic, so the Hessian ΦᵀΦ/n does not move during the run.</dd>
+<dt>Optimiser</dt><dd>Full-batch gradient descent, w ← w − η∇L(w), η = 1/L with L = λ_max(ΦᵀΦ/n) from a power iteration. Per-step decay of each eigendirection is exactly (1 − λᵢ/L).</dd>
+<dt>Stopping</dt><dd>Stop when ‖∇L‖₂ ≤ 10⁻³, or after 10⁶ updates. Recorded points follow a geometric schedule (~1.03× spacing).</dd>
+<dt>Check</dt><dd>Across the three stretching factors the measured updates-to-target divided by κ is 4.03 / 4.16 / 4.27 — the same constant for three decades of κ, the shape the bound r ≥ (κ/2)·ln(1/ε) predicts.</dd>
+</dl>
+</div>
+
+<footer>Part of the ME2605 course demos. Generator: <code>generate.cjs</code> in this folder; the curves above are computed offline and embedded in this page.</footer>
+</main>
+<script>
+const CURVES = __CURVES_JSON__;
+const cap=CURVES.maxSteps, target=CURVES.target;
+
+function lg(v){return Math.log10(v);}
+function chart(el,series,yIdx,yMin,yMax,xMax,fmtY){
+  const W=980,H=430,L=64,R=16,T=14,B=44,iw=W-L-R,ih=H-T-B;
+  const X=v=>L+(lg(Math.max(v,1))/lg(xMax))*iw;
+  const Y=v=>T+ih-(lg(v)-lg(yMin))/(lg(yMax)-lg(yMin))*ih;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+  for(const p of [1,2,3,4,5,6]){
+    if(p>lg(xMax))break;
+    const x=X(Math.pow(10,p));
+    s+='<line x1="'+x+'" y1="'+T+'" x2="'+x+'" y2="'+(T+ih)+'" stroke="#eef2f6"/>';
+    s+='<text x="'+x+'" y="'+(H-22)+'" font-size="11.5" fill="#5b6b7b" text-anchor="middle">10'+(p?'⁰¹²³⁴⁵⁶'[p]:'⁰')+'</text>';
+  }
+  for(let e=lg(yMin);e<=lg(yMax);e++){
+    const y=Y(Math.pow(10,e));
+    s+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="#eef2f6"/>';
+    s+='<text x="'+(L-8)+'" y="'+(y+4)+'" font-size="11.5" fill="#5b6b7b" text-anchor="end">'+fmtY(Math.pow(10,e))+'</text>';
+  }
+  const yT=Y(target);
+  s+='<line x1="'+L+'" y1="'+yT+'" x2="'+(W-R)+'" y2="'+yT+'" stroke="#17202a" stroke-dasharray="5 4" stroke-width="1.2"/>';
+  s+='<text x="'+(W-R-4)+'" y="'+(yT-6)+'" font-size="11.5" fill="#17202a" text-anchor="end">target 10⁻³</text>';
+  const xC=X(cap);
+  s+='<line x1="'+xC+'" y1="'+T+'" x2="'+xC+'" y2="'+(T+ih)+'" stroke="#b3261e" stroke-dasharray="5 4" stroke-width="1.2"/>';
+  s+='<text x="'+(xC-6)+'" y="'+(T+16)+'" font-size="11.5" fill="#b3261e" text-anchor="end">10⁶ cap</text>';
+  for(const d of series){
+    let path='',pen=false;
+    for(const pt of d.curve){
+      const x=X(Math.max(pt[0],1)),y=Y(Math.max(pt[yIdx],yMin));
+      path+=(pen?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);pen=true;
+    }
+    s+='<path d="'+path+'" fill="none" stroke="'+d.color+'" stroke-width="'+(d.reached?1.8:2.6)+'"'+(d.reached?'':' stroke-dasharray="7 5"')+' stroke-linejoin="round"/>';
+    const last=d.curve[d.curve.length-1];
+    if(!d.reached){
+      s+='<circle cx="'+X(Math.max(last[0],1))+'" cy="'+Y(Math.max(last[yIdx],yMin))+'" r="3.5" fill="'+d.color+'"/>';
+    }
+  }
+  s+='</svg>';
+  document.getElementById(el).innerHTML=s;
+}
+function fmtSci(v){
+  const e=Math.floor(Math.log10(v)+1e-9),m=v/Math.pow(10,e);
+  const sup='⁰¹²³⁴⁵⁶⁷⁸⁹';
+  const es=String(e).split('').map(c=>c==='-'?'⁻':sup[+c]).join('');
+  return (m===1?'':(m.toFixed(1).replace(/\.0$/,'')+'·'))+'10'+es;
+}
+chart('gradchart',CURVES.datasets,2,1e-4,2,cap,v=>fmtSci(v));
+chart('losschart',CURVES.datasets,1,0.04,1,cap,v=>fmtSci(v));
+const lgd=document.getElementById('gradlegend');
+lgd.innerHTML=CURVES.datasets.map(d=>'<span><i style="background:'+d.color+'"></i>'+d.name+(d.reached?'':' (not reached)')+'</span>').join('');
+const cards=document.getElementById('cards');
+for(const d of CURVES.datasets){
+  const xs=d.points.map(p=>p[0]),ys=d.points.map(p=>p[1]);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const W=202,H=120,pad=6;
+  const X=v=>pad+(v-x0)/(x1-x0||1)*(W-2*pad);
+  const Y=v=>H-pad-(v-y0)/(y1-y0||1)*(H-2*pad);
+  let s='<svg viewBox="0 0 '+W+' '+H+'">';
+  for(const p of d.points){
+    s+='<circle cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="2.1" fill="'+(p[2]?'#d9480f':'#1e40af')+'" fill-opacity="0.85"/>';
+  }
+  s+='</svg>';
+  const stretch=d.key.startsWith('scale')?d.key.slice(6):null;
+  cards.insertAdjacentHTML('beforeend',
+    '<div class="card"><h3 style="color:'+d.color+'">'+d.name+'</h3><p class="note">'+d.note+(stretch?' (plotted with the stretch removed)':'')+'</p>'+s+
+    '<p class="stats">κ = <b>'+fmtSci(d.kappa)+'</b> · η = '+d.eta.toExponential(1)+' · updates to 10⁻³: <b>'+(d.reached?d.steps.toLocaleString('en-US'):'</b><span class="miss">not reached in 10⁶</span>')+(d.reached?'</b>':'')+'</p></div>');
+}
+</script>
+</body>
+</html>

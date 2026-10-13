@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Condition Number vs Standardization Lab · ME2605</title>
+<style>
+  :root{
+    --ink:#111827; --muted:#6B7280; --line:#D1D5DB; --bg:#F8FAFC;
+    --blue:#1D4ED8; --teal:#0F766E; --red:#B91C1C; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  header{padding:18px 24px 8px}
+  h1{font-size:21px;margin:0 0 4px}
+  header p{margin:0;color:var(--muted);font-size:13.5px}
+  .wrap{display:grid;grid-template-columns:300px 1fr;gap:18px;padding:14px 24px 30px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .panel h2{font-size:12px;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;text-transform:uppercase}
+  label{display:block;font-size:13px;margin:10px 0 3px}
+  label b{font-weight:700}
+  input[type=range]{width:100%}
+  select,input[type=number]{width:100%;padding:5px 7px;font-size:13.5px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .val{float:right;color:var(--blue);font-weight:700;font-variant-numeric:tabular-nums}
+  button{margin-top:14px;width:100%;padding:9px;font-size:14px;font-weight:700;color:#fff;
+         background:var(--blue);border:0;border-radius:7px;cursor:pointer}
+  button:hover{filter:brightness(1.08)}
+  .note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.45}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .stage h3{margin:0;font-size:14px}
+  .stage .kappa{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;margin:2px 0 0}
+  .stage .sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .stage canvas{width:100%;height:96px;display:block;margin-top:6px}
+  .defn{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:10px 16px;margin:0 24px;font-size:13px;color:var(--ink)}
+  .defn i{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Condition Number vs Standardization Lab</h1>
+  <p>A random d &times; n matrix X &middot; the matrix GD moves in is XX&#7522;. Change the size, the
+     distribution, the seed &mdash; then change the preprocessing, and watch &kappa; answer.</p>
+</header>
+
+<div class="defn">
+  <b>&#954;<sub>nz</sub>(XX&#7522;) = &#955;<sub>max</sub> / &#955;<sub>min-positive</sub></b>
+  &nbsp;&mdash;&nbsp; zero eigenvalues are excluded (they cost nothing; <i>Paradox 1</i>), and their
+  count is shown separately as <i>null directions</i>. &nbsp; <i>Row normalization = symmetric Jacobi
+  scaling; centring is what changes the angle between a row and the mean.</i>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Controls</h2>
+    <label>n &middot; samples (columns) <span class="val" id="v-n"></span></label>
+    <input type="range" id="n" min="3" max="120" step="1" value="24">
+    <label>d &middot; features (rows) <span class="val" id="v-d"></span></label>
+    <input type="range" id="d" min="2" max="70" step="1" value="8">
+    <label>Random seed <span class="val" id="v-seed"></span></label>
+    <input type="range" id="seed" min="1" max="999" step="1" value="42">
+    <label>Distribution</label>
+    <select id="dist">
+      <option value="u">Uniform on [1, 100]</option>
+      <option value="g">Gaussian N(0, 1)</option>
+      <option value="c">Cauchy (0, 1)</option>
+    </select>
+    <label>Centring offset &delta; (added after &minus;mean)
+      <span class="val" id="v-delta"></span></label>
+    <input type="range" id="delta" min="-60" max="60" step="1" value="0">
+    <label>Row-normalize factor c (after &divide;norm)
+      <span class="val" id="v-c"></span></label>
+    <input type="range" id="c" min="0.1" max="10" step="0.1" value="1">
+    <button id="reroll">New draw (same settings)</button>
+    <div class="note">
+      Pipeline, top-left to bottom-right: <b>raw</b> &rarr; <b>centred</b> (subtract the row mean,
+      add &delta;) &rarr; <b>normalized</b> (divide each row by its norm, multiply by c) &rarr;
+      <b>both</b>. All four use the same draw. If d &gt; n, XX&#7522; has d &minus; n exact zeros
+      &mdash; that is why the smallest <i>non-zero</i> eigenvalue is the one that counts.
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel stage" id="card-raw"></div>
+    <div class="panel stage" id="card-cen"></div>
+    <div class="panel stage" id="card-nrm"></div>
+    <div class="panel stage" id="card-both"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ---------- seeded RNG ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;
+  var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;
+  return((t^t>>>14)>>>0)/4294967296;};}
+
+function drawMatrix(dist,n,d,seed){
+  const rnd=mulberry32(seed*7919+13);
+  const X=[];                                  // d rows x n cols
+  for(let i=0;i<d;i++){const row=new Float64Array(n);
+    for(let j=0;j<n;j++){
+      if(dist==="u") row[j]=1+99*rnd();
+      else if(dist==="g"){let u=0,v=0;while(u===0)u=rnd();while(v===0)v=rnd();
+        row[j]=Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+      else {let u=0;while(u===0)u=rnd();row[j]=Math.tan(Math.PI*(u-0.5));}
+    } X.push(row);}
+  return X;
+}
+
+// ---------- Jacobi eigenvalues (symmetric) ----------
+function jacobi(Ain){
+  const n=Ain.length, A=Ain.map(r=>Float64Array.from(r));
+  for(let sweep=0;sweep<60;sweep++){
+    let off=0,nrm=0;
+    for(let p=0;p<n;p++){nrm+=A[p][p]*A[p][p];
+      for(let q=p+1;q<n;q++) off+=2*A[p][q]*A[p][q];}
+    if(off<=1e-22*(nrm+1e-300)) break;
+    for(let p=0;p<n-1;p++)for(let q=p+1;q<n;q++){
+      const apq=A[p][q]; if(Math.abs(apq)<1e-300) continue;
+      const th=(A[q][q]-A[p][p])/(2*apq);
+      const t=(th>=0?1:-1)/(Math.abs(th)+Math.sqrt(th*th+1));
+      const c=1/Math.sqrt(t*t+1), s=t*c;
+      for(let k=0;k<n;k++){const akp=A[k][p],akq=A[k][q];
+        A[k][p]=c*akp-s*akq; A[k][q]=s*akp+c*akq;}
+      for(let k=0;k<n;k++){const apk=A[p][k],aqk=A[q][k];
+        A[p][k]=c*apk-s*aqk; A[q][k]=s*apk+c*aqk;}
+    }
+  }
+  const ev=new Float64Array(n);
+  for(let i=0;i<n;i++) ev[i]=A[i][i];
+  return Float64Array.from(ev).sort();
+}
+
+// ---------- stages ----------
+function stats(G){
+  const ev=jacobi(G), n=ev.length;
+  const lmax=ev[n-1];
+  const tol=lmax*1e-11;
+  let nulls=0, lminPos=lmax;
+  for(let i=0;i<n;i++){
+    if(ev[i]<=tol) nulls++;
+    else if(ev[i]<lminPos) lminPos=ev[i];
+  }
+  return {ev:ev,lmax:lmax,lminPos:lminPos,nulls:nulls,
+          kappa:lminPos>0?lmax/lminPos:Infinity};
+}
+function gram(X){
+  const d=X.length,n=X[0].length,G=[];
+  for(let i=0;i<d;i++) G.push(new Float64Array(d));
+  for(let i=0;i<d;i++)for(let j=i;j<d;j++){let s=0;
+    for(let k=0;k<n;k++) s+=X[i][k]*X[j][k];
+    G[i][j]=s;G[j][i]=s;}
+  return G;
+}
+function centre(X,delta){
+  return X.map(r=>{const m=r.reduce((a,b)=>a+b,0)/r.length;
+    return Float64Array.from(r,v=>v-m+delta);});
+}
+function rownorm(X,c){
+  return X.map(r=>{let s=0;for(const v of r)s+=v*v;
+    const nm=Math.sqrt(s)||1;return Float64Array.from(r,v=>v/nm*c);});
+}
+
+// ---------- formatting ----------
+function fmt(v){
+  if(!isFinite(v)) return "\u221e";
+  if(v===0) return "0";
+  const e=Math.floor(Math.log10(Math.abs(v)));
+  if(e>=5||e<=-3){const m=v/Math.pow(10,e);return m.toFixed(2)+"\u00d710"+sup(e);}
+  return v.toFixed(Math.max(0,4-e));
+}
+function sup(e){
+  const M={"-":"\u207b","0":"\u2070","1":"\u00b9","2":"\u00b2","3":"\u00b3","4":"\u2074",
+           "5":"\u2075","6":"\u2076","7":"\u2077","8":"\u2078","9":"\u2079"};
+  return String(e).split("").map(ch=>M[ch]||ch).join("");
+}
+function kappaColor(k){
+  if(!isFinite(k)) return "#B91C1C";
+  const l=Math.log10(k);
+  if(l<1) return "#0F766E";
+  if(l<3) return "#1D4ED8";
+  if(l<6) return "#B45309";
+  return "#B91C1C";
+}
+
+// ---------- sparkline ----------
+function spark(cv,ev){
+  const dpr=window.devicePixelRatio||1;
+  const w=cv.clientWidth,h=cv.clientHeight;
+  cv.width=w*dpr;cv.height=h*dpr;
+  const g=cv.getContext("2d");g.scale(dpr,dpr);
+  g.clearRect(0,0,w,h);
+  const lmax=Math.max(ev[ev.length-1],1e-300);
+  const lo=Math.min(ev.find(v=>v>lmax*1e-13)??lmax*1e-13, lmax);
+  const logLo=Math.log10(lo),logHi=Math.log10(lmax),span=Math.max(logHi-logLo,1e-9);
+  g.strokeStyle="#E5E7EB";g.lineWidth=1;
+  [1e-2,1e-4,1e-6,1e-8,1e-10].forEach(t=>{
+    if(t>lo&&t<lmax){const y=h-(Math.log10(t)-logLo)/span*h;
+      g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}});
+  ev.forEach((v,i)=>{
+    const x=(i+0.5)/ev.length*w;
+    const lv=Math.max(Math.log10(Math.max(v,lo)),logLo);
+    const y=h-(lv-logLo)/span*(h-6)-3;
+    g.fillStyle=(v<=lmax*1e-11)?"#D1D5DB":(i===ev.length-1)?"#B91C1C":"#1D4ED8";
+    g.fillRect(x-1.6,y,3.2,h-y-3);
+  });
+  g.fillStyle="#6B7280";g.font="10px Helvetica";
+  g.fillText("\u03bb  (log scale, sorted)",6,11);
+}
+
+// ---------- stage cards ----------
+function card(id,title,desc,st){
+  const el=document.getElementById(id);
+  el.innerHTML="<h3>"+title+"</h3>"+
+    "<div class='kappa' style='color:"+kappaColor(st.kappa)+"'>\u03ba<sub>nz</sub> = "+fmt(st.kappa)+"</div>"+
+    "<div class='sub'>&#955;max = "+fmt(st.lmax)+" &nbsp; &#955;min+ = "+fmt(st.lminPos)+
+    " &nbsp; null dirs = "+st.nulls+"</div>"+
+    "<div class='sub'>"+desc+"</div>"+
+    "<canvas></canvas>";
+  spark(el.querySelector("canvas"),Array.from(st.ev));
+}
+
+// ---------- main ----------
+function update(){
+  const n=+document.getElementById("n").value,
+        d=+document.getElementById("d").value,
+        seed=+document.getElementById("seed").value,
+        dist=document.getElementById("dist").value,
+        delta=+document.getElementById("delta").value,
+        c=+document.getElementById("c").value;
+  document.getElementById("v-n").textContent=n;
+  document.getElementById("v-d").textContent=d;
+  document.getElementById("v-seed").textContent=seed;
+  document.getElementById("v-delta").textContent=(delta>0?"+":"")+delta;
+  document.getElementById("v-c").textContent="\u00d7"+c.toFixed(1);
+
+  const X0=drawMatrix(dist,n,d,seed);
+  const Xc=centre(X0,delta);
+  const Xn=rownorm(X0,c);
+  const Xb=rownorm(Xc,c);
+
+  card("card-raw","Raw \u2014 XX\u1d40 of X as drawn",
+       "the matrix GD moves in, before anything is done to it.",stats(gram(X0)));
+  card("card-cen","Centred \u2014 row \u2212 mean "+(delta?( "+ ("+(delta>0?"+":"")+delta+")"):""),
+       "centring removes the row mean; \u03b4 adds a offset back.",stats(gram(Xc)));
+  card("card-nrm","Normalized \u2014 row \u00f7 norm \u00d7 "+c.toFixed(1),
+       "symmetric Jacobi scaling: every diagonal of XX\u1d40 becomes c\u00b2.",stats(gram(Xn)));
+  card("card-both","Centred, then normalized",
+       "the standardization recipe of the lecture.",stats(gram(Xb)));
+}
+
+["n","d","seed","dist","delta","c"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",update);});
+document.getElementById("reroll").addEventListener("click",()=>{
+  const s=document.getElementById("seed");
+  s.value=1+(+s.value)%999; update();});
+update();
+</script>
+</body>
+</html>

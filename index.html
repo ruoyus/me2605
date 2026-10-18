@@ -150,13 +150,15 @@
       <tr>
         <td class="week">5</td>
         <td class="when">Oct 12</td>
-        <td><span class="lang-en">Width and the loss landscape: global landscape, mode connectivity; skip connections and residual networks</span>
-            <span class="lang-zh">宽度与损失景观：全局景观、模式连通性；跳跃连接与残差网络</span></td>
+        <td><span class="lang-en">Normalization and the convergence rate: the other normalization layers &mdash; WeightNorm and SpectralNorm, layer-output-based vs weight-based; the convergence rate of gradient descent, and where &kappa; = L/&mu; enters the iteration count; a regression example where data preprocessing is read as a condition number; explaining BatchNorm and LayerNorm through the condition number, measured on a one-hidden-layer network</span>
+            <span class="lang-zh">归一化与收敛速率：其余归一化层——WeightNorm 与 SpectralNorm，按层输出归一化 vs 按权重归一化；梯度下降的收敛速率，以及 &kappa; = L/&mu; 如何进入迭代步数；用一个回归例子把数据预处理读成条件数；从条件数解释 BatchNorm 与 LayerNorm（在单隐层网络上实测）</span></td>
         <td>
-          &mdash;
+          <a href="slides/lecture_5.pdf"><span class="lang-en">Lecture 5 notes (PDF)</span><span class="lang-zh">讲义 5（PDF）</span></a><br>
+          <a href="demos/condscale-lab/"><span class="lang-en">Lab &middot; Condition Number vs Standardization</span><span class="lang-zh">实验 &middot; 条件数与标准化</span></a><br>
+          <a href="demos/normalization-lab/"><span class="lang-en">Lab &middot; Normalization Lab</span><span class="lang-zh">实验 &middot; 归一化实验室</span></a>
         </td>
-        <td><span class="lang-en">Visualize the landscape; train an MLP and a ResNet</span>
-            <span class="lang-zh">可视化损失景观；训练 MLP 与 ResNet</span></td>
+        <td><span class="lang-en">Measure &kappa; before and after preprocessing; then compare BatchNorm and LayerNorm on a small network in the lab</span>
+            <span class="lang-zh">测量预处理前后的 &kappa;；再在实验里比较 BatchNorm 与 LayerNorm</span></td>
       </tr>
 
       <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>

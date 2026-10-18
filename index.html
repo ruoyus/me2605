@@ -95,8 +95,8 @@
       <tr>
         <td class="week">1</td>
         <td class="when">Sep 8</td>
-        <td><span class="lang-en">Course overview and motivation; ML basics review &mdash; loss, cross-entropy, gradient and Hessian, gradient descent; the three-error decomposition of test error</span>
-            <span class="lang-zh">课程总览与动机；机器学习基础复习——损失、交叉熵、梯度与 Hessian、梯度下降；测试误差的三误差分解</span></td>
+        <td><span class="lang-en"><strong>Course overview and ML basics.</strong> Loss, gradient and Hessian; the three-error decomposition.</span>
+            <span class="lang-zh"><strong>课程总览与机器学习基础。</strong>损失、梯度与 Hessian；三误差分解。</span></td>
         <td>
           <a href="slides/lecture_1.1.pdf"><span class="lang-en">Lecture 1.1 notes (PDF)</span><span class="lang-zh">讲义 1.1（PDF）</span></a><br>
           <a href="slides/lecture_1.2.pdf"><span class="lang-en">Lecture 1.2 notes (PDF)</span><span class="lang-zh">讲义 1.2（PDF）</span></a><br>
@@ -110,8 +110,8 @@
       <tr>
         <td class="week">2</td>
         <td class="when">Sep 15</td>
-        <td><span class="lang-en">Backpropagation and signal propagation: forward and backward passes, the linearization trick; activation functions, Xavier/He initialization, dynamical isometry</span>
-            <span class="lang-zh">反向传播与信号传播：前向与反向传播、线性化技巧；激活函数、Xavier/He 初始化、动力等距</span></td>
+        <td><span class="lang-en"><strong>Backpropagation and signal propagation.</strong> Forward and backward passes; initialization and dynamical isometry.</span>
+            <span class="lang-zh"><strong>反向传播与信号传播。</strong>前向与反向传播；初始化与动力等距。</span></td>
         <td>
           <a href="slides/lecture_2.pdf"><span class="lang-en">Lecture 2 notes (PDF)</span><span class="lang-zh">讲义 2（PDF）</span></a><br>
           <a href="demos/backprop-lab/"><span class="lang-en">Demo 1 &middot; Backprop Lab</span><span class="lang-zh">Demo 1 &middot; 反向传播实验室</span></a><br>
@@ -125,8 +125,8 @@
       <tr>
         <td class="week">3</td>
         <td class="when">Sep 22</td>
-        <td><span class="lang-en">Depth and normalization: why depth is hard &mdash; the variance analysis, the depth–width ratio, the wide-network regime; four ways to enforce a requirement; the normalization operation, LayerNorm (pre-activation LN / post-activation LN), RMSNorm</span>
-            <span class="lang-zh">深度与归一化：深度为何难训——方差分析、深度–宽度比、宽网情形；对权重施加要求的四种方法；归一化操作、LayerNorm（pre-activation LN / post-activation LN）、RMSNorm</span></td>
+        <td><span class="lang-en"><strong>Depth and normalization.</strong> Why depth is hard to train; LayerNorm and RMSNorm.</span>
+            <span class="lang-zh"><strong>深度与归一化。</strong>深度为何难训；LayerNorm 与 RMSNorm。</span></td>
         <td>
           <a href="slides/lecture_3.pdf"><span class="lang-en">Lecture 3 notes (PDF)</span><span class="lang-zh">讲义 3（PDF）</span></a><br>
           <a href="demos/deep-train-lab/"><span class="lang-en">Demo 1 &middot; Deep Train Lab</span><span class="lang-zh">Demo 1 &middot; 深度训练实验室</span></a>
@@ -138,8 +138,8 @@
       <tr>
         <td class="week">4</td>
         <td class="when">Sep 29</td>
-        <td><span class="lang-en">Normalization II: LayerNorm &mdash; how many learnable parameters, whether they cost representation power, and backpropagation through LayerNorm; BatchNorm &mdash; normalizing across samples, and training–inference consistency</span>
-            <span class="lang-zh">归一化 II：LayerNorm —— 可学习参数的个数、是否会损失表示能力、LayerNorm 的反向传播；BatchNorm —— 沿样本归一化、训练与推断的一致性</span></td>
+        <td><span class="lang-en"><strong>Normalization II.</strong> LayerNorm&rsquo;s parameters and backprop; BatchNorm and train&ndash;inference consistency.</span>
+            <span class="lang-zh"><strong>归一化 II。</strong>LayerNorm 的参数与反传；BatchNorm 与训练&ndash;推断一致性。</span></td>
         <td>
           <a href="slides/lecture_4.pdf"><span class="lang-en">Lecture 4 notes (PDF)</span><span class="lang-zh">讲义 4（PDF）</span></a>
         </td>
@@ -151,8 +151,8 @@
       <tr>
         <td class="week">5</td>
         <td class="when">Oct 13</td>
-        <td><span class="lang-en">Normalization and the convergence rate: the other normalization layers &mdash; WeightNorm and SpectralNorm, layer-output-based vs weight-based; the convergence rate of gradient descent, and where &kappa; = L/&mu; enters the iteration count; a regression example where data preprocessing is read as a condition number; explaining BatchNorm and LayerNorm through the condition number, measured on a one-hidden-layer network</span>
-            <span class="lang-zh">归一化与收敛速率：其余归一化层——WeightNorm 与 SpectralNorm，按层输出归一化 vs 按权重归一化；梯度下降的收敛速率，以及 &kappa; = L/&mu; 如何进入迭代步数；用一个回归例子把数据预处理读成条件数；从条件数解释 BatchNorm 与 LayerNorm（在单隐层网络上实测）</span></td>
+        <td><span class="lang-en"><strong>Normalization and the convergence rate.</strong> The other normalization layers; the rate and &kappa;; data preprocessing.</span>
+            <span class="lang-zh"><strong>归一化与收敛速率。</strong>其余归一化层；收敛率与 &kappa;；数据预处理。</span></td>
         <td>
           <a href="slides/lecture_5.pdf"><span class="lang-en">Lecture 5 notes (PDF)</span><span class="lang-zh">讲义 5（PDF）</span></a><br>
           <a href="demos/condscale-lab/"><span class="lang-en">Lab &middot; Condition Number vs Standardization</span><span class="lang-zh">实验 &middot; 条件数与标准化</span></a><br>
@@ -165,8 +165,8 @@
       <tr>
         <td class="week">6</td>
         <td class="when">Oct 20</td>
-        <td><span class="lang-en">Optimization algorithms: SGD and momentum; AdaGrad, RMSProp and Adam read as diagonal preconditioners through Gauss–Newton; when Adam converges and when it does not; matrix preconditioning &mdash; Shampoo and Muon; learning-rate schedules and weight decay</span>
-            <span class="lang-zh">优化算法：SGD 与动量；把 AdaGrad、RMSProp、Adam 读成对角预条件（Gauss–Newton 视角）；Adam 何时收敛、何时不收敛；矩阵预条件——Shampoo 与 Muon；学习率 schedule 与 weight decay</span></td>
+        <td><span class="lang-en"><strong>Optimization algorithms.</strong> SGD and momentum, Adam, Shampoo and Muon; learning-rate schedules.</span>
+            <span class="lang-zh"><strong>优化算法。</strong>SGD 与动量、Adam、Shampoo 与 Muon；学习率 schedule。</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Compare SGD, momentum and AdamW at a fixed step budget</span>
             <span class="lang-zh">固定步数预算下比较 SGD、动量与 AdamW</span></td>
@@ -175,8 +175,8 @@
       <tr>
         <td class="week">7</td>
         <td class="when">Oct 27</td>
-        <td><span class="lang-en">Residual connections and the loss landscape: skip connections and ResNet blocks; why depth becomes trainable again; flat versus sharp minima and mode connectivity; width and trainability. Closes with an in-class compute-budget race</span>
-            <span class="lang-zh">残差连接与损失景观：跳跃连接与 ResNet 模块；深度为什么重新可训；平坦极小与尖锐极小、模式连通性；宽度与可训性。最后是一场课堂算力预算比赛</span></td>
+        <td><span class="lang-en"><strong>Residual connections and the loss landscape.</strong> Mode connectivity; why depth trains again; an in-class compute race.</span>
+            <span class="lang-zh"><strong>残差连接与损失景观。</strong>模式连通性；深度为何重新可训；课堂算力比赛。</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">MLP versus ResNet at fixed depth; slice the landscape; 20-minute race</span>
             <span class="lang-zh">固定深度比较 MLP 与 ResNet；切一张景观切片；20 分钟比赛</span></td>
@@ -194,8 +194,8 @@
       <tr>
         <td class="week">9</td>
         <td class="when">Nov 10</td>
-        <td><span class="lang-en">Transformers I: tokenization, next-token prediction and cross-entropy; self-attention and multi-head attention; the Transformer block &mdash; residual, LayerNorm, MLP; rotary position encoding</span>
-            <span class="lang-zh">Transformer I：分词、next-token 预测与交叉熵；自注意力与多头注意力；Transformer 模块——残差、LayerNorm、MLP；旋转位置编码</span></td>
+        <td><span class="lang-en"><strong>Transformers I.</strong> Tokenization, self-attention, the Transformer block, RoPE.</span>
+            <span class="lang-zh"><strong>Transformer I。</strong>分词、自注意力、Transformer 模块、RoPE。</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Read nanoGPT end to end; pre-train a small model</span>
             <span class="lang-zh">通读 nanoGPT；预训练一个小模型</span></td>
@@ -204,8 +204,8 @@
       <tr>
         <td class="week">10</td>
         <td class="when">Nov 17</td>
-        <td><span class="lang-en">Transformers II &mdash; training a Transformer: parameter and FLOP accounting; KV cache and inference memory; the pre-training pipeline &mdash; data, tokenizer, warmup, checkpoints, evaluation; why the block is sensitive to where normalization sits</span>
-            <span class="lang-zh">Transformer II——训练一个 Transformer：参数量与 FLOPs 记账；KV cache 与推理显存；预训练流水线——数据、分词器、warmup、checkpoint、评测；模块为什么对归一化位置敏感</span></td>
+        <td><span class="lang-en"><strong>Transformers II.</strong> Training a Transformer: parameter and FLOP accounting, KV cache, the pre-training pipeline.</span>
+            <span class="lang-zh"><strong>Transformer II。</strong>训练一个 Transformer：参数量与 FLOPs 记账、KV cache、预训练流水线。</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Pre-train a small nanoGPT; budget its memory and FLOPs</span>
             <span class="lang-zh">预训练一个小 nanoGPT；给它的显存与 FLOPs 记账</span></td>
@@ -214,8 +214,8 @@
       <tr>
         <td class="week">11</td>
         <td class="when">Nov 24</td>
-        <td><span class="lang-en">Supervised fine-tuning and LoRA: instruction/response formatting, full fine-tuning, forgetting; low-rank updates, rank and scaling, memory accounting</span>
-            <span class="lang-zh">监督微调与 LoRA：指令/回复格式、全量微调、遗忘问题；低秩更新、秩与缩放、显存核算</span></td>
+        <td><span class="lang-en"><strong>SFT and LoRA.</strong> Instruction formatting and forgetting; low-rank updates and memory.</span>
+            <span class="lang-zh"><strong>SFT 与 LoRA。</strong>指令格式与遗忘；低秩更新与显存核算。</span></td>
         <td>&mdash;</td>
         <td><span class="lang-en">Fine-tune a common LLM</span><span class="lang-zh">微调一个常见 LLM</span></td>
       </tr>
@@ -225,8 +225,8 @@
       <tr>
         <td class="week">12</td>
         <td class="when">Dec 1</td>
-        <td><span class="lang-en">Kernels, FlashAttention and precision: kernels and the hardware hierarchy; the roofline view; FlashAttention as an IO problem; bf16/fp16/fp32 &mdash; what they save and what they break</span>
-            <span class="lang-zh">Kernel、FlashAttention 与精度：kernel 与硬件层级；roofline 视角；把 FlashAttention 看成 IO 问题；bf16/fp16/fp32 省下什么、又会坏什么</span></td>
+        <td><span class="lang-en"><strong>Kernels and FlashAttention.</strong> The roofline view; bf16 versus fp32.</span>
+            <span class="lang-zh"><strong>Kernel 与 FlashAttention。</strong>roofline 视角；bf16 与 fp32。</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
@@ -234,8 +234,8 @@
       <tr>
         <td class="week">13</td>
         <td class="when">Dec 8</td>
-        <td><span class="lang-en">Hyperparameter selection and scaling laws: grid, random and Bayesian search; hyperparameter transfer; Kaplan/Chinchilla scaling relations; allocating a fixed compute budget over model, data and training</span>
-            <span class="lang-zh">超参数选择与 scaling law：网格、随机与贝叶斯搜索；超参迁移；Kaplan/Chinchilla 缩放关系；固定算力预算在模型、数据与训练之间的分配</span></td>
+        <td><span class="lang-en"><strong>Hyperparameters and scaling laws.</strong> Search strategies; compute-optimal allocation.</span>
+            <span class="lang-zh"><strong>超参数与 scaling law。</strong>搜索策略；预算最优分配。</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>

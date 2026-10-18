@@ -40,11 +40,11 @@
 <header>
   <h1>Condition Number vs Standardization Lab</h1>
   <p>A random d &times; n matrix X &middot; the matrix GD moves in is XX&#7522;. Change the size, the
-     distribution, the seed &mdash; then change the preprocessing, and watch &kappa; answer.</p>
+     distribution, the seed &mdash; then change the preprocessing and see how &kappa; changes as the inputs change.</p>
 </header>
 
 <div class="defn">
-  <b>&#954;<sub>nz</sub>(XX&#7522;) = &#955;<sub>max</sub> / &#955;<sub>min-positive</sub></b>
+  <b>&#954;<sub>nz</sub>(XX&#7522;) = &#955;<sub>max</sub> / &#955;<sub>min,nz</sub></b>
   &nbsp;&mdash;&nbsp; zero eigenvalues are excluded (they cost nothing; <i>Paradox 1</i>), and their
   count is shown separately as <i>null directions</i>. &nbsp; <i>Row normalization = symmetric Jacobi
   scaling; centring is what changes the angle between a row and the mean.</i>
@@ -214,7 +214,7 @@ function card(id,title,desc,st){
   const el=document.getElementById(id);
   el.innerHTML="<h3>"+title+"</h3>"+
     "<div class='kappa' style='color:"+kappaColor(st.kappa)+"'>\u03ba<sub>nz</sub> = "+fmt(st.kappa)+"</div>"+
-    "<div class='sub'>&#955;max = "+fmt(st.lmax)+" &nbsp; &#955;min+ = "+fmt(st.lminPos)+
+    "<div class='sub'>&#955;max = "+fmt(st.lmax)+" &nbsp; &#955;min,nz = "+fmt(st.lminPos)+
     " &nbsp; null dirs = "+st.nulls+"</div>"+
     "<div class='sub'>"+desc+"</div>"+
     "<canvas></canvas>";

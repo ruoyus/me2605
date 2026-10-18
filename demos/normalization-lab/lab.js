@@ -2,6 +2,10 @@
 const $=id=>document.getElementById(id), E=NormEngine;
 let language='en',worker=null,active=null,result=null,points=[],maps={},running=false;
 const colors={none:'#d8543d',ln:'#3262ed',bn:'#008577',wn:'#7c3aed'}, names={none:'No normalization',ln:'LayerNorm',bn:'BatchNorm',wn:'Weight norm'}, namesZh={none:'无归一化',ln:'LayerNorm',bn:'BatchNorm',wn:'权重范数'}, arms=['none','ln','bn','wn'];
+/* Short names drawn at the end of each curve (his ask, 2026-10-17: the three colours
+   have to be identified inside the figure, not only in the legend above it). */
+const short={none:'None',ln:'LayerNorm',bn:'BatchNorm',wn:'Weight norm'},
+      shortZh={none:'无归一化',ln:'LayerNorm',bn:'BatchNorm',wn:'权重范数'};
 const t=(en,zh)=>language==='zh'?zh:en;
 function selectedArms(){return arms.filter(a=>{const el=$('arm-'+a);return !el||el.checked;});}
 /** Arms of the run whose results are on screen; falls back to the current selection before any run. */
@@ -32,8 +36,9 @@ function sandbox(){
   $('axis-result').innerHTML='<div class="formula ln">LN → '+vec(ln.out)+'</div><div class="formula bn">BN → '+vec(bn.out)+'</div><p class="small">LN: μ₁ = '+f(ln.mu[0])+', σ₁ = '+f(1/ln.inv[0])+'<br>BN: μ = '+vec(bn.mu)+', σ = '+vec(Array.from(bn.inv,v=>1/v))+'</p>'+(B===1?'<div class="warning">'+t('With B = 1, centered values are zero. The mathematical BN output is β, not 1. Standard training implementations reject this fully connected case. Stored-statistics inference can still process one sample.','B = 1 时中心化值为零，数学上的 BN 输出是 β，不是 1。标准实现会拒绝这种全连接层训练情形。使用存储统计量的推理仍可处理单样本。')+'</div>':'<p class="small">'+t('σ includes ε = 10⁻⁵. γ and β are shared, not recomputed for each sample.','σ 包含 ε = 10⁻⁵。γ、β 共享，不为每个样本重新计算。')+'</p>');
 }
 function canvas(id){const el=$(id),ctx=el.getContext('2d');ctx.clearRect(0,0,el.width,el.height);return {ctx,w:el.width,h:el.height};}
-function chart(id,series,xMax,yMin,yMax,log,yLabel,xLabel){
-  const {ctx:g,w,h}=canvas(id),left=55,right=17,top=14,bottom=40;
+function chart(id,series,xMax,yMin,yMax,log,yLabel,xLabel,opts){
+  const showLabels=!!(opts&&opts.labels);
+  const {ctx:g,w,h}=canvas(id),left=55,right=showLabels?122:17,top=14,bottom=40;
   const tx=x=>left+(w-left-right)*x/Math.max(1,xMax), trans=v=>log?Math.log10(Math.max(1e-8,v)):v;
   const lo=trans(yMin),hi=trans(yMax),ty=y=>h-bottom-(h-top-bottom)*(trans(y)-lo)/(hi-lo||1);
   g.font='13px system-ui';g.lineWidth=1;
@@ -46,6 +51,28 @@ function chart(id,series,xMax,yMin,yMax,log,yLabel,xLabel){
   g.fillStyle='#66748a';g.fillText(xLabel,w/2,h-3);
   for(const s of series){g.strokeStyle=colors[s.arm];g.lineWidth=2.7;g.beginPath();let moved=false;for(const p of s.data){if(!Number.isFinite(p[1])){moved=false;continue;}const x=tx(p[0]),y=ty(p[1]);if(!moved){g.moveTo(x,y);moved=true;}else g.lineTo(x,y);}g.stroke();if(s.data.length===1){g.beginPath();g.arc(tx(s.data[0][0]),ty(s.data[0][1]),3,0,7);g.fillStyle=colors[s.arm];g.fill();}}
   if(!series.some(s=>s.data.length)){g.fillStyle='#768399';g.textAlign='center';g.fillText(t('Run a comparison to see measured curves','运行对比，查看实测曲线'),w/2,h/2);}
+  if(showLabels){
+    const pts=[];
+    for(const s of series){
+      if(!s.label) continue;
+      let last=null;for(const p of s.data) if(Number.isFinite(p[1])) last=p;
+      if(last) pts.push({arm:s.arm,label:s.label,x:tx(last[0]),y0:ty(last[1]),y:ty(last[1])});
+    }
+    pts.sort((a,b)=>a.y-b.y);let prev=-1e9;
+    for(const p of pts){p.y=Math.min(h-bottom-14,Math.max(top+8,p.y));if(p.y<prev+14)p.y=prev+14;prev=p.y;}
+    /* the stack can still run past the axis line (labels on top of the x tick);
+       slide the whole column back up so it stays inside the plot. */
+    if(pts.length&&pts[pts.length-1].y>h-bottom-12){const d=pts[pts.length-1].y-(h-bottom-12);for(const p of pts)p.y-=d;if(pts[0].y<top+8){const e=top+8-pts[0].y;for(const p of pts)p.y+=e;}}
+    g.font='600 12px system-ui';g.textAlign='left';g.textBaseline='middle';
+    for(const p of pts){
+      g.fillStyle=colors[p.arm];g.beginPath();g.arc(p.x,p.y0,2.6,0,7);g.fill();
+      g.strokeStyle=colors[p.arm];g.lineWidth=1.1;
+      g.beginPath();g.moveTo(p.x+2,p.y0);g.lineTo(p.x+8,p.y);g.stroke();
+      g.lineWidth=3.2;g.strokeStyle='#ffffff';g.strokeText(p.label,p.x+10,p.y);
+      g.fillStyle=colors[p.arm];g.fillText(p.label,p.x+10,p.y);
+    }
+    g.textBaseline='alphabetic';
+  }
 }
 function map(arm){
   const {ctx:g,w,h}=canvas('map-'+arm),data=maps[arm];
@@ -61,16 +88,16 @@ function render(){
   chart('loss',models.map(m=>({arm:m.arm,data:m.history.map(p=>[p.step,p.loss])})),steps,min,max,true,'loss',t('SGD updates','SGD 更新次数'));
   chart('accuracy',models.map(m=>({arm:m.arm,data:m.history.map(p=>[p.step,p.accuracy])})),steps,0,1,false,'accuracy',t('SGD updates','SGD 更新次数'));
   const scales=models.filter(m=>m.latest&&!m.failed).flatMap(m=>m.latest.scale).filter(v=>v>0&&Number.isFinite(v));
-  chart('signal',models.filter(m=>m.latest&&!m.failed).map(m=>({arm:m.arm,data:m.latest.scale.map((v,i)=>[i+1,v])})),active?active.depth:config().depth,Math.min(.1,...scales),Math.max(2,...scales),true,'RMS',t('Hidden layer','隐藏层'));
+  chart('signal',models.filter(m=>m.latest&&!m.failed).map(m=>({arm:m.arm,label:t(short[m.arm],shortZh[m.arm]),data:m.latest.scale.map((v,i)=>[i+1,v])})),active?active.depth:config().depth,Math.min(.1,...scales),Math.max(2,...scales),true,'RMS',t('Hidden layer','隐藏层'),{labels:true});
   $('cards').innerHTML=shown.map(arm=>{
     const m=models.find(a=>a.arm===arm),v=m&&m.latest;
-    return '<article class="model-card" style="--color:'+colors[arm]+'"><h3>'+t(names[arm],namesZh[arm])+'</h3><div class="metric">'+(m&&m.failed?t('Diverged','发散'):v?(100*v.accuracy).toFixed(1)+'%':'—')+'</div><p class="small">'+(m&&m.failed?t('Non-finite values at step ','第 ')+m.failedAt+t('',' 步出现非有限值'):t('Held-out accuracy','留出集准确率'))+'</p><canvas class="map" id="map-'+arm+'" width="280" height="196" role="img" aria-label="'+t(names[arm],namesZh[arm])+' decision map"></canvas><p class="small">'+(m&&m.failed?t('Curve stops at the last finite evaluation.','曲线停在最后一个有限评估值。'):v?t('Held-out loss: ','留出集损失：')+v.loss.toFixed(3):t('Decision map appears when training starts.','开始训练后显示分类图。'))+'</p><p class="small">'+(m&&Number.isFinite(m.trainLoss)?t('Last training batch loss: ','最近训练批损失：')+m.trainLoss.toFixed(3):'')+'</p></article>';
+    return '<article class="model-card" style="--color:'+colors[arm]+'"><h3>'+t(names[arm],namesZh[arm])+'</h3><div class="metric">'+(m&&m.failed?t('Diverged','发散'):v?(100*v.accuracy).toFixed(1)+'%':'—')+'</div><p class="small">'+(m&&m.failed?t('Non-finite values at step ','第 ')+m.failedAt+t('',' 步出现非有限值'):t('Test accuracy','测试集准确率'))+'</p><canvas class="map" id="map-'+arm+'" width="280" height="196" role="img" aria-label="'+t(names[arm],namesZh[arm])+' decision map"></canvas><p class="small">'+(m&&m.failed?t('Curve stops at the last finite evaluation.','曲线停在最后一个有限评估值。'):v?t('Test loss: ','测试集损失：')+v.loss.toFixed(3):t('Decision map appears when training starts.','开始训练后显示分类图。'))+'</p><p class="small">'+(m&&Number.isFinite(m.trainLoss)?t('Last training batch loss: ','最近训练批损失：')+m.trainLoss.toFixed(3):'')+'</p></article>';
   }).join('');
   for(const arm of shown) {
     map(arm);
     if(maps[arm]) {
       const caption=document.createElement('p');caption.className='small';
-      caption.textContent=result&&result.done?t('Final decision map · dots: held-out labels (blue = class 0, orange = class 1); background shading: model score. Axes show unscaled inputs.','最终分类图 · 点为留出标签（蓝 = 类别 0，橙 = 类别 1）；背景深浅为模型输出分数。坐标轴使用缩放前的输入。'):t('Initial decision map (updates after training). Dots: held-out labels.','初始化分类图（训练完成后更新）。点为留出标签。');
+      caption.textContent=result&&result.done?t('Final decision map · dots: test labels (blue = class 0, orange = class 1); background shading: model score. Axes show unscaled inputs.','最终分类图 · 点为测试标签（蓝 = 类别 0，橙 = 类别 1）；背景深浅为模型输出分数。坐标轴使用缩放前的输入。'):t('Initial decision map (updates after training). Dots: test labels.','初始化分类图（训练完成后更新）。点为测试标签。');
       $('map-'+arm).after(caption);
     }
   }
@@ -101,7 +128,7 @@ function run(){
 }
 $('run').onclick=run;
 $('stop').onclick=()=>{if(worker)worker.terminate();worker=null;setRunning(false);$('export').disabled=!result;$('status').textContent=t('Stopped. Curves show the last completed checkpoint. Run starts fresh.','已停止。曲线保留最后完成的检查点。再次运行将从头开始。');};
-$('export').onclick=()=>{if(!result)return;const payload={version:1,config:active,completed:!!result.done,step:result.step,protocol:'1280 training / 384 held-out interlocked spiral strands, sampled uniformly per unit arc length; matched initialization and mini-batches; BN standard evaluation uses running statistics',models:result.models.map(m=>({arm:m.arm,failed:m.failed,failedAt:m.failedAt,history:m.history,latest:m.latest,batchStatisticsDiagnostic:m.diagnostic}))};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='normalization-seed-'+active.seed+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('export').onclick=()=>{if(!result)return;const payload={version:1,config:active,completed:!!result.done,step:result.step,protocol:'1280 training / 384 test interlocked spiral strands, sampled uniformly per unit arc length; matched initialization and mini-batches; BN standard evaluation uses running statistics',models:result.models.map(m=>({arm:m.arm,failed:m.failed,failedAt:m.failedAt,history:m.history,latest:m.latest,batchStatisticsDiagnostic:m.diagnostic}))};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='normalization-seed-'+active.seed+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 document.querySelectorAll('[data-preset]').forEach(button=>button.onclick=()=>{preset=button.dataset.preset;Object.entries(presets[preset]).forEach(([key,value])=>$(key).value=value);$('placement').value='post';$('affine').value='yes';document.querySelectorAll('[data-preset]').forEach(b=>b.classList.toggle('selected',b===button));explain();if(!result)render();else $('status').textContent=t('Settings changed. Run to replace the previous results.','设置已改变。点击运行以替换之前的结果。');});
 document.querySelectorAll('.controls select,.controls input').forEach(el=>el.addEventListener('change',()=>{explain();if(result)$('status').textContent=t('Settings changed. Displayed results still use the previous run settings.','设置已改变。当前结果仍使用上次运行的设置。');else render();}));
 $('companions').onchange=sandbox;

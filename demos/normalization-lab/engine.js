@@ -408,7 +408,7 @@ function moons(seed, count, scale) {
   var r=mulberry32(seed), X=new Float64Array(count*2), y=new Float64Array(count);
   /* Two spiral strands winding 1.25 turns around a shared centre, offset by half a turn:
      the strands interlock deeply, and a threshold on a single input coordinate cannot
-     exceed ~60% held-out accuracy. (The export keeps the historical name `moons`.) */
+     exceed ~60% test accuracy. (The export keeps the historical name `moons`.) */
   var CX=0.5, CY=0.25, TURNS=1.25, R0=0.12, R1=1.5, SIGMA=0.05;
   /* u is drawn with density proportional to the radius, which makes the points uniform
      per unit arc length (ds = r*dtheta along a strand) instead of uniform per unit angle:

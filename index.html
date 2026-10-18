@@ -9,6 +9,7 @@
   <style>
     td.when { white-space: nowrap; color: var(--muted); }
     td.holiday { text-align: center; font-style: italic; }
+    tr.examrow td { background: var(--accent-soft); color: var(--accent); }
   </style>
 </head>
 <body>
@@ -75,8 +76,8 @@
 <!-- ============ SCHEDULE ============ -->
 <section id="schedule">
   <h2><span class="lang-en">Schedule</span><span class="lang-zh">日程安排</span></h2>
-  <p class="subtitle lang-en">Tentative. Classes meet on Mondays; the week of Oct 5 is a public holiday (no class). Slides are attached to each session as the semester progresses.</p>
-  <p class="subtitle lang-zh">暂定安排。课程在周一上课；10 月 5 日当周为国庆假期，停课一次。课件将在学期进行中逐次附上。</p>
+  <p class="subtitle lang-en">Tentative. Classes meet on Mondays; the week of Oct 5 is a public holiday (no class); the midterm is held in class on Nov 2. Slides and labs are attached as the semester progresses.</p>
+  <p class="subtitle lang-zh">暂定安排。课程在周一上课；10 月 5 日当周为国庆假期，停课一次；11 月 2 日随堂期中考试。课件与实验随课程进度陆续附上。</p>
 
   <table>
     <thead>
@@ -161,32 +162,58 @@
             <span class="lang-zh">测量预处理前后的 &kappa;；再在实验里比较 BatchNorm 与 LayerNorm</span></td>
       </tr>
 
-      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>
-
       <tr>
         <td class="week">6</td>
         <td class="when">Oct 19</td>
-        <td><span class="lang-en">Seq2Seq, Transformers and nanoGPT: next-token prediction, tokenization, self-attention, multi-head attention, Transformer blocks</span>
-            <span class="lang-zh">Seq2Seq、Transformer 与 nanoGPT：next-token 预测、分词、自注意力、多头注意力、Transformer 模块</span></td>
+        <td><span class="lang-en">Optimization algorithms: SGD and momentum; AdaGrad, RMSProp and Adam read as diagonal preconditioners through Gauss–Newton; when Adam converges and when it does not; matrix preconditioning &mdash; Shampoo and Muon; learning-rate schedules and weight decay</span>
+            <span class="lang-zh">优化算法：SGD 与动量；把 AdaGrad、RMSProp、Adam 读成对角预条件（Gauss–Newton 视角）；Adam 何时收敛、何时不收敛；矩阵预条件——Shampoo 与 Muon；学习率 schedule 与 weight decay</span></td>
         <td>&mdash;</td>
-        <td><span class="lang-en">Pre-train a small nanoGPT model</span><span class="lang-zh">预训练小型 nanoGPT 模型</span></td>
+        <td><span class="lang-en">Compare SGD, momentum and AdamW at a fixed step budget</span>
+            <span class="lang-zh">固定步数预算下比较 SGD、动量与 AdamW</span></td>
       </tr>
 
       <tr>
         <td class="week">7</td>
         <td class="when">Oct 26</td>
-        <td><span class="lang-en">Optimization algorithms and Adam: GD, SGD with momentum, learning-rate selection; AdaGrad, RMSProp, Adam; convergence theory of Adam</span>
-            <span class="lang-zh">优化算法与 Adam：GD、带动量 SGD、学习率选择；AdaGrad、RMSProp、Adam；Adam 收敛理论</span></td>
-        <td>
-          &mdash;
-        </td>
-        <td><span class="lang-en">Compare optimizers</span>
-            <span class="lang-zh">比较不同优化器</span></td>
+        <td><span class="lang-en">Residual connections and the loss landscape: skip connections and ResNet blocks; why depth becomes trainable again; flat versus sharp minima and mode connectivity; width and trainability. Closes with an in-class compute-budget race</span>
+            <span class="lang-zh">残差连接与损失景观：跳跃连接与 ResNet 模块；深度为什么重新可训；平坦极小与尖锐极小、模式连通性；宽度与可训性。最后是一场课堂算力预算比赛</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">MLP versus ResNet at fixed depth; slice the landscape; 20-minute race</span>
+            <span class="lang-zh">固定深度比较 MLP 与 ResNet；切一张景观切片；20 分钟比赛</span></td>
+      </tr>
+
+      <tr class="examrow">
+        <td class="week">8</td>
+        <td class="when">Nov 2</td>
+        <td colspan="3"><span class="lang-en">Midterm examination, in class &mdash; Lectures 1&ndash;7 (Part 0 and Part I)</span>
+            <span class="lang-zh">期中考试，随堂进行——第 1&ndash;7 讲（Part 0 与 Part I）</span></td>
+      </tr>
+
+      <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part II — Large Language Model Training</span><span class="lang-zh">Part II — 大语言模型训练</span></td></tr>
+
+      <tr>
+        <td class="week">9</td>
+        <td class="when">Nov 9</td>
+        <td><span class="lang-en">Transformers I: tokenization, next-token prediction and cross-entropy; self-attention and multi-head attention; the Transformer block &mdash; residual, LayerNorm, MLP; rotary position encoding</span>
+            <span class="lang-zh">Transformer I：分词、next-token 预测与交叉熵；自注意力与多头注意力；Transformer 模块——残差、LayerNorm、MLP；旋转位置编码</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Read nanoGPT end to end; pre-train a small model</span>
+            <span class="lang-zh">通读 nanoGPT；预训练一个小模型</span></td>
       </tr>
 
       <tr>
-        <td class="week">8</td>
-        <td class="when">Nov 2</td>
+        <td class="week">10</td>
+        <td class="when">Nov 16</td>
+        <td><span class="lang-en">Transformers II &mdash; training a Transformer: parameter and FLOP accounting; KV cache and inference memory; the pre-training pipeline &mdash; data, tokenizer, warmup, checkpoints, evaluation; why the block is sensitive to where normalization sits</span>
+            <span class="lang-zh">Transformer II——训练一个 Transformer：参数量与 FLOPs 记账；KV cache 与推理显存；预训练流水线——数据、分词器、warmup、checkpoint、评测；模块为什么对归一化位置敏感</span></td>
+        <td>&mdash;</td>
+        <td><span class="lang-en">Pre-train a small nanoGPT; budget its memory and FLOPs</span>
+            <span class="lang-zh">预训练一个小 nanoGPT；给它的显存与 FLOPs 记账</span></td>
+      </tr>
+
+      <tr>
+        <td class="week">11</td>
+        <td class="when">Nov 23</td>
         <td><span class="lang-en">Supervised fine-tuning and LoRA: instruction/response formatting, full fine-tuning, forgetting; low-rank updates, rank and scaling, memory accounting</span>
             <span class="lang-zh">监督微调与 LoRA：指令/回复格式、全量微调、遗忘问题；低秩更新、秩与缩放、显存核算</span></td>
         <td>&mdash;</td>
@@ -196,37 +223,10 @@
       <tr><td colspan="5" class="sub part-label"><span class="lang-en">Part III — Advanced LLM Training</span><span class="lang-zh">Part III — 进阶 LLM 训练</span></td></tr>
 
       <tr>
-        <td class="week">9</td>
-        <td class="when">Nov 9</td>
-        <td><span class="lang-en">Advanced architecture: sparse attention, GQA, MLA, DSA; MoE (optional)</span>
-            <span class="lang-zh">先进架构：稀疏注意力、GQA、MLA、DSA；MoE（可选）</span></td>
-        <td>&mdash;</td>
-        <td></td>
-      </tr>
-
-      <tr>
-        <td class="week">10</td>
-        <td class="when">Nov 16</td>
-        <td><span class="lang-en">Second-order optimization: relation of Adam and Gauss–Newton; Shampoo and Kronecker factorization; muon and matrix orthogonalization</span>
-            <span class="lang-zh">二阶优化：Adam 与 Gauss–Newton 的关系；Shampoo 与 Kronecker 分解；muon 与矩阵正交化</span></td>
-        <td>&mdash;</td>
-        <td></td>
-      </tr>
-
-      <tr>
-        <td class="week">11</td>
-        <td class="when">Nov 23</td>
-        <td><span class="lang-en">Advanced theory — Hessian structure and spectra: Hessian–vector product, computing the spectrum, Hessian structure of neural nets</span>
-            <span class="lang-zh">进阶理论——Hessian 结构与谱：Hessian–vector product、谱的计算、神经网络 Hessian 结构</span></td>
-        <td>&mdash;</td>
-        <td></td>
-      </tr>
-
-      <tr>
         <td class="week">12</td>
         <td class="when">Nov 30</td>
-        <td><span class="lang-en">Kernels and performance optimization: kernels and hardware architecture; Flash Attention</span>
-            <span class="lang-zh">Kernel 与性能优化：kernel 与硬件架构；Flash Attention</span></td>
+        <td><span class="lang-en">Kernels, FlashAttention and precision: kernels and the hardware hierarchy; the roofline view; FlashAttention as an IO problem; bf16/fp16/fp32 &mdash; what they save and what they break</span>
+            <span class="lang-zh">Kernel、FlashAttention 与精度：kernel 与硬件层级；roofline 视角；把 FlashAttention 看成 IO 问题；bf16/fp16/fp32 省下什么、又会坏什么</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>
@@ -234,8 +234,17 @@
       <tr>
         <td class="week">13</td>
         <td class="when">Dec 7</td>
-        <td><span class="lang-en">Scaling laws: Kaplan/Chinchilla-style scaling relations; model–data–systems tradeoffs under a fixed budget</span>
-            <span class="lang-zh">Scaling law：Kaplan/Chinchilla 式缩放关系；固定预算下的模型–数据–系统权衡</span></td>
+        <td><span class="lang-en">Hyperparameter selection and scaling laws: grid, random and Bayesian search; hyperparameter transfer; Kaplan/Chinchilla scaling relations; allocating a fixed compute budget over model, data and training</span>
+            <span class="lang-zh">超参数选择与 scaling law：网格、随机与贝叶斯搜索；超参迁移；Kaplan/Chinchilla 缩放关系；固定算力预算在模型、数据与训练之间的分配</span></td>
+        <td>&mdash;</td>
+        <td></td>
+      </tr>
+
+      <tr>
+        <td class="week">&#8212;</td>
+        <td class="when">Optional</td>
+        <td><span class="lang-en">Modern architecture choices, self-study (not examined): GQA/MQA, MLA, sparse attention, MoE. Slides posted after Dec 7; covered only if time allows</span>
+            <span class="lang-zh">现代架构选择，自学材料（不考）：GQA/MQA、MLA、稀疏注意力、MoE。12 月 7 日之后放上讲义，课时允许才讲</span></td>
         <td>&mdash;</td>
         <td></td>
       </tr>

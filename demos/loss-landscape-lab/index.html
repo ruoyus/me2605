@@ -1,0 +1,1159 @@
+<title>Loss Landscape Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: instrument panel — controls rail on the left, three readouts on top, the map below, pinned maps at the bottom. */
+:root {
+  --bg: #f3f5f4; --panel: #ffffff; --ink: #14212b; --muted: #5d6b73; --line: #d7dedd; --soft: #e9eeed;
+  --accent: #1d6a86; --accent-ink: #ffffff; --warn: #a3471b; --ok: #2f7a4a;
+  --c0: #1d6a86; --c1: #d9822b; --c2: #7a4fa3;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1518; --panel: #161e22; --ink: #e3eaec; --muted: #94a3aa; --line: #2a363c; --soft: #1d272c;
+  --accent: #5bb3d1; --accent-ink: #0b1215; --warn: #f0a070; --ok: #7cc995;
+  --c0: #5bb3d1; --c1: #f0a050; --c2: #b791e0; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f1518; --panel: #161e22; --ink: #e3eaec; --muted: #94a3aa; --line: #2a363c; --soft: #1d272c;
+  --accent: #5bb3d1; --accent-ink: #0b1215; --warn: #f0a070; --ok: #7cc995;
+  --c0: #5bb3d1; --c1: #f0a050; --c2: #b791e0; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 28px; max-width: 1500px; margin: 0 auto; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; margin-bottom: 12px; }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: 26px; letter-spacing: 0.01em; margin: 0; }
+.sub { color: var(--muted); font-size: 13px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; align-items: center; }
+.presets .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-right: 4px; }
+button { font: inherit; cursor: pointer; border-radius: 6px; }
+.chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 4px 10px; font-size: 13px; }
+.chip:hover { border-color: var(--accent); }
+.chip.on, .chip.on:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.cur { font-size: 12.5px; color: var(--muted); margin-left: 6px; }
+.cur b { color: var(--ink); }
+.runbar { flex-direction: column; align-items: stretch !important; }
+.runbar .btnrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.runbar .hint { margin: 0; }
+.stepline { font-family: var(--f-mono); font-size: 12px; color: var(--muted); min-height: 1.3em; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.modes button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.runmode { align-self: flex-start; }
+.chip:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 10px); max-height: calc(100vh - 20px); overflow: auto; }
+@media (max-width: 900px) { aside { position: static; max-height: none; } }
+.runbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); padding: 6px 12px; font-weight: 600; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.auto { font-size: 12px; color: var(--muted); display: flex; gap: 5px; align-items: center; }
+fieldset { border: 0; padding: 0; margin: 10px 0 0; }
+legend { font-family: var(--f-display); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0; margin-bottom: 4px; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 3px 0; }
+.row label { font-size: 13px; }
+.row output { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row input[type=range], .row select { grid-column: 1 / -1; width: 100%; }
+.row select { font: inherit; font-size: 13px; padding: 3px 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); color: var(--ink); }
+.row.check { grid-template-columns: auto 1fr; }
+.row.check input { margin: 0; }
+input[type=range] { accent-color: var(--accent); }
+input[type=checkbox] { accent-color: var(--accent); }
+.hint { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; }
+
+main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.ph { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.ph h2 { font-family: var(--f-display); font-weight: 600; font-size: 15px; margin: 0; letter-spacing: 0.01em; }
+.ph .note { font-size: 12px; color: var(--muted); }
+.top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 640px) { .top { grid-template-columns: minmax(0, 1fr); } }
+.modes { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.modes button { border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 6px 12px; font-size: 13px; font-weight: 500; }
+.modes button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+#modeSub { margin: 0 0 4px; max-width: 95ch; }
+.archnote { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; max-width: 110ch; border-left: 2px solid var(--line); padding-left: 10px; }
+.statbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.statbar .stats { margin: 0; }
+.pin .pcurve { width: 100%; aspect-ratio: 4 / 3; }
+.panel.wide { grid-column: 1 / -1; }
+.gplot { width: 100%; height: 260px; }
+canvas.box { width: 100%; aspect-ratio: 1 / 1; max-width: 100%; display: block; border-radius: 6px; background: var(--soft); }
+canvas.curve { width: 100%; aspect-ratio: 4 / 3; display: block; }
+.plot1d { width: 100%; aspect-ratio: 4 / 3; }
+
+.stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.stat { font-family: var(--f-mono); font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; font-variant-numeric: tabular-nums; color: var(--ink); background: var(--soft); }
+.stat b { font-weight: 500; color: var(--muted); margin-right: 4px; }
+.stat.bad { border-color: var(--warn); color: var(--warn); }
+.stat.good { border-color: var(--ok); color: var(--ok); }
+.maps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .maps { grid-template-columns: minmax(0, 1fr); } }
+.map { width: 100%; aspect-ratio: 1 / 1; max-width: 100%; }
+.progress { height: 3px; background: var(--soft); border-radius: 2px; overflow: hidden; margin-top: 6px; }
+.progress div { height: 100%; width: 0; background: var(--accent); transition: width 0.12s linear; }
+.status { font-family: var(--f-mono); font-size: 12px; color: var(--muted); min-height: 1.4em; }
+
+.pins { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.pin { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px 8px; background: var(--bg); min-width: 0; }
+.pin .pt { display: flex; justify-content: space-between; gap: 6px; align-items: start; }
+.pin .cap { font-size: 11.5px; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
+.pin .meta { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.pin .x { border: 0; background: transparent; color: var(--muted); font-size: 16px; line-height: 1; padding: 0 2px; }
+.pin .pplot { width: 100%; aspect-ratio: 1 / 1; }
+.empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+.method { font-size: 13.5px; max-width: 75ch; }
+.method p { margin: 6px 0; }
+.method code, .formula { font-family: var(--f-mono); font-size: 12.5px; }
+.formula { display: block; background: var(--soft); border-radius: 6px; padding: 6px 10px; margin: 6px 0; overflow-x: auto; white-space: nowrap; }
+details summary { cursor: pointer; font-family: var(--f-display); font-weight: 600; font-size: 15px; }
+a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .progress div { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Loss Landscape Lab</h1>
+    <div class="modes" role="tablist" aria-label="Lab">
+      <button type="button" role="tab" id="modeTrain" data-mode="training">Lab 1 · Skip connections</button>
+      <button type="button" role="tab" id="modeLand" data-mode="landscape">Lab 2 · Loss landscape</button>
+    </div>
+  </header>
+  <p class="sub" id="modeSub"></p>
+  <p class="archnote">Every model here is a fully connected network (MLP) on 2-D points; there are no convolutions. “22 layers” means one input layer, 10 blocks of 2 hidden layers each, and one output layer. Width is the number of neurons per hidden layer. With skip connections on, each block adds its output to its input, as in ResNet.</p>
+  <div class="presets" id="presets"><span class="lbl">Scenarios</span></div>
+  <div class="cur" id="curScn" style="margin:-8px 0 12px"></div>
+
+  <div class="layout">
+    <aside>
+      <div class="runbar">
+        <div class="modes runmode" role="group" aria-label="Run mode"><button type="button" id="modeAuto" aria-pressed="true">Auto</button><button type="button" id="modeManual" aria-pressed="false">Manual</button></div>
+        <p class="hint" id="runHint"></p>
+        <div class="btnrow">
+          <button class="btn" id="runBtn" type="button">Train &amp; map</button>
+          <button class="btn ghost" id="resetBtn" type="button" hidden>Reset to init</button>
+          <button class="btn ghost" id="mapBtn" type="button" hidden>Draw landscape</button>
+        </div>
+        <div class="stepline" id="stepLine"></div>
+      </div>
+      <div id="controls"></div>
+    </aside>
+
+    <main>
+      <div class="statbar"><div class="stats" id="stats"></div><button class="chip" id="pinBtn" type="button">Pin this run</button></div>
+      <div class="status" id="statusTop" hidden></div>
+      <div class="top">
+        <section class="panel">
+          <div class="ph"><h2>Data &amp; decision regions</h2><span class="note" id="dataNote"></span></div>
+          <canvas class="box" id="boundary" aria-label="Training data and the network's decision regions"></canvas>
+        </section>
+        <section class="panel">
+          <div class="ph"><h2>Training curve</h2><span class="note">log₁₀ loss vs step</span></div>
+          <canvas class="curve" id="curve" aria-label="Training and test loss over steps"></canvas>
+        </section>
+        <section class="panel wide" id="gradPanel">
+          <div class="ph"><h2>Backward signal: gradient norm per layer</h2><span class="note">‖∇W<sub>l</sub>‖ on the full training set, layer 1 = input side</span></div>
+          <div class="gplot" id="gradPlot"></div>
+        </section>
+      </div>
+
+      <section class="panel" id="landPanel">
+        <div class="ph"><h2>2D landscape around θ*</h2><span class="note" id="mapNote"></span></div>
+        <div class="status" id="status">Loading…</div>
+        <div class="progress"><div id="prog"></div></div>
+        <div class="maps">
+          <div class="map" id="contour" aria-label="Contour plot of the loss surface"></div>
+          <div class="map" id="surface" aria-label="3D surface of the loss"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="ph"><h2>Pinned for comparison</h2><span class="note">Pin runs from different settings to compare them side by side.</span></div>
+        <div class="pins" id="pins"><div class="empty">Nothing pinned yet. Try pinning the plain net, then the ResNet.</div></div>
+      </section>
+
+      <section class="panel method" id="methodPanel">
+        <details open>
+          <summary>How the map is made</summary>
+          <p>After training to θ*, draw two Gaussian random directions δ and η of the same shape as θ*, then plot</p>
+          <span class="formula">f(α, β) = L(θ* + α·δ + β·η),  α, β ∈ [−r, r]</span>
+          <p><b>Filter normalization.</b> Each direction is rescaled neuron by neuron (row by row of each weight matrix W<sub>l</sub>) so it has the same norm as the corresponding row of θ*:</p>
+          <span class="formula">δ<sub>l,i</sub> ← δ<sub>l,i</sub> / ‖δ<sub>l,i</sub>‖ · ‖θ*<sub>l,i</sub>‖</span>
+          <p>Without it, ReLU and normalization layers make the picture depend on weight scale rather than geometry. Set <i>Direction scaling</i> to “none” to see the distortion. As in the paper, bias and normalization parameters get zero direction by default.</p>
+          <p><b>Details.</b> The loss is the full-batch cross-entropy on the chosen set. BatchNorm uses full-batch statistics at every grid point, so its scale invariance shows in the map. Values above 10 are clipped. Each map is one random 2D slice of a space with thousands of dimensions, so change the direction seed before you draw conclusions.</p>
+          <p><b>Grid statistics.</b> “Local minima” counts interior grid points lower than all 8 neighbours. “Non-convex” is the share of points whose finite-difference Hessian has λ<sub>min</sub> &lt; 0 with |λ<sub>min</sub>/λ<sub>max</sub>| &gt; 0.1, a rough version of the paper's convexity map.</p>
+        </details>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script>// Tiny MLP / ResNet engine with manual backprop + filter-normalized landscapes (Li et al. 2018).
+// Runs in the browser and in Node.
+(function (root) {
+  'use strict';
+
+  // ---------- RNG ----------
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function makeGauss(rng) {
+    let spare = null;
+    return function () {
+      if (spare !== null) { const s = spare; spare = null; return s; }
+      let u = 0; while (u === 0) u = rng();
+      const v = rng(), r = Math.sqrt(-2 * Math.log(u));
+      spare = r * Math.sin(2 * Math.PI * v);
+      return r * Math.cos(2 * Math.PI * v);
+    };
+  }
+
+  // ---------- Data ----------
+  const DATASETS = {
+    moons: { K: 2, gen(n, noise, rng, g) {
+      const X = [], y = [];
+      for (let i = 0; i < n; i++) {
+        const c = i % 2, t = Math.PI * rng();
+        let a, b;
+        if (c === 0) { a = Math.cos(t); b = Math.sin(t); } else { a = 1 - Math.cos(t); b = 0.5 - Math.sin(t); }
+        X.push(a + noise * g(), b + noise * g()); y.push(c);
+      }
+      return { X, y };
+    } },
+    circles: { K: 2, gen(n, noise, rng, g) {
+      const X = [], y = [];
+      for (let i = 0; i < n; i++) {
+        const c = i % 2, t = 2 * Math.PI * rng(), r = c === 0 ? 0.45 : 1.0;
+        X.push(r * Math.cos(t) + noise * 0.5 * g(), r * Math.sin(t) + noise * 0.5 * g()); y.push(c);
+      }
+      return { X, y };
+    } },
+    spiral: { K: 2, gen(n, noise, rng, g) {
+      const X = [], y = [];
+      for (let i = 0; i < n; i++) {
+        const c = i % 2, r = 0.15 + rng(), th = r * 3.2 * Math.PI + c * Math.PI;
+        X.push(r * Math.cos(th) + noise * 0.3 * g(), r * Math.sin(th) + noise * 0.3 * g()); y.push(c);
+      }
+      return { X, y };
+    } },
+    xor: { K: 2, gen(n, noise, rng, g) {
+      const X = [], y = [];
+      for (let i = 0; i < n; i++) {
+        const sx = rng() < 0.5 ? -1 : 1, sy = rng() < 0.5 ? -1 : 1;
+        X.push(sx + (0.25 + noise) * g(), sy + (0.25 + noise) * g()); y.push(sx * sy > 0 ? 0 : 1);
+      }
+      return { X, y };
+    } },
+    checker: { K: 2, gen(n, noise, rng, g) {
+      const X = [], y = [];
+      for (let i = 0; i < n; i++) {
+        const a = 2 * rng() - 1, b = 2 * rng() - 1;
+        const c = (Math.floor((a + 1) * 2) + Math.floor((b + 1) * 2)) % 2;
+        X.push(a + noise * 0.2 * g(), b + noise * 0.2 * g()); y.push(c);
+      }
+      return { X, y };
+    } },
+    blobs3: { K: 3, gen(n, noise, rng, g) {
+      const X = [], y = [], C = [[0, 1], [-0.9, -0.5], [0.9, -0.5]];
+      for (let i = 0; i < n; i++) {
+        const c = i % 3;
+        X.push(C[c][0] + (0.25 + noise) * g(), C[c][1] + (0.25 + noise) * g()); y.push(c);
+      }
+      return { X, y };
+    } },
+    random: { K: 2, gen(n, noise, rng) {
+      const X = [], y = [];
+      for (let i = 0; i < n; i++) { X.push(2 * rng() - 1, 2 * rng() - 1); y.push(rng() < 0.5 ? 0 : 1); }
+      return { X, y };
+    } },
+  };
+
+  function makeData(name, n, noise, labelNoise, seed) {
+    const rng = mulberry32(seed), g = makeGauss(rng);
+    const ds = DATASETS[name];
+    const raw = ds.gen(n, noise, rng, g);
+    const X = Float32Array.from(raw.X), y = Int32Array.from(raw.y);
+    for (let i = 0; i < n; i++) if (rng() < labelNoise) y[i] = (y[i] + 1 + Math.floor(rng() * (ds.K - 1))) % ds.K;
+    return { X, y, n, d: 2, K: ds.K };
+  }
+  function standardizer(data) {
+    const m = [0, 0], s = [0, 0];
+    for (let i = 0; i < data.n; i++) for (let k = 0; k < 2; k++) m[k] += data.X[2 * i + k] / data.n;
+    for (let i = 0; i < data.n; i++) for (let k = 0; k < 2; k++) s[k] += (data.X[2 * i + k] - m[k]) ** 2 / data.n;
+    s[0] = Math.sqrt(s[0]) || 1; s[1] = Math.sqrt(s[1]) || 1;
+    return { m, s, apply(d) { const X = new Float32Array(d.X.length); for (let i = 0; i < d.X.length; i++) X[i] = (d.X[i] - m[i % 2]) / s[i % 2]; return Object.assign({}, d, { X }); } };
+  }
+
+  // ---------- Modules ----------
+  function Param(data, kind, rows, cols, name) { return { data, grad: new Float32Array(data.length), kind, rows, cols, name }; }
+
+  class Linear {
+    constructor(din, dout, rng, std, name) {
+      const g = makeGauss(rng), W = new Float32Array(dout * din);
+      for (let i = 0; i < W.length; i++) W[i] = std * g();
+      this.din = din; this.dout = dout;
+      this.W = Param(W, 'weight', dout, din, name + '.W');
+      this.b = Param(new Float32Array(dout), 'bias', 1, dout, name + '.b');
+    }
+    params() { return [this.W, this.b]; }
+    forward(X, n) {
+      const { din, dout } = this, W = this.W.data, b = this.b.data, Y = new Float32Array(n * dout);
+      for (let i = 0; i < n; i++) {
+        const xo = i * din, yo = i * dout;
+        for (let o = 0; o < dout; o++) {
+          let s = b[o]; const wo = o * din;
+          for (let k = 0; k < din; k++) s += X[xo + k] * W[wo + k];
+          Y[yo + o] = s;
+        }
+      }
+      this.X = X; this.n = n; return Y;
+    }
+    backward(dY) {
+      const { din, dout, X, n } = this, W = this.W.data, dW = this.W.grad, db = this.b.grad, dX = new Float32Array(n * din);
+      for (let i = 0; i < n; i++) {
+        const xo = i * din, yo = i * dout;
+        for (let o = 0; o < dout; o++) {
+          const g = dY[yo + o]; if (g === 0) continue;
+          db[o] += g; const wo = o * din;
+          for (let k = 0; k < din; k++) { dW[wo + k] += g * X[xo + k]; dX[xo + k] += g * W[wo + k]; }
+        }
+      }
+      return dX;
+    }
+  }
+
+  const ACTS = {
+    relu: { f: x => x > 0 ? x : 0, df: x => x > 0 ? 1 : 0 },
+    leaky: { f: x => x > 0 ? x : 0.1 * x, df: x => x > 0 ? 1 : 0.1 },
+    tanh: { f: x => Math.tanh(x), df: x => { const t = Math.tanh(x); return 1 - t * t; } },
+    gelu: {
+      f: x => 0.5 * x * (1 + Math.tanh(0.7978845608 * (x + 0.044715 * x * x * x))),
+      df: x => { const u = 0.7978845608 * (x + 0.044715 * x * x * x), t = Math.tanh(u); return 0.5 * (1 + t) + 0.5 * x * (1 - t * t) * 0.7978845608 * (1 + 3 * 0.044715 * x * x); }
+    },
+    linear: { f: x => x, df: () => 1 },
+  };
+  class Act {
+    constructor(type) { this.a = ACTS[type]; }
+    params() { return []; }
+    forward(X) { const f = this.a.f, Y = new Float32Array(X.length); for (let i = 0; i < X.length; i++) Y[i] = f(X[i]); this.X = X; return Y; }
+    backward(dY) { const df = this.a.df, X = this.X, dX = new Float32Array(X.length); for (let i = 0; i < X.length; i++) dX[i] = dY[i] * df(X[i]); return dX; }
+  }
+
+  // BatchNorm1d. mode: 'train' (batch stats, update running), 'full' (batch stats, no update), 'eval' (running stats)
+  class BN {
+    constructor(dim, name) {
+      this.dim = dim;
+      this.g = Param(new Float32Array(dim).fill(1), 'norm', 1, dim, name + '.gamma');
+      this.b = Param(new Float32Array(dim), 'norm', 1, dim, name + '.beta');
+      this.rm = new Float32Array(dim); this.rv = new Float32Array(dim).fill(1); this.eps = 1e-5;
+    }
+    params() { return [this.g, this.b]; }
+    forward(X, n, mode) {
+      const d = this.dim, g = this.g.data, b = this.b.data, Y = new Float32Array(n * d), xh = new Float32Array(n * d), inv = new Float32Array(d);
+      for (let j = 0; j < d; j++) {
+        let mu, va;
+        if (mode === 'eval') { mu = this.rm[j]; va = this.rv[j]; }
+        else {
+          mu = 0; for (let i = 0; i < n; i++) mu += X[i * d + j]; mu /= n;
+          va = 0; for (let i = 0; i < n; i++) { const t = X[i * d + j] - mu; va += t * t; } va /= n;
+          if (mode === 'train') { this.rm[j] = 0.9 * this.rm[j] + 0.1 * mu; this.rv[j] = 0.9 * this.rv[j] + 0.1 * va; }
+        }
+        const is = 1 / Math.sqrt(va + this.eps); inv[j] = is;
+        for (let i = 0; i < n; i++) { const t = (X[i * d + j] - mu) * is; xh[i * d + j] = t; Y[i * d + j] = g[j] * t + b[j]; }
+      }
+      this.xh = xh; this.inv = inv; this.n = n; return Y;
+    }
+    backward(dY) {
+      const d = this.dim, n = this.n, xh = this.xh, g = this.g.data, dX = new Float32Array(n * d);
+      for (let j = 0; j < d; j++) {
+        let s1 = 0, s2 = 0;
+        for (let i = 0; i < n; i++) { const dy = dY[i * d + j]; this.b.grad[j] += dy; this.g.grad[j] += dy * xh[i * d + j]; const dxh = dy * g[j]; s1 += dxh; s2 += dxh * xh[i * d + j]; }
+        const c = this.inv[j] / n;
+        for (let i = 0; i < n; i++) { const dxh = dY[i * d + j] * g[j]; dX[i * d + j] = c * (n * dxh - s1 - xh[i * d + j] * s2); }
+      }
+      return dX;
+    }
+  }
+
+  class LN {
+    constructor(dim, name) {
+      this.dim = dim;
+      this.g = Param(new Float32Array(dim).fill(1), 'norm', 1, dim, name + '.gamma');
+      this.b = Param(new Float32Array(dim), 'norm', 1, dim, name + '.beta');
+      this.eps = 1e-5;
+    }
+    params() { return [this.g, this.b]; }
+    forward(X, n) {
+      const d = this.dim, g = this.g.data, b = this.b.data, Y = new Float32Array(n * d), xh = new Float32Array(n * d), inv = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const o = i * d; let mu = 0; for (let j = 0; j < d; j++) mu += X[o + j]; mu /= d;
+        let va = 0; for (let j = 0; j < d; j++) { const t = X[o + j] - mu; va += t * t; } va /= d;
+        const is = 1 / Math.sqrt(va + this.eps); inv[i] = is;
+        for (let j = 0; j < d; j++) { const t = (X[o + j] - mu) * is; xh[o + j] = t; Y[o + j] = g[j] * t + b[j]; }
+      }
+      this.xh = xh; this.inv = inv; this.n = n; return Y;
+    }
+    backward(dY) {
+      const d = this.dim, n = this.n, xh = this.xh, g = this.g.data, dX = new Float32Array(n * d);
+      for (let i = 0; i < n; i++) {
+        const o = i * d; let s1 = 0, s2 = 0;
+        for (let j = 0; j < d; j++) { const dy = dY[o + j]; this.b.grad[j] += dy; this.g.grad[j] += dy * xh[o + j]; const dxh = dy * g[j]; s1 += dxh; s2 += dxh * xh[o + j]; }
+        const c = this.inv[i] / d;
+        for (let j = 0; j < d; j++) { const dxh = dY[o + j] * g[j]; dX[o + j] = c * (d * dxh - s1 - xh[o + j] * s2); }
+      }
+      return dX;
+    }
+  }
+
+  class Seq {
+    constructor(mods) { this.mods = mods; }
+    params() { return this.mods.flatMap(m => m.params()); }
+    forward(X, n, mode) { for (const m of this.mods) X = m.forward(X, n, mode); return X; }
+    backward(dY) { for (let i = this.mods.length - 1; i >= 0; i--) dY = this.mods[i].backward(dY); return dY; }
+  }
+
+  class Residual {
+    constructor(branch, post, scale) { this.branch = branch; this.post = post; this.scale = scale; }
+    params() { return this.branch.params(); }
+    forward(X, n, mode) {
+      const B = this.branch.forward(X, n, mode), s = this.scale, Y = new Float32Array(X.length);
+      for (let i = 0; i < Y.length; i++) Y[i] = X[i] + s * B[i];
+      return this.post ? this.post.forward(Y, n, mode) : Y;
+    }
+    backward(dY) {
+      if (this.post) dY = this.post.backward(dY);
+      const s = this.scale, dB = new Float32Array(dY.length);
+      for (let i = 0; i < dY.length; i++) dB[i] = s * dY[i];
+      const dX = this.branch.backward(dB);
+      for (let i = 0; i < dX.length; i++) dX[i] += dY[i];
+      return dX;
+    }
+  }
+
+  // ---------- Model builder ----------
+  // cfg: {width, blocks, act, skip, norm:'none'|'bn'|'ln', place:'post'|'pre', zeroInit, branchScale:'1'|'invsqrt', initScale, K, seed}
+  function buildModel(cfg) {
+    const rng = mulberry32(cfg.seed), w = cfg.width, L = cfg.blocks;
+    const gain = (cfg.act === 'tanh' || cfg.act === 'linear') ? 1 : 2;
+    const std = fan => cfg.initScale * Math.sqrt(gain / fan);
+    let id = 0;
+    const lin = (a, b) => new Linear(a, b, rng, std(a), 'fc' + (id++));
+    const norm = () => cfg.norm === 'bn' ? new BN(w, 'bn' + id) : cfg.norm === 'ln' ? new LN(w, 'ln' + id) : null;
+    const act = () => new Act(cfg.act);
+    const S = (arr) => arr.filter(Boolean);
+    const scale = cfg.branchScale === 'invsqrt' ? 1 / Math.sqrt(L) : 1;
+    const mods = [];
+    mods.push(lin(2, w));
+    if (cfg.place === 'post') mods.push(...S([norm(), act()]));
+    for (let l = 0; l < L; l++) {
+      let br;
+      if (cfg.place === 'post') br = S([lin(w, w), norm(), act(), lin(w, w), norm()]);
+      else br = S([norm(), act(), lin(w, w), norm(), act(), lin(w, w)]);
+      if (cfg.skip && cfg.zeroInit) {
+        const last = br[br.length - 1];
+        if (last instanceof BN || last instanceof LN) last.g.data.fill(0);
+        else if (last instanceof Linear) last.W.data.fill(0);
+      }
+      if (cfg.skip) mods.push(new Residual(new Seq(br), cfg.place === 'post' ? act() : null, scale));
+      else mods.push(new Seq(cfg.place === 'post' ? br.concat([act()]) : br));
+    }
+    if (cfg.place === 'pre') mods.push(...S([norm(), act()]));
+    mods.push(lin(w, cfg.K));
+    const net = new Seq(mods);
+    net.paramList = net.params();
+    net.K = cfg.K;
+    net.nParams = net.paramList.reduce((s, p) => s + p.data.length, 0);
+    return net;
+  }
+
+  // ---------- Loss ----------
+  function softmaxCE(logits, y, n, K, needGrad) {
+    let loss = 0, correct = 0; const dL = needGrad ? new Float32Array(n * K) : null;
+    for (let i = 0; i < n; i++) {
+      const o = i * K; let m = -Infinity, am = 0;
+      for (let k = 0; k < K; k++) if (logits[o + k] > m) { m = logits[o + k]; am = k; }
+      let s = 0; for (let k = 0; k < K; k++) s += Math.exp(logits[o + k] - m);
+      const lse = m + Math.log(s);
+      loss += lse - logits[o + y[i]];
+      if (am === y[i]) correct++;
+      if (needGrad) for (let k = 0; k < K; k++) dL[o + k] = (Math.exp(logits[o + k] - lse) - (k === y[i] ? 1 : 0)) / n;
+    }
+    return { loss: loss / n, acc: correct / n, dL };
+  }
+
+  function evaluate(net, data, mode) {
+    const out = net.forward(data.X, data.n, mode || 'full');
+    const r = softmaxCE(out, data.y, data.n, net.K, false);
+    return (isFinite(r.loss) ? r : { loss: Infinity, acc: r.acc });
+  }
+
+  // ---------- Optimizer ----------
+  class Optimizer {
+    constructor(params, o) {
+      this.p = params; this.o = o; this.t = 0;
+      this.m = params.map(p => new Float32Array(p.data.length));
+      this.v = params.map(p => new Float32Array(p.data.length));
+    }
+    step() {
+      const o = this.o; this.t++;
+      for (let pi = 0; pi < this.p.length; pi++) {
+        const P = this.p[pi], d = P.data, g = P.grad, m = this.m[pi], v = this.v[pi];
+        const wd = (P.kind === 'weight') ? o.wd : 0;
+        if (o.type === 'adam') {
+          const b1 = 0.9, b2 = 0.999, c1 = 1 - Math.pow(b1, this.t), c2 = 1 - Math.pow(b2, this.t);
+          for (let i = 0; i < d.length; i++) {
+            m[i] = b1 * m[i] + (1 - b1) * g[i]; v[i] = b2 * v[i] + (1 - b2) * g[i] * g[i];
+            d[i] -= o.lr * ((m[i] / c1) / (Math.sqrt(v[i] / c2) + 1e-8) + wd * d[i]);
+          }
+        } else {
+          const mu = o.momentum;
+          for (let i = 0; i < d.length; i++) { const gi = g[i] + wd * d[i]; m[i] = mu * m[i] + gi; d[i] -= o.lr * m[i]; }
+        }
+        g.fill(0);
+      }
+    }
+  }
+
+  function trainStep(net, opt, data, batch, rng) {
+    let X = data.X, y = data.y, n = data.n;
+    if (batch < n) {
+      X = new Float32Array(batch * 2); y = new Int32Array(batch);
+      for (let i = 0; i < batch; i++) { const j = Math.floor(rng() * n); X[2 * i] = data.X[2 * j]; X[2 * i + 1] = data.X[2 * j + 1]; y[i] = data.y[j]; }
+      n = batch;
+    }
+    const out = net.forward(X, n, 'train');
+    const r = softmaxCE(out, y, n, net.K, true);
+    if (!isFinite(r.loss)) { for (const p of net.paramList) p.grad.fill(0); return r; }
+    net.backward(r.dL);
+    let gn = 0; for (const p of net.paramList) for (let i = 0; i < p.grad.length; i++) gn += p.grad[i] * p.grad[i];
+    r.gradNorm = Math.sqrt(gn);
+    opt.step();
+    return r;
+  }
+
+  // ---------- Landscape ----------
+  function snapshot(net) { return net.paramList.map(p => Float32Array.from(p.data)); }
+  function restore(net, snap) { net.paramList.forEach((p, i) => p.data.set(snap[i])); }
+
+  // mode: 'filter' (Li et al. filter-wise), 'layer', 'none' ; ignoreBN: set bias/norm directions to zero
+  function makeDirection(net, center, seed, mode, ignoreBN) {
+    const g = makeGauss(mulberry32(seed));
+    return net.paramList.map((p, pi) => {
+      const th = center[pi], d = new Float32Array(th.length);
+      for (let i = 0; i < d.length; i++) d[i] = g();
+      if (p.kind !== 'weight') {
+        if (ignoreBN) { d.fill(0); return d; }
+        if (mode !== 'none') { let a = 0, b = 0; for (let i = 0; i < d.length; i++) { a += th[i] * th[i]; b += d[i] * d[i]; } const s = Math.sqrt(a) / (Math.sqrt(b) + 1e-10); for (let i = 0; i < d.length; i++) d[i] *= s; }
+        return d;
+      }
+      if (mode === 'filter') {
+        for (let r = 0; r < p.rows; r++) {
+          let a = 0, b = 0; const o = r * p.cols;
+          for (let c = 0; c < p.cols; c++) { a += th[o + c] * th[o + c]; b += d[o + c] * d[o + c]; }
+          const s = Math.sqrt(a) / (Math.sqrt(b) + 1e-10);
+          for (let c = 0; c < p.cols; c++) d[o + c] *= s;
+        }
+      } else if (mode === 'layer') {
+        let a = 0, b = 0; for (let i = 0; i < d.length; i++) { a += th[i] * th[i]; b += d[i] * d[i]; }
+        const s = Math.sqrt(a) / (Math.sqrt(b) + 1e-10); for (let i = 0; i < d.length; i++) d[i] *= s;
+      }
+      return d;
+    });
+  }
+  function setPoint(net, center, dirs, coefs) {
+    net.paramList.forEach((p, pi) => {
+      const c = center[pi], out = p.data;
+      for (let i = 0; i < out.length; i++) { let v = c[i]; for (let k = 0; k < dirs.length; k++) v += coefs[k] * dirs[k][pi][i]; out[i] = v; }
+    });
+  }
+
+  // Generator: yields after each row so UI can render progressively.
+  function* landscape2D(net, data, center, d1, d2, range, res) {
+    const xs = [], z = [], acc = [];
+    for (let i = 0; i < res; i++) xs.push(-range + 2 * range * i / (res - 1));
+    for (let j = 0; j < res; j++) {
+      const row = [], arow = [];
+      for (let i = 0; i < res; i++) {
+        setPoint(net, center, [d1, d2], [xs[i], xs[j]]);
+        const r = evaluate(net, data, 'full');
+        row.push(r.loss); arow.push(r.acc);
+      }
+      z.push(row); acc.push(arow);
+      yield { xs, z, acc, done: false, row: j };
+    }
+    restore(net, center);
+    yield { xs, z, acc, done: true };
+  }
+
+  function interp1D(net, data, test, init, center, npts) {
+    const dir = [center.map((c, pi) => { const d = new Float32Array(c.length); for (let i = 0; i < c.length; i++) d[i] = c[i] - init[pi][i]; return d; })];
+    const a = [], tr = [], te = [];
+    for (let k = 0; k < npts; k++) {
+      const al = -0.25 + 1.5 * k / (npts - 1);
+      setPoint(net, init, dir, [al]);
+      a.push(al); tr.push(evaluate(net, data, 'full').loss); te.push(evaluate(net, test, 'full').loss);
+    }
+    restore(net, center);
+    return { a, tr, te };
+  }
+
+  // Roughness stats from a grid
+  function gridStats(z) {
+    const n = z.length; let mins = 0, neg = 0, tot = 0;
+    for (let j = 1; j < n - 1; j++) for (let i = 1; i < n - 1; i++) {
+      const c = z[j][i]; if (!isFinite(c)) continue;
+      let isMin = true;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if ((di || dj) && !(z[j + dj][i + di] > c)) isMin = false;
+      if (isMin) mins++;
+      const fxx = z[j][i + 1] - 2 * c + z[j][i - 1], fyy = z[j + 1][i] - 2 * c + z[j - 1][i];
+      const fxy = (z[j + 1][i + 1] - z[j + 1][i - 1] - z[j - 1][i + 1] + z[j - 1][i - 1]) / 4;
+      const tr = fxx + fyy, det = fxx * fyy - fxy * fxy;
+      const disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+      const lmax = tr / 2 + disc, lmin = tr / 2 - disc;
+      if (isFinite(lmin)) { tot++; if (lmin < 0 && Math.abs(lmin) > 0.1 * Math.abs(lmax)) neg++; }
+    }
+    return { localMins: mins, nonconvexFrac: tot ? neg / tot : 0 };
+  }
+
+  // Per-layer weight-gradient norms on the full data set (for signal-propagation plots).
+  function layerGradNorms(net, data) {
+    const out = net.forward(data.X, data.n, 'full');
+    const r = softmaxCE(out, data.y, data.n, net.K, true);
+    net.backward(r.dL);
+    const res = [];
+    for (const p of net.paramList) {
+      if (p.name && p.name.endsWith('.W')) { let s = 0; for (let i = 0; i < p.grad.length; i++) s += p.grad[i] * p.grad[i]; res.push(Math.sqrt(s)); }
+    }
+    for (const p of net.paramList) p.grad.fill(0);
+    return res;
+  }
+
+  const api = { layerGradNorms, mulberry32, makeGauss, makeData, standardizer, buildModel, Optimizer, trainStep, evaluate, softmaxCE,
+    snapshot, restore, makeDirection, setPoint, landscape2D, interp1D, gridStats, DATASETS, BN, LN, Linear };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.LE = api;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>
+(function () {
+'use strict';
+const $ = id => document.getElementById(id);
+
+// ---------------- Controls ----------------
+const f2 = v => (+v).toFixed(2), sci = v => { const x = Math.pow(10, +v); return x >= 0.01 ? x.toPrecision(2) : x.toExponential(0); };
+const CONTROLS = [
+  { group: 'Data', items: [
+    { id: 'dataset', type: 'select', label: 'Dataset', value: 'spiral', kind: 'full', options: [['moons', 'Two moons'], ['circles', 'Circles'], ['spiral', 'Spiral'], ['xor', 'XOR'], ['checker', 'Checkerboard (4×4)'], ['blobs3', 'Three blobs (3 classes)'], ['random', 'Random labels']] },
+    { id: 'n', type: 'range', label: 'Training samples', min: 40, max: 400, step: 20, value: 200, kind: 'full' },
+    { id: 'dataSeed', type: 'range', label: 'Data seed', min: 1, max: 20, step: 1, value: 1, kind: 'full' },
+  ] },
+  { group: 'Architecture', items: [
+    { id: 'width', type: 'range', label: 'Width', min: 2, max: 48, step: 1, value: 16, kind: 'full' },
+    { id: 'blocks', type: 'range', label: 'Blocks (2 layers each)', min: 1, max: 27, step: 1, value: 6, kind: 'full', fmt: v => v + ' → ' + (2 * v + 2) + ' layers' },
+    { id: 'act', type: 'select', label: 'Activation', value: 'relu', kind: 'full', options: [['relu', 'ReLU'], ['leaky', 'Leaky ReLU (0.1)'], ['gelu', 'GELU'], ['tanh', 'tanh'], ['linear', 'Linear (no activation)']] },
+    { id: 'skip', type: 'check', label: 'Skip connections (ResNet)', value: true, kind: 'full' },
+    { id: 'norm', type: 'select', label: 'Normalization', value: 'bn', kind: 'full', options: [['none', 'None'], ['bn', 'BatchNorm'], ['ln', 'LayerNorm']] },
+    { id: 'place', type: 'select', label: 'Block style', value: 'post', kind: 'full', options: [['post', 'Post-activation (ResNet v1): act(x + N(W·act(N(W·x))))'], ['pre', 'Pre-activation (ResNet v2): x + W·act(N(W·act(N(x))))']] },
+    { id: 'zeroInit', type: 'check', label: 'Zero-init last layer of each branch', value: false, kind: 'full' },
+    { id: 'branchScale', type: 'select', label: 'Branch scale', value: '1', kind: 'full', options: [['1', 'x + F(x)'], ['invsqrt', 'x + F(x)/√L']] },
+    { id: 'initScale', type: 'range', label: 'Init scale × He', min: -2, max: 2, step: 0.25, value: 0, kind: 'full', fmt: v => '×' + Math.pow(2, v).toPrecision(2) },
+    { id: 'initSeed', type: 'range', label: 'Init seed', min: 1, max: 20, step: 1, value: 1, kind: 'full' },
+  ] },
+  { group: 'Training', items: [
+    { id: 'opt', type: 'select', label: 'Optimizer', value: 'sgd', kind: 'full', options: [['sgd', 'SGD + momentum 0.9'], ['adam', 'Adam']] },
+    { id: 'lr', type: 'range', label: 'Learning rate', min: -5, max: 1, step: 0.25, value: -1.25, kind: 'full', fmt: sci },
+    { id: 'batch', type: 'select', label: 'Batch size', value: 'full', kind: 'full', options: [['full', 'Full batch'], ['64', '64'], ['16', '16']] },
+    { id: 'steps', type: 'select', label: 'Training steps', value: '600', kind: 'full', options: [['300', '300'], ['600', '600'], ['1000', '1000'], ['2000', '2000'], ['3000', '3000']] },
+    { id: 'wd', type: 'range', label: 'Weight decay', min: 0, max: 0.01, step: 0.0005, value: 0, kind: 'full', fmt: v => (+v).toFixed(4) },
+  ] },
+  { group: 'Landscape', items: [
+    { id: 'dirNorm', type: 'select', label: 'Direction scaling', value: 'filter', kind: 'map', options: [['filter', 'Filter-wise (Li et al.)'], ['layer', 'Layer-wise'], ['none', 'None (raw Gaussian)']] },
+    { id: 'ignoreBN', type: 'check', label: 'Zero direction on bias & norm params', value: true, kind: 'map' },
+    { id: 'range', type: 'range', label: 'Range r', min: 0.1, max: 2, step: 0.05, value: 1, kind: 'map', fmt: f2 },
+    { id: 'res', type: 'range', label: 'Grid resolution', min: 11, max: 51, step: 2, value: 25, kind: 'map', fmt: v => v + '×' + v },
+    { id: 'evalOn', type: 'select', label: 'Loss on', value: 'train', kind: 'map', options: [['train', 'Training set'], ['test', 'Test set']] },
+    { id: 'dirSeed', type: 'range', label: 'Direction seed', min: 1, max: 20, step: 1, value: 1, kind: 'map' },
+    { id: 'zscale', type: 'select', label: 'Height', value: 'log', kind: 'view', options: [['log', 'log₁₀ loss'], ['lin', 'loss']] },
+  ] },
+];
+const SPEC = {};
+function buildControls() {
+  const root = $('controls');
+  for (const g of CONTROLS) {
+    const fs = document.createElement('fieldset');
+    fs.id = 'fs-' + g.group.toLowerCase();
+    fs.innerHTML = '<legend>' + g.group + '</legend>';
+    for (const c of g.items) {
+      SPEC[c.id] = c;
+      const row = document.createElement('div');
+      if (c.type === 'check') {
+        row.className = 'row check';
+        row.innerHTML = '<input type="checkbox" id="' + c.id + '"' + (c.value ? ' checked' : '') + '><label for="' + c.id + '">' + c.label + '</label>';
+      } else if (c.type === 'select') {
+        row.className = 'row';
+        row.innerHTML = '<label for="' + c.id + '">' + c.label + '</label><span></span><select id="' + c.id + '">' + c.options.map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('') + '</select>';
+      } else {
+        row.className = 'row';
+        row.innerHTML = '<label for="' + c.id + '">' + c.label + '</label><output id="' + c.id + '_o"></output><input type="range" id="' + c.id + '" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '">';
+      }
+      fs.appendChild(row);
+    }
+    root.appendChild(fs);
+  }
+  for (const id in SPEC) {
+    const c = SPEC[id], el = $(id);
+    if (c.type === 'select') el.value = c.value; else if (c.type === 'range') el.value = c.value;
+    updateOut(id);
+    el.addEventListener('input', () => { updateOut(id); });
+    el.addEventListener('change', () => onChange(c.kind));
+  }
+  const pn = document.createElement('p'); pn.className = 'hint'; pn.id = 'landHint';
+  pn.textContent = 'Changing a Landscape setting only redraws the map (Auto) or waits for “Draw landscape” (Manual). Every other change rebuilds the network from scratch.';
+  root.appendChild(pn);
+}
+function updateOut(id) { const c = SPEC[id], o = $(id + '_o'); if (o) o.textContent = c.fmt ? c.fmt($(id).value) : $(id).value; }
+function setControl(id, v) { const c = SPEC[id], el = $(id); if (c.type === 'check') el.checked = !!v; else el.value = v; updateOut(id); }
+function readCfg() {
+  const v = id => $(id).value, n = id => +$(id).value, b = id => $(id).checked;
+  return { dataset: v('dataset'), n: n('n'), noise: 0.15, labelNoise: 0, dataSeed: n('dataSeed'),
+    width: n('width'), blocks: n('blocks'), act: v('act'), skip: b('skip'), norm: v('norm'), place: v('place'), zeroInit: b('zeroInit'),
+    branchScale: v('branchScale'), initScale: Math.pow(2, n('initScale')), seed: n('initSeed'),
+    opt: v('opt'), lr: Math.pow(10, n('lr')), batch: v('batch'), steps: n('steps'), wd: n('wd'),
+    dirNorm: v('dirNorm'), ignoreBN: b('ignoreBN'), range: n('range'), res: n('res'), evalOn: v('evalOn'), dirSeed: n('dirSeed'), zscale: v('zscale') };
+}
+
+// ---------------- Presets ----------------
+const BASE = { dataset: 'spiral', n: 200, dataSeed: 1, width: 16, blocks: 6, act: 'relu', skip: true, norm: 'none', place: 'post', zeroInit: false, branchScale: '1', initScale: 0, initSeed: 1, opt: 'sgd', lr: -1.25, batch: 'full', steps: 600, wd: 0 };
+const PRESETS = [
+  ['Plain + BN, 30 layers', { blocks: 14, skip: false, norm: 'bn', lr: -1, steps: 300 }],
+  ['ResNet + BN, 30 layers', { blocks: 14, skip: true, norm: 'bn', lr: -1, steps: 300 }],
+  ['Plain + BN, 56 layers', { blocks: 27, skip: false, norm: 'bn', lr: -1, steps: 300 }],
+  ['ResNet + BN, 56 layers', { blocks: 27, skip: true, norm: 'bn', lr: -1, steps: 300 }],
+  ['Plain, 22 layers', { blocks: 10, skip: false }],
+  ['ResNet, 22 layers, no norm (He init)', { blocks: 10, skip: true }],
+  ['ResNet + zero-init branch', { blocks: 10, skip: true, zeroInit: true }],
+  ['ResNet v1 + BatchNorm', { blocks: 10, skip: true, norm: 'bn', place: 'post' }],
+  ['ResNet v2 (pre-act) + LayerNorm', { blocks: 10, skip: true, norm: 'ln', place: 'pre' }],
+  ['Narrow plain net (width 4)', { width: 4, blocks: 3, skip: false, steps: 1000 }],
+  ['Wide plain net (width 48)', { width: 48, blocks: 3, skip: false, steps: 1000 }],
+  ['Random labels', { dataset: 'random', n: 120, blocks: 3, width: 32, skip: true, norm: 'bn', steps: 2000 }],
+];
+function markScenario() {
+  document.querySelectorAll('#presets .chip').forEach(b => { const on = b.dataset.name === S.scenario; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  $('curScn').innerHTML = S.scenario ? 'Current scenario: <b>' + S.scenario + '</b>' : 'Current scenario: <b>custom settings</b>';
+}
+function applyPreset(name, p) {
+  const cfg = Object.assign({}, BASE, p);
+  for (const k in cfg) if (SPEC[k]) setControl(k, cfg[k]);
+  S.scenario = name; markScenario();
+  kick('full', true);
+}
+function buildPresets() {
+  const box = $('presets');
+  PRESETS.forEach(([name, p]) => { const b = document.createElement('button'); b.className = 'chip'; b.type = 'button'; b.textContent = name; b.dataset.name = name; b.onclick = () => applyPreset(name, p); box.appendChild(b); });
+}
+
+// ---------------- Theme helpers ----------------
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function hexToRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+
+// ---------------- State ----------------
+const S = { runId: 0, net: null, data: null, test: null, init: null, center: null, hist: [], testHist: [], cfg: null, diverged: false, last: null, pins: [], trainMs: 0,
+  step: 0, auto: true, training: false, pause: false, mapping: false, scenario: null, opt: null, rng: null, batch: 0 };
+const yieldUI = () => new Promise(r => setTimeout(r, 0));
+const setStatus = t => { $('status').textContent = t; };
+
+let pending = null, timer = null;
+function onChange(kind) {
+  if (kind === 'view') { renderMaps(); return; }
+  if (kind === 'full') { S.scenario = null; markScenario(); }
+  kick(kind, false);
+}
+// Auto: run the pipeline. Manual: only rebuild the network at step 0 (full changes) or wait for the buttons.
+function kick(kind, immediate) {
+  pending = (pending === 'full' || kind === 'full') ? 'full' : 'map';
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const k = pending; pending = null;
+    if (S.auto) run(k);
+    else if (k === 'full') resetNow();
+    else setStatus('Landscape setting changed. Press “Draw landscape” to redraw.');
+  }, immediate ? 0 : 250);
+}
+
+function restoreIfMapping() { if (S.net && S.center && S.mapping) { LE.restore(S.net, S.center); S.mapping = false; } }
+
+// Auto mode pipeline: (re)build -> train to the end -> (Lab 2) draw the map.
+async function run(kind) {
+  if (!window.Plotly) { setStatus('The plotting library did not load. Check your connection and reload the page.'); return; }
+  const id = ++S.runId;
+  restoreIfMapping(); S.pause = false; S.training = false;
+  const cfg = readCfg();
+  if (kind === 'full' || !S.net) prepare(cfg);
+  if (S.step < S.cfg.steps && !S.diverged) { const r = await trainLoop(id); if (r !== 'done') return; }
+  if (S.mode === 'training') {
+    setProgress(1);
+    $('statusTop').textContent = (S.diverged ? 'Diverged at step ' + S.diverged : 'Done') + ' · trained in ' + (S.trainMs / 1000).toFixed(1) + ' s';
+    syncButtons(); return;
+  }
+  await mapLandscape(cfg, id);
+}
+
+// ---------------- Build / reset ----------------
+function prepare(cfg) {
+  const raw = LE.makeData(cfg.dataset, cfg.n, cfg.noise, cfg.labelNoise, cfg.dataSeed);
+  const st = LE.standardizer(raw);
+  const data = st.apply(raw), test = st.apply(LE.makeData(cfg.dataset, 400, cfg.noise, cfg.labelNoise, cfg.dataSeed + 7919));
+  const net = LE.buildModel(Object.assign({}, cfg, { K: data.K }));
+  for (let i = 0; i < 30; i++) net.forward(data.X, data.n, 'train'); // warm up BatchNorm running statistics at init (weights untouched)
+  Object.assign(S, { net, data, test, cfg, init: LE.snapshot(net), center: null, hist: [], testHist: [], diverged: false, last: null, mapping: false, step: 0, trainMs: 0,
+    opt: new LE.Optimizer(net.paramList, { type: cfg.opt, lr: cfg.lr, momentum: 0.9, wd: cfg.wd }), rng: LE.mulberry32(cfg.seed * 31 + 7), batch: cfg.batch === 'full' ? data.n : +cfg.batch,
+    g100: null, gEnd: null });
+  $('dataNote').textContent = data.n + ' train / ' + test.n + ' test · ' + data.K + ' classes';
+  S.hist.push(LE.evaluate(net, data, 'full').loss); S.testHist.push([0, LE.evaluate(net, test, 'full').loss]);
+  S.g0 = LE.layerGradNorms(net, data);
+  updateFinal();
+  if (window.Plotly) ['contour', 'surface'].forEach(i => { try { Plotly.purge(i); } catch (e) {} });
+  $('mapNote').textContent = '';
+  drawBoundary(); drawCurve(); renderStats(); if (S.mode === 'training') drawGrad(); setProgress(0); syncButtons();
+}
+function updateFinal() {
+  S.final = { train: LE.evaluate(S.net, S.data, 'full'), test: LE.evaluate(S.net, S.test, 'full') };
+  S.gEnd = S.diverged ? null : LE.layerGradNorms(S.net, S.data);
+}
+function resetNow() {
+  ++S.runId; restoreIfMapping(); S.pause = false; S.training = false;
+  prepare(readCfg());
+  setStatus('Ready at initialization (step 0). Press Start training' + (S.mode === 'landscape' ? ', or Draw landscape right now.' : '.'));
+}
+
+// ---------------- Training (resumable) ----------------
+async function trainLoop(id) {
+  const cfg = S.cfg, net = S.net, data = S.data, test = S.test;
+  S.training = true; S.pause = false; syncButtons();
+  const t0 = performance.now() - S.trainMs; let lastDraw = 0;
+  while (S.step < cfg.steps) {
+    const tEnd = performance.now() + 24;
+    while (S.step < cfg.steps && performance.now() < tEnd) {
+      const r = LE.trainStep(net, S.opt, data, S.batch, S.rng); S.step++;
+      if (!isFinite(r.loss) || r.loss > 1e4 || (r.gradNorm !== undefined && !isFinite(r.gradNorm))) { S.diverged = S.step; break; }
+      S.hist.push(r.loss);
+      if (S.step % 20 === 0 || S.step === cfg.steps) S.testHist.push([S.step, LE.evaluate(net, test, 'full').loss]);
+      if (S.step === 100) { S.g100 = LE.layerGradNorms(net, data); if (S.mode === 'training') drawGrad(); }
+    }
+    if (S.diverged) break;
+    const now = performance.now();
+    if (now - lastDraw > 180) { lastDraw = now; drawBoundary(); drawCurve(); setProgress(S.step / cfg.steps); setStatus('Training · step ' + S.step + ' / ' + cfg.steps); syncButtons(); }
+    await yieldUI(); if (id !== S.runId) return 'cancelled';
+    if (S.pause) {
+      S.training = false; S.pause = false; S.trainMs = performance.now() - t0; updateFinal();
+      drawBoundary(); drawCurve(); renderStats(); if (S.mode === 'training') drawGrad(); syncButtons();
+      setStatus('Paused at step ' + S.step + ' / ' + cfg.steps + '.');
+      return 'paused';
+    }
+  }
+  S.training = false; S.trainMs = performance.now() - t0; updateFinal();
+  drawBoundary(); drawCurve(); renderStats(); if (S.mode === 'training') drawGrad(); setProgress(S.step / cfg.steps); syncButtons();
+  setStatus(S.diverged ? 'Diverged at step ' + S.diverged + '.' : 'Training finished · ' + cfg.steps + ' steps in ' + (S.trainMs / 1000).toFixed(1) + ' s.');
+  return 'done';
+}
+async function manualTrain() {
+  if (S.training) { S.pause = true; return; }
+  if (S.mapping) return;
+  if (!S.net || S.step >= S.cfg.steps || S.diverged) resetNow();
+  const id = ++S.runId;
+  const r = await trainLoop(id);
+  if (r === 'done' && S.mode === 'training') $('statusTop').textContent = (S.diverged ? 'Diverged at step ' + S.diverged : 'Done') + ' · trained in ' + (S.trainMs / 1000).toFixed(1) + ' s';
+}
+async function manualMap() {
+  if (!S.net) resetNow();
+  if (S.training) { S.pause = true; while (S.training) await new Promise(r => setTimeout(r, 25)); }
+  restoreIfMapping();
+  const id = ++S.runId;
+  await mapLandscape(readCfg(), id);
+}
+
+// ---------------- Landscape ----------------
+async function mapLandscape(cfg, id) {
+  const net = S.net;
+  const center = LE.snapshot(net), atStep = S.step; S.center = center;
+  updateFinal(); renderStats();
+  const d1 = LE.makeDirection(net, center, cfg.dirSeed * 2 + 101, cfg.dirNorm, cfg.ignoreBN);
+  const d2 = LE.makeDirection(net, center, cfg.dirSeed * 2 + 102, cfg.dirNorm, cfg.ignoreBN);
+  const evalData = cfg.evalOn === 'test' ? S.test : S.data;
+  S.mapping = true; syncButtons();
+  const gen = LE.landscape2D(net, evalData, center, d1, d2, cfg.range, cfg.res);
+  const t0 = performance.now(); let lastDraw = 0, cur = null;
+  const mcfg = Object.assign({}, S.cfg, { dirNorm: cfg.dirNorm, ignoreBN: cfg.ignoreBN, range: cfg.range, res: cfg.res, evalOn: cfg.evalOn, dirSeed: cfg.dirSeed, atStep });
+  $('mapNote').textContent = 'weights at step ' + atStep + ' of ' + S.cfg.steps + ' · ' + (cfg.evalOn === 'test' ? 'test' : 'train') + ' loss · ' + { filter: 'filter-normalized', layer: 'layer-normalized', none: 'raw' }[cfg.dirNorm] + ' directions · r = ' + cfg.range;
+  while (true) {
+    const tEnd = performance.now() + 30; let doneFlag = false;
+    while (performance.now() < tEnd) { const it = gen.next(); if (it.done) { doneFlag = true; break; } cur = it.value; if (cur.done) { doneFlag = true; break; } }
+    if (id !== S.runId) return; // the canceller restores the weights
+    const now = performance.now();
+    if (cur && !cur.done && now - lastDraw > 200) {
+      lastDraw = now; S.last = partial(cur, cfg.res); renderMaps(true);
+      setProgress((cur.row + 1) / cfg.res); setStatus('Mapping · row ' + (cur.row + 1) + ' / ' + cfg.res);
+    }
+    if (doneFlag) break;
+    await yieldUI(); if (id !== S.runId) return;
+  }
+  S.mapping = false; LE.restore(net, center);
+  S.last = { xs: cur.xs, z: cur.z, stats: LE.gridStats(cur.z), cfg: mcfg, mapMs: performance.now() - t0 };
+  renderMaps(false);
+  renderStats(); setProgress(1); syncButtons();
+  setStatus('Done · weights at step ' + atStep + ' · mapped ' + cfg.res + '×' + cfg.res + ' points in ' + (S.last.mapMs / 1000).toFixed(1) + ' s');
+}
+function partial(cur, res) { const z = cur.z.slice(); while (z.length < res) z.push(new Array(res).fill(null)); return { xs: cur.xs, z, partial: true }; }
+function setProgress(p) { $('prog').style.width = Math.round(100 * p) + '%'; }
+
+// ---------------- Rendering ----------------
+const CLIP = 10;
+function zt(z, mode) { return z.map(r => r.map(v => { if (v === null) return null; if (!isFinite(v) || v > CLIP) v = CLIP; return mode === 'log' ? Math.log10(Math.max(v, 1e-5)) : v; })); }
+function plotLayoutBase(extra) {
+  const fg = css('--ink'), muted = css('--muted'), line = css('--line');
+  return Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: 'IBM Plex Sans, system-ui, sans-serif', color: fg, size: 11 },
+    margin: { l: 38, r: 10, t: 10, b: 34 },
+    xaxis: { gridcolor: line, zerolinecolor: line, linecolor: line, tickfont: { color: muted } },
+    yaxis: { gridcolor: line, zerolinecolor: line, linecolor: line, tickfont: { color: muted } } }, extra || {});
+}
+function contourTrace(xs, z, mode, small) {
+  return { type: 'contour', x: xs, y: xs, z: zt(z, mode), colorscale: 'Viridis', ncontours: small ? 22 : 34, connectgaps: false,
+    contours: { coloring: 'lines' }, line: { width: small ? 1 : 1.4 }, showscale: !small,
+    colorbar: small ? undefined : { thickness: 10, len: 0.8, tickfont: { size: 10, color: css('--muted') }, title: { text: mode === 'log' ? 'log₁₀ L' : 'L', side: 'right', font: { size: 11, color: css('--muted') } } },
+    hovertemplate: 'α=%{x:.2f}<br>β=%{y:.2f}<br>' + (mode === 'log' ? 'log₁₀ L' : 'L') + '=%{z:.3f}<extra></extra>' };
+}
+function centerMarker() { return { type: 'scatter', x: [0], y: [0], mode: 'markers', marker: { symbol: 'x-thin', size: 11, line: { width: 2, color: css('--warn') } }, hoverinfo: 'skip', showlegend: false }; }
+function renderMaps(isPartial) {
+  if (!S.last || !window.Plotly) return;
+  const mode = $('zscale').value, L = S.last;
+  Plotly.react('contour', [contourTrace(L.xs, L.z, mode, false), centerMarker()], plotLayoutBase({
+    xaxis: Object.assign(plotLayoutBase().xaxis, { title: { text: 'α (direction δ)', font: { size: 11 } }, range: [L.xs[0], L.xs[L.xs.length - 1]] }),
+    yaxis: Object.assign(plotLayoutBase().yaxis, { title: { text: 'β (direction η)', font: { size: 11 } }, scaleanchor: 'x', range: [L.xs[0], L.xs[L.xs.length - 1]] }),
+    margin: { l: 44, r: 6, t: 8, b: 40 }, uirevision: 'c' }), { displayModeBar: false, responsive: true });
+  if (isPartial) return;
+  const muted = css('--muted'), line = css('--line');
+  const ax = t => ({ title: { text: t, font: { size: 11, color: muted } }, gridcolor: line, zerolinecolor: line, tickfont: { size: 9, color: muted }, backgroundcolor: 'rgba(0,0,0,0)', showspikes: false });
+  Plotly.react('surface', [{ type: 'surface', x: L.xs, y: L.xs, z: zt(L.z, mode), colorscale: 'Viridis', showscale: false,
+    contours: { z: { show: true, usecolormap: true, project: { z: true }, width: 1 } }, hovertemplate: 'α=%{x:.2f} β=%{y:.2f}<br>%{z:.3f}<extra></extra>' }],
+    plotLayoutBase({ margin: { l: 0, r: 0, t: 0, b: 0 }, uirevision: 's',
+      scene: { xaxis: ax('α'), yaxis: ax('β'), zaxis: ax(mode === 'log' ? 'log₁₀ L' : 'L'), aspectmode: 'manual', aspectratio: { x: 1, y: 1, z: 0.65 }, camera: { eye: { x: 1.45, y: -1.45, z: 1.0 } } } }),
+    { displayModeBar: false, responsive: true });
+}
+function drawInterp(I) {
+  const acc = css('--accent'), c1 = css('--c1'), muted = css('--muted');
+  const cl = a => a.map(v => isFinite(v) ? Math.min(v, CLIP) : CLIP);
+  Plotly.react('interp', [
+    { x: I.a, y: cl(I.tr), mode: 'lines', name: 'train', line: { color: acc, width: 2 } },
+    { x: I.a, y: cl(I.te), mode: 'lines', name: 'test', line: { color: c1, width: 2, dash: 'dot' } },
+  ], plotLayoutBase({ margin: { l: 44, r: 8, t: 6, b: 36 }, showlegend: true, legend: { orientation: 'h', x: 0, y: 1.08, font: { size: 11 } },
+    xaxis: Object.assign(plotLayoutBase().xaxis, { title: { text: 'α  (0 = init, 1 = trained)', font: { size: 11, color: muted } } }),
+    yaxis: Object.assign(plotLayoutBase().yaxis, { type: 'log', title: { text: 'loss', font: { size: 11, color: muted } } }),
+    shapes: [0, 1].map(x => ({ type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { color: css('--line'), width: 1, dash: 'dash' } })) }),
+    { displayModeBar: false, responsive: true });
+}
+
+function drawGrad() {
+  if (!window.Plotly || !S.g0) return;
+  const muted = css('--muted'), cl = a => a.map(v => isFinite(v) && v > 0 ? v : null);
+  const xs = S.g0.map((_, i) => i + 1), tr = [];
+  tr.push({ x: xs, y: cl(S.g0), mode: 'lines+markers', name: 'at init', line: { color: css('--c2'), width: 2, dash: 'dot' }, marker: { size: 4 } });
+  if (S.g100) tr.push({ x: xs, y: cl(S.g100), mode: 'lines+markers', name: 'after 100 steps', line: { color: css('--c1'), width: 2 }, marker: { size: 4 } });
+  if (S.gEnd && S.step !== 100 && S.step !== 0) tr.push({ x: xs, y: cl(S.gEnd), mode: 'lines', name: S.step >= S.cfg.steps ? 'end of training' : 'now (step ' + S.step + ')', line: { color: css('--accent'), width: 2 } });
+  const ratio = S.g0[0] / S.g0[S.g0.length - 1];
+  Plotly.react('gradPlot', tr, plotLayoutBase({ margin: { l: 50, r: 10, t: 26, b: 36 }, showlegend: true, legend: { orientation: 'h', x: 0, y: 1.16, font: { size: 11 } },
+    xaxis: Object.assign(plotLayoutBase().xaxis, { title: { text: 'layer', font: { size: 11, color: muted } } }),
+    yaxis: Object.assign(plotLayoutBase().yaxis, { type: 'log', exponentformat: 'power', title: { text: '‖∇W‖', font: { size: 11, color: muted } } }),
+    annotations: [{ xref: 'paper', yref: 'paper', x: 1, y: 1.16, xanchor: 'right', showarrow: false, font: { size: 11, color: muted }, text: 'at init: layer 1 / last layer = ' + (isFinite(ratio) ? ratio.toExponential(1) : '–') }] }),
+    { displayModeBar: false, responsive: true });
+}
+function fitCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return { ctx, w, h };
+}
+function drawBoundary() {
+  const cv = $('boundary'), { ctx, w, h } = fitCanvas(cv), D = S.data, net = S.net; if (!D) return;
+  let lo = Infinity, hi = -Infinity; for (let i = 0; i < D.X.length; i++) { lo = Math.min(lo, D.X[i]); hi = Math.max(hi, D.X[i]); }
+  lo -= 0.35; hi += 0.35;
+  const G = 64, P = new Float32Array(G * G * 2);
+  for (let j = 0; j < G; j++) for (let i = 0; i < G; i++) { const k = j * G + i; P[2 * k] = lo + (hi - lo) * (i + 0.5) / G; P[2 * k + 1] = hi - (hi - lo) * (j + 0.5) / G; }
+  const mode = S.cfg.norm === 'bn' ? 'eval' : 'full';
+  const out = net.forward(P, G * G, mode), K = net.K;
+  const cols = [css('--c0'), css('--c1'), css('--c2')].map(hexToRgb), bg = hexToRgb(css('--panel'));
+  const img = ctx.createImageData(G, G);
+  for (let k = 0; k < G * G; k++) {
+    let m = -Infinity; for (let c = 0; c < K; c++) m = Math.max(m, out[k * K + c]);
+    let s = 0; const p = []; for (let c = 0; c < K; c++) { p[c] = Math.exp(out[k * K + c] - m); s += p[c]; }
+    let r = 0, g = 0, b = 0;
+    if (!isFinite(s)) { r = g = b = 128; } else {
+      let conf = 0; for (let c = 0; c < K; c++) { p[c] /= s; r += p[c] * cols[c][0]; g += p[c] * cols[c][1]; b += p[c] * cols[c][2]; conf = Math.max(conf, p[c]); }
+      const a = 0.12 + 0.38 * (conf - 1 / K) / (1 - 1 / K);
+      r = bg[0] * (1 - a) + r * a; g = bg[1] * (1 - a) + g * a; b = bg[2] * (1 - a) + b * a;
+    }
+    img.data[4 * k] = r; img.data[4 * k + 1] = g; img.data[4 * k + 2] = b; img.data[4 * k + 3] = 255;
+  }
+  const off = document.createElement('canvas'); off.width = G; off.height = G; off.getContext('2d').putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.clearRect(0, 0, w, h); ctx.drawImage(off, 0, 0, w, h);
+  const sx = x => (x - lo) / (hi - lo) * w, sy = y => (hi - y) / (hi - lo) * h;
+  ctx.lineWidth = 1; ctx.strokeStyle = css('--panel');
+  for (let i = 0; i < D.n; i++) {
+    const c = cols[D.y[i]]; ctx.fillStyle = 'rgb(' + c.join(',') + ')';
+    ctx.beginPath(); ctx.arc(sx(D.X[2 * i]), sy(D.X[2 * i + 1]), 3.2, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+  }
+}
+function drawCurve() {
+  const cv = $('curve'), { ctx, w, h } = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h);
+  const H = S.hist, T = S.testHist, N = Math.max(S.cfg.steps, 1);
+  const ml = 36, mr = 8, mt = 8, mb = 24, pw = w - ml - mr, ph = h - mt - mb;
+  const vals = H.concat(T.map(t => t[1])).filter(v => isFinite(v) && v > 0);
+  let ymin = Math.floor(Math.log10(Math.max(1e-5, Math.min(...vals, 1)))), ymax = Math.ceil(Math.log10(Math.max(...vals, 1)));
+  if (ymax <= ymin) ymax = ymin + 1;
+  const X = s => ml + s / N * pw, Y = v => mt + (ymax - Math.log10(Math.max(v, 1e-6))) / (ymax - ymin) * ph;
+  const line = css('--line'), muted = css('--muted');
+  ctx.font = '10px "IBM Plex Mono", monospace'; ctx.fillStyle = muted; ctx.strokeStyle = line; ctx.lineWidth = 1;
+  for (let e = ymin; e <= ymax; e++) { const y = Y(Math.pow(10, e)); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(w - mr, y); ctx.stroke(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillText(String(e), ml - 5, y); }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  [0, 0.5, 1].forEach(f => ctx.fillText(String(Math.round(f * N)), X(f * N), h - mb + 6));
+  ctx.lineWidth = 1.6; ctx.strokeStyle = css('--accent'); ctx.beginPath();
+  const stride = Math.max(1, Math.floor(H.length / 600));
+  for (let i = 0; i < H.length; i += stride) { const x = X(i), y = Y(Math.min(H[i], 1e3)); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+  ctx.stroke();
+  ctx.strokeStyle = css('--c1'); ctx.setLineDash([3, 3]); ctx.beginPath();
+  T.forEach((t, i) => { const x = X(t[0]), y = Y(Math.min(isFinite(t[1]) ? t[1] : 1e3, 1e3)); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = css('--accent'); ctx.fillText('train', ml + 6, mt + 2); ctx.fillStyle = css('--c1'); ctx.fillText('test', ml + 46, mt + 2);
+  if (S.diverged) { ctx.fillStyle = css('--warn'); ctx.textAlign = 'right'; ctx.fillText('diverged at step ' + S.diverged, w - mr - 4, mt + 2); }
+}
+function renderStats() {
+  const el = $('stats'); if (!S.net) return;
+  const f = S.final, chips = [];
+  const fmt = v => isFinite(v) ? (v < 0.001 ? v.toExponential(1) : v.toFixed(3)) : '∞';
+  chips.push(['params', S.net.nParams.toLocaleString()]);
+  if (S.diverged) chips.push(['training', 'diverged at step ' + S.diverged, 'bad']);
+  if (f) { chips.push(['step', S.step + '/' + S.cfg.steps]); chips.push(['train loss', fmt(f.train.loss)]); chips.push(['test loss', fmt(f.test.loss)]); chips.push(['train acc', (100 * f.train.acc).toFixed(1) + '%', f.train.acc > 0.97 ? 'good' : f.train.acc < 0.7 ? 'bad' : '']); chips.push(['test acc', (100 * f.test.acc).toFixed(1) + '%']); }
+  if (S.last && S.last.stats && !S.last.partial) { chips.push(['grid local minima', S.last.stats.localMins]); chips.push(['non-convex', Math.round(100 * S.last.stats.nonconvexFrac) + '%']); }
+  el.innerHTML = chips.map(c => '<span class="stat ' + (c[2] || '') + '"><b>' + c[0] + '</b>' + c[1] + '</span>').join('');
+}
+
+// ---------------- Pins ----------------
+function describe(c) {
+  const ds = SPEC.dataset.options.find(o => o[0] === c.dataset)[1];
+  const parts = [ds, (2 * c.blocks + 2) + ' layers × ' + c.width, SPEC.act.options.find(o => o[0] === c.act)[1].replace(/ \(.*\)/, ''),
+    c.skip ? 'skip' + (c.zeroInit ? ', zero-init' : '') + (c.branchScale === 'invsqrt' ? ', /√L' : '') : 'no skip',
+    c.norm === 'none' ? 'no norm' : (c.norm === 'bn' ? 'BN' : 'LN') + (c.place === 'pre' ? ' pre-act' : ' post-act'),
+    c.opt === 'adam' ? 'Adam' : 'SGD', 'lr ' + c.lr.toPrecision(2)];
+  if (c.atStep !== undefined && c.atStep < c.steps) parts.push(c.atStep === 0 ? 'at init' : 'at step ' + c.atStep);
+  if (c.labelNoise) parts.push(Math.round(c.labelNoise * 100) + '% label noise');
+  if (c.dirNorm !== 'filter') parts.push(c.dirNorm + ' dirs');
+  if (c.evalOn === 'test') parts.push('test loss');
+  return parts.join(' · ');
+}
+function renderPins() {
+  const box = $('pins');
+  if (!S.pins.length) { box.innerHTML = '<div class="empty">Nothing pinned yet. Try pinning the plain net, then the ResNet.</div>'; return; }
+  box.innerHTML = '';
+  const mode = $('zscale').value;
+  S.pins.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'pin';
+    d.innerHTML = '<div class="pt"><div><div class="cap">' + p.label + '</div><div class="meta">' + p.meta + '</div></div><button class="x" type="button" aria-label="Remove pin">×</button></div><div class="' + (p.z ? 'pplot' : 'pcurve') + '"></div>';
+    d.querySelector('.x').onclick = () => { S.pins.splice(i, 1); renderPins(); };
+    box.appendChild(d);
+    const tick = { tickfont: { size: 9, color: css('--muted') } };
+    if (p.z) {
+      Plotly.newPlot(d.querySelector('.pplot'), [contourTrace(p.xs, p.z, mode, true), centerMarker()], plotLayoutBase({ margin: { l: 26, r: 4, t: 4, b: 20 }, xaxis: Object.assign(plotLayoutBase().xaxis, tick), yaxis: Object.assign(plotLayoutBase().yaxis, tick, { scaleanchor: 'x' }) }), { staticPlot: true, responsive: true });
+    } else {
+      const cl = v => isFinite(v) ? Math.max(Math.min(v, 1e3), 1e-6) : 1e3;
+      const stride = Math.max(1, Math.floor(p.hist.length / 300)), xs = [], ys = [];
+      for (let k = 0; k < p.hist.length; k += stride) { xs.push(k); ys.push(cl(p.hist[k])); }
+      Plotly.newPlot(d.querySelector('.pcurve'), [
+        { x: xs, y: ys, mode: 'lines', line: { color: css('--accent'), width: 1.5 }, name: 'train' },
+        { x: p.testHist.map(t => t[0]), y: p.testHist.map(t => cl(t[1])), mode: 'lines', line: { color: css('--c1'), width: 1.2, dash: 'dot' }, name: 'test' },
+      ], plotLayoutBase({ margin: { l: 34, r: 4, t: 4, b: 20 }, showlegend: false, xaxis: Object.assign(plotLayoutBase().xaxis, tick), yaxis: Object.assign(plotLayoutBase().yaxis, tick, { type: 'log', dtick: 1 }) }), { staticPlot: true, responsive: true });
+    }
+  });
+}
+$('pinBtn').onclick = () => {
+  if (!S.net || !S.final) return;
+  const f = S.final;
+  const meta = (S.diverged ? 'diverged at step ' + S.diverged + ' · ' : '') + 'train loss ' + (isFinite(f.train.loss) ? f.train.loss.toFixed(3) : '∞') + ' · train acc ' + (100 * f.train.acc).toFixed(0) + '% · test acc ' + (100 * f.test.acc).toFixed(0) + '%';
+  if (S.mode === 'training') {
+    S.pins.push({ hist: S.hist.slice(), testHist: S.testHist.slice(), label: describe(Object.assign({ dirNorm: 'filter', evalOn: 'train' }, S.cfg)), meta });
+  } else {
+    if (!S.last || S.last.partial) return;
+    S.pins.push({ xs: S.last.xs, z: S.last.z, label: describe(S.last.cfg), meta: meta + ' · minima ' + S.last.stats.localMins + ' · non-convex ' + Math.round(100 * S.last.stats.nonconvexFrac) + '%' });
+  }
+  if (S.pins.length > 8) S.pins.shift();
+  renderPins();
+};
+
+// ---------------- Modes ----------------
+const MODE_TEXT = {
+  training: 'Lab 1: train plain and residual MLPs and compare their training curves and decision regions. Pin each run to compare.',
+  landscape: 'Lab 2: slice the loss surface around the current weights (at the end of training, or at any step you choose in Manual mode) with filter-normalized random directions (Li, Xu, Taylor, Studer & Goldstein, NeurIPS 2018).',
+};
+function syncButtons() {
+  const land = S.mode === 'landscape', man = !S.auto, rb = $('runBtn');
+  $('resetBtn').hidden = !man; $('mapBtn').hidden = !(man && land);
+  if (!man) rb.textContent = land ? 'Train & map' : 'Train';
+  else rb.textContent = S.training ? 'Pause' : (S.net && S.step > 0 && S.step < S.cfg.steps && !S.diverged ? 'Resume training' : 'Start training');
+  rb.disabled = man && S.mapping;
+  $('mapBtn').disabled = S.mapping;
+  $('stepLine').textContent = S.net ? 'step ' + S.step + ' / ' + S.cfg.steps + (S.diverged ? ' · diverged at ' + S.diverged : '') : '';
+  $('runHint').textContent = S.auto
+    ? 'Auto: pick a scenario or change a setting and the lab ' + (land ? 'trains and draws the landscape' : 'trains') + ' for you.'
+    : 'Manual: scenarios and settings only set up the network at step 0. Press Start training' + (land ? ', and Draw landscape whenever you like: at step 0, halfway through training, or at the end.' : '.');
+  $('modeAuto').setAttribute('aria-pressed', S.auto); $('modeManual').setAttribute('aria-pressed', !S.auto);
+}
+function setAuto(a) {
+  if (S.auto === a) return;
+  S.auto = a;
+  if (!a) { if (S.training) S.pause = true; syncButtons(); }
+  else { syncButtons(); run('full'); }
+}
+function setMode(m, rerun) {
+  S.mode = m;
+  $('modeTrain').setAttribute('aria-selected', m === 'training'); $('modeLand').setAttribute('aria-selected', m === 'landscape');
+  $('modeSub').textContent = MODE_TEXT[m];
+  const land = m === 'landscape';
+  $('landPanel').hidden = !land; $('methodPanel').hidden = !land; $('fs-landscape').hidden = !land; $('landHint').hidden = !land;
+  $('statusTop').hidden = land; $('gradPanel').hidden = land;
+  if (!land) setTimeout(drawGrad, 0);
+  $('pinBtn').textContent = land ? 'Pin this map' : 'Pin this run';
+  S.pins = []; renderPins(); syncButtons();
+  try { history.replaceState(null, '', '#' + m); } catch (e) {}
+  if (rerun) {
+    if (!S.net) { S.auto ? run('full') : resetNow(); }
+    else if (land) { if (S.auto) run(S.step >= S.cfg.steps ? 'map' : 'full'); }
+    else { setProgress(1); $('statusTop').textContent = S.training ? 'Training…' : 'Step ' + S.step + ' / ' + S.cfg.steps; }
+  }
+}
+$('modeTrain').onclick = () => setMode('training', true);
+$('modeLand').onclick = () => setMode('landscape', true);
+new MutationObserver(() => { $('statusTop').textContent = $('status').textContent; }).observe($('status'), { childList: true, characterData: true, subtree: true });
+
+// ---------------- Wire up ----------------
+buildControls(); buildPresets(); markScenario();
+setMode(location.hash === '#training' ? 'training' : 'landscape', false);
+$('runBtn').onclick = () => { if (S.auto) run('full'); else manualTrain(); };
+$('resetBtn').onclick = resetNow;
+$('mapBtn').onclick = manualMap;
+$('modeAuto').onclick = () => setAuto(true);
+$('modeManual').onclick = () => setAuto(false);
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (S.net) { drawBoundary(); drawCurve(); } }, 150); });
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (S.net) { drawBoundary(); drawCurve(); renderMaps(); renderPins(); } });
+run('full');
+})();
+</script>

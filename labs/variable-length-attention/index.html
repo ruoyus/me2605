@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Variable-Length Attention Lab · ME2605</title>
+<link rel="stylesheet" href="style.css">
+<script defer src="results.js"></script>
+<script defer src="lab.js"></script>
+</head>
+<body>
+<main>
+<nav><a href="https://ruoyus.github.io/me2605/">ME2605</a><a href="https://ruoyus.github.io/me2605/labs/attention-lookup/">Fixed-length lookup lab</a></nav>
+<header>
+<h1>Variable-Length Attention Lab</h1>
+<p>Ask for the fruit or vegetable in a prompt with up to 24 distractors. Compare a shared attention rule with an MLP trained on zero-padded prompts.</p>
+</header>
+<section aria-labelledby="prompt-heading">
+<h2 id="prompt-heading">Try a prompt</h2>
+<form id="prompt-form">
+<div class="controls"><label>Tokens <input id="length" type="number" min="7" max="30" value="7"></label>
+<label>Query <select id="query"><option>fruit</option><option>vegetable</option></select></label>
+<button type="button" id="new-example">New held-out pair</button></div>
+<label for="prompt">Prompt <span id="token-count"></span></label>
+<textarea id="prompt" rows="3" spellcheck="false">Items: apple, tree, carrot. Name the fruit:</textarea>
+<p class="hint">Use <code>Items: … Name the fruit:</code> or <code>Items: … Name the vegetable:</code>. Include exactly one fruit and one vegetable. Both models use the same 7–30 token limit in this demo.</p>
+<div class="controls"><button type="submit" class="primary">Predict</button><button type="button" id="swap">Swap fruit and vegetable</button></div>
+</form>
+<p id="status" role="status"></p>
+<div class="grid results" id="predictions" aria-live="polite"></div>
+<details><summary>Words you can use</summary><div id="vocab"></div></details>
+</section>
+<section aria-labelledby="charts-heading">
+<h2 id="charts-heading">How the models did on held-out pairs</h2>
+<p><span class="attention">● Attention</span> <span class="mlp">● Padded MLP</span></p>
+<div class="grid">
+<figure><canvas id="ce" width="580" height="260" aria-label="Test cross-entropy over optimizer steps"></canvas><figcaption>Test cross-entropy (log scale)</figcaption></figure>
+<figure><canvas id="acc" width="580" height="260" aria-label="Final test accuracy by prompt length"></canvas><figcaption>Final accuracy by prompt length</figcaption></figure>
+</div>
+<p id="run-details" class="hint"></p>
+</section>
+<section aria-labelledby="trace-heading">
+<h2 id="trace-heading">Inspect the attention scores</h2>
+<p>Each bar is the raw query–key dot product for a token in the prompt. A score can be negative.</p>
+<div id="trace"></div>
+</section>
+<footer><a href="train.py">Training source (NumPy)</a><span> · </span><a href="README.md">Reproduce the experiment</a></footer>
+</main>
+</body>
+</html>

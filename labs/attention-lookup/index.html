@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Attention Lookup Lab · ME2605</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="run-7.js"></script>
+  <script defer src="run-17.js"></script>
+  <script defer src="run-31.js"></script>
+  <script defer src="mlp-7.js"></script>
+  <script defer src="mlp-17.js"></script>
+  <script defer src="mlp-31.js"></script>
+  <script defer src="lab.js"></script>
+</head>
+<body>
+<header>
+  <div class="wrap nav"><span>ME2605 <span class="divider">/</span> LECTURE 10 BONUS</span>
+    <a href="https://ruoyus.github.io/me2605/#schedule">Course schedule ↗</a></div>
+  <div class="wrap intro">
+    <p class="kicker">ONE QUERY · SIX INPUT WORDS</p>
+    <h1>Attention Lookup Lab</h1>
+    <p class="deck">Can a model learn to find the requested word?</p>
+    <p>Replay training for a single attention function and a two-layer MLP. Try the same prefix on both models and inspect how attention forms its prediction.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="transport" aria-label="Training playback">
+    <div class="controls">
+      <button id="play" class="primary">▶ Play training</button>
+      <button id="reset" title="Return to random initialization">Reset</button>
+      <button id="end">Last selected step</button>
+      <label>Maximum steps <select id="max-steps"></select></label>
+      <label class="seed">Random seed <select id="seed"><option>7</option><option>17</option><option>31</option></select></label>
+    </div>
+    <div class="timeline">
+      <label for="progress">Checkpoint <strong id="step"></strong></label>
+      <input id="progress" type="range" min="0" max="1" value="0">
+    </div>
+    <p class="quiet">Both models share the initial embeddings and batch sequence for each seed. Recorded Adam updates · batch 128 · learning rate 0.01</p>
+  </section>
+
+  <section class="probe" aria-labelledby="probe-title">
+    <div class="section-head"><h2 id="probe-title">Try a prefix</h2><span class="tag" id="split"></span></div>
+    <div class="controls">
+      <label>Fruit <select id="fruit"></select></label>
+      <label>Vegetable <select id="vegetable"></select></label>
+      <label>Request <select id="query"><option>fruit</option><option>vegetable</option></select></label>
+      <button id="swap">Swap item order</button>
+      <button id="heldout">Next held-out pair</button>
+      <button id="mlp-error">Find an MLP test error</button>
+    </div>
+    <div id="prefix" class="prefix" aria-label="Six input words"></div>
+    <div class="probe-result">
+      <div><span class="eyebrow">TRUE SEVENTH WORD</span><strong id="target"></strong></div>
+      <div><span class="eyebrow">ATTENTION</span><strong id="prediction"></strong><span class="quiet">Target probability <span id="prob"></span></span></div>
+      <div><span class="eyebrow">TWO-LAYER MLP</span><strong id="mlp-prediction"></strong><span class="quiet">Target probability <span id="mlp-prob"></span></span></div>
+    </div>
+    <p id="error-status" class="quiet" role="status"></p>
+    <details><summary>Trace the attention prediction</summary>
+      <p>Each score multiplies its value vector. The sum goes to a 55-word output head, then softmax gives the next-word distribution.</p>
+      <div class="scroll"><table class="trace"><thead><tr><th>Input position</th><th>Item</th><th>Raw score</th><th>Contribution length</th></tr></thead><tbody id="trace"></tbody></table></div>
+      <p id="top" class="quiet"></p>
+    </details>
+  </section>
+
+  <div class="grid">
+    <section aria-labelledby="loss-title">
+      <div class="section-head"><h2 id="loss-title">Training and test loss</h2><span class="tag">LOG SCALE</span></div>
+      <div class="legend"><span class="blue">● Train</span><span class="rose">● Test</span><span>━ Attention</span><span>┄ MLP</span></div>
+      <canvas id="loss" role="img" aria-label="Mean train and test cross-entropy by update"></canvas>
+      <div class="scroll"><table class="metrics">
+        <thead><tr><th>Model</th><th>Split</th><th>Mean CE</th><th>PPL − 1</th><th>Top-1</th></tr></thead>
+        <tbody id="metrics"></tbody>
+      </table></div>
+      <p class="quiet">PPL = exp(CE). PPL − 1 shows small differences near one.</p>
+    </section>
+    <section aria-labelledby="vectors-title">
+      <div class="section-head"><h2 id="vectors-title">Attention word vectors in 2D</h2>
+        <select id="view" aria-label="Vector projection"><option value="embedding">Embeddings</option><option value="queryKey">Projected queries / keys</option></select></div>
+      <div class="legend"><span class="blue">◆ Query words</span><span class="rose">● Fruits</span><span class="green">● Vegetables</span></div>
+      <canvas id="vectors" role="img" aria-label="PCA trajectories of fruit, vegetable, apple, pear, carrot, and cabbage"></canvas>
+      <p class="quiet" id="projectionCaption"></p>
+    </section>
+  </div>
+
+  <section aria-labelledby="models-title">
+    <div class="section-head"><h2 id="models-title">Two models for the same task</h2></div>
+    <div class="models">
+      <div><h3>One attention function <small>2,528 parameters</small></h3>
+        <p>Positions 1–5 supply keys and values. Position 6 supplies the only query. Take five raw dot products, weight the values, and send their sum to the word output head.</p>
+        <p class="quiet">One head, with no attention softmax, nonlinear activation layer, positional encoding, or normalization.</p></div>
+      <div><h3>Two-layer MLP <small>2,607 parameters</small></h3>
+        <p>Concatenate the six 16-dimensional embeddings in input order. Map 96 inputs to 11 hidden units, apply ReLU, then map the result to 55 word scores.</p>
+        <p class="quiet">Both models use the same final-word cross-entropy over vocabulary logits.</p></div>
+    </div>
+    <p class="quiet">The attention sum is invariant to swapping the two items. The MLP’s first layer has distinct weights for each slot.</p>
+  </section>
+
+  <section aria-labelledby="scores-title">
+    <div class="section-head"><h2 id="scores-title">Did the scores learn Assumption 2?</h2>
+      <label><input id="ideal" type="checkbox"> Show ideal 1 / 0</label></div>
+    <p>The two rows are the queries <strong>fruit</strong> and <strong>vegetable</strong>. Each cell is the signed dot product of a projected query and item key. Select an item to try it above.</p>
+    <div id="heat" class="scroll"></div>
+    <div class="legend"><span class="indigo">■ Negative</span><span class="neutral">■ Near zero</span><span class="rose">■ Positive</span><span id="extent"></span></div>
+    <p id="scoreDetail" class="quiet"></p>
+    <p class="quiet">Lec 9 uses scores near 1 for a match and 0 for a mismatch. The toggle shows the exact 1/0 construction. Training only checks the seventh word, so learned scores can differ in sign and scale.</p>
+  </section>
+
+  <section aria-labelledby="proof-title">
+    <div class="section-head"><h2 id="proof-title">How close is the run to the best possible loss?</h2></div>
+    <p>Cross-entropy is nonnegative. We can construct parameters for this attention model that select the correct item using 1/0 scores. Its output head gives every item a distinct direction on the unit circle. Scaling that head widens the correct logit’s lead, driving CE toward zero.</p>
+    <div class="scroll"><table class="metrics"><thead><tr><th>Constructed head scale</th><th>Train CE</th><th>Test CE</th><th>Test top-1</th></tr></thead><tbody id="witness"></tbody></table></div>
+    <p class="quiet">Zero is the infimum. With finite logits, the true word has probability below one. An observed CE of ε puts the run within ε of the global infimum on that split.</p>
+  </section>
+
+  <section aria-labelledby="data-title">
+    <div class="section-head"><h2 id="data-title">Data and training code</h2></div>
+    <p>20 fruits × 30 vegetables × 2 orders × 2 requests = 2,400 examples. Train on 480 pairs (1,920 examples), then test on the other 120 pairs (480 examples). Every produce word occurs in training. All examples for the same pair stay in the same split.</p>
+    <details><summary>See the full 55-word vocabulary</summary><p id="vocab"></p></details>
+    <div class="links"><a href="train.py" download>Attention training code ↓</a><a href="train_mlp.py" download>MLP comparison code ↓</a><a href="train.tsv" download>Training corpus ↓</a><a href="test.tsv" download>Test corpus ↓</a></div>
+  </section>
+</main>
+<footer class="wrap">ME2605 · Training Neural Networks: Theory and Practice</footer>
+</body>
+</html>

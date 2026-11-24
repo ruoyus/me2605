@@ -6,6 +6,7 @@ const fruit = new Set(data.fruits);
 const vegetable = new Set(data.vegetables);
 const distractor = new Set(data.distractors);
 const promptField = byId("prompt");
+let liveWeights = null;
 const dot = (a, b) => a.reduce((sum, v, i) => sum + v * b[i], 0);
 const matvec = (matrix, vector) => matrix.map(row => dot(row, vector));
 const argmax = xs => xs.reduce((i, x, j) => x > xs[i] ? j : i, 0);
@@ -28,7 +29,7 @@ function inspectPrompt(text) {
 }
 
 function predictAttention(ids) {
-  const [E, Wq, Wk, Wv, head] = data.models.attention.params;
+  const [E, Wq, Wk, Wv, head] = liveWeights ? liveWeights.attention : data.models.attention.params;
   const q = matvec(Wq, E[ids[ids.length - 1]]);
   const source = ids.slice(0, -1);
   const scores = source.map(id => dot(q, matvec(Wk, E[id])));
@@ -40,7 +41,7 @@ function predictAttention(ids) {
 }
 
 function predictMlp(ids) {
-  const [E, W1, b1, W2, b2] = data.models.mlp.params;
+  const [E, W1, b1, W2, b2] = liveWeights ? liveWeights.mlp : data.models.mlp.params;
   const x = [...ids, ...Array(30 - ids.length).fill(0)].flatMap(id => E[id]);
   const h = matvec(W1, x).map((v, i) => Math.max(0, v + b1[i]));
   return matvec(W2, h).map((v, i) => v + b2[i]);
@@ -178,4 +179,110 @@ byId("swap").addEventListener("click", () => {
 for (const [title, words] of [["Fruit", data.fruits], ["Vegetables", data.vegetables], ["Distractors", data.distractors]]) {
   byId("vocab").append(element("p", title + ": " + words.join(", ")));
 }
+let worker = null;
+let pending = 0;
+let liveLosses = [];
+let initialized = false;
+
+function trainingButtons(active) {
+  byId("train").disabled = active;
+  byId("pause").disabled = !active;
+  byId("steps").disabled = active;
+}
+
+function livePlot() {
+  const hidden = liveLosses.length === 0;
+  byId("live-plot").hidden = hidden;
+  if (hidden) return;
+  const maxStep = Math.max(2, liveLosses[liveLosses.length - 1][0]);
+  const high = Math.max(1, ...liveLosses.slice(-1600).flatMap(([,a,m]) => [a,m]));
+  const series = [{color:"#146354", points:[]},{color:"#a34c27", points:[]}];
+  for (const [step,a,m] of liveLosses.slice(-1600)) {
+    series[0].points.push([step,a]);
+    series[1].points.push([step,m]);
+  }
+  const first = series[0].points[0][0];
+  plot(byId("live-loss"),series,first,maxStep,0,high,[first,maxStep],
+    [0,high/2,high], x => x.toFixed(2), String);
+}
+
+function startWorker(steps) {
+  if (worker) worker.terminate();
+  liveLosses = [];
+  livePlot();
+  initialized = false;
+  pending = steps;
+  trainingButtons(true);
+  byId("training-status").textContent = "Initializing random weights…";
+  try {
+    worker = new Worker("trainer.js?v=2");
+  } catch (error) {
+    trainingButtons(false);
+    byId("training-status").textContent = "Live training needs an HTTPS page or a local web server. The saved run still works here.";
+    return;
+  }
+  const currentWorker = worker;
+  worker.onerror = () => {
+    if (worker !== currentWorker) return;
+    worker.terminate();
+    worker = null;
+    pending = 0;
+    trainingButtons(false);
+    byId("training-status").textContent = "Live training could not start. Open the course site over HTTPS, or use the saved weights.";
+  };
+  worker.onmessage = ({data: frame}) => {
+    if (worker !== currentWorker || frame.kind !== "state") return;
+    liveWeights = {attention:frame.attention, mlp:frame.mlp};
+    byId("weight-source").textContent = "Predictions use live weights at step " + frame.step.toLocaleString() + ".";
+    liveLosses.push(...frame.losses);
+    livePlot();
+    run();
+    if (!initialized) {
+      initialized = true;
+      if (pending) {
+        worker.postMessage({kind:"train", steps:pending});
+        pending = 0;
+        byId("training-status").textContent = "Training…";
+        return;
+      }
+    }
+    const active = frame.status === "training";
+    trainingButtons(active);
+    const name = active ? "Training" : frame.status === "paused" ? "Paused" : "Ready";
+    byId("training-status").textContent = name + " · " + frame.step.toLocaleString() + " completed steps";
+  };
+  worker.postMessage({kind:"reset", words:data.words, fruits:data.fruits, vegetables:data.vegetables, distractors:data.distractors});
+}
+
+byId("train").addEventListener("click", () => {
+  const value = Number(byId("steps").value);
+  const steps = Number.isFinite(value) ? Math.max(1, Math.min(1600, Math.trunc(value))) : 100;
+  byId("steps").value = steps;
+  if (!worker) startWorker(steps);
+  else {
+    trainingButtons(true);
+    byId("training-status").textContent = "Training…";
+    worker.postMessage({kind:"train", steps});
+  }
+});
+byId("pause").addEventListener("click", () => {
+  if (!worker) return;
+  pending = 0;
+  worker.postMessage({kind:"pause"});
+});
+byId("reset").addEventListener("click", () => { startWorker(0); });
+byId("saved").addEventListener("click", () => {
+  if (worker) worker.terminate();
+  worker = null;
+  initialized = false;
+  pending = 0;
+  liveWeights = null;
+  liveLosses = [];
+  livePlot();
+  trainingButtons(false);
+  byId("training-status").textContent = "Using the saved checkpoint. Train starts a new run.";
+  byId("weight-source").textContent = "Predictions use weights from the saved run.";
+  run();
+});
+
 run(); charts();

@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Variable-Length Attention Lab · ME2605</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 <script defer src="results.js"></script>
-<script defer src="lab.js"></script>
+<script defer src="lab.js?v=2"></script>
 </head>
 <body>
 <main>
@@ -15,8 +15,25 @@
 <h1>Variable-Length Attention Lab</h1>
 <p>Ask for the fruit or vegetable in a prompt with up to 24 distractors. Compare a shared attention rule with an MLP trained on zero-padded prompts.</p>
 </header>
+<section aria-labelledby="training-heading">
+<h2 id="training-heading">Train in your browser</h2>
+<p>Start from random weights and watch both models learn on the same batches of 32 synthetic prompts.</p>
+<div class="controls">
+<label>Steps per run <input id="steps" type="number" min="1" max="1600" value="100" inputmode="numeric"></label>
+<button type="button" id="train" class="primary">Train</button>
+<button type="button" id="pause" disabled>Pause</button>
+<button type="button" id="reset">Reset</button>
+<button type="button" id="saved">Use saved weights</button>
+</div>
+<p id="training-status" role="status">Using the saved checkpoint. Train starts a new run.</p>
+<div id="live-plot" hidden>
+<p><span class="attention">● Attention</span> <span class="mlp">● Padded MLP</span></p>
+<figure><canvas id="live-loss" width="800" height="235" aria-label="Live cross-entropy on the current training batches"></canvas><figcaption>Live training cross-entropy</figcaption></figure>
+</div>
+</section>
 <section aria-labelledby="prompt-heading">
 <h2 id="prompt-heading">Try a prompt</h2>
+<p id="weight-source" class="hint">Predictions use weights from the saved run.</p>
 <form id="prompt-form">
 <div class="controls"><label>Tokens <input id="length" type="number" min="7" max="30" value="7"></label>
 <label>Query <select id="query"><option>fruit</option><option>vegetable</option></select></label>
@@ -31,7 +48,7 @@
 <details><summary>Words you can use</summary><div id="vocab"></div></details>
 </section>
 <section aria-labelledby="charts-heading">
-<h2 id="charts-heading">How the models did on held-out pairs</h2>
+<h2 id="charts-heading">Saved run: how the models did on held-out pairs</h2>
 <p><span class="attention">● Attention</span> <span class="mlp">● Padded MLP</span></p>
 <div class="grid">
 <figure><canvas id="ce" width="580" height="260" aria-label="Test cross-entropy over optimizer steps"></canvas><figcaption>Test cross-entropy (log scale)</figcaption></figure>

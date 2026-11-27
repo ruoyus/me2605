@@ -6,7 +6,7 @@
 <title>Variable-Length Attention Lab · ME2605</title>
 <link rel="stylesheet" href="style.css?v=2">
 <script defer src="results.js"></script>
-<script defer src="lab.js?v=2"></script>
+<script defer src="lab.js?v=3"></script>
 </head>
 <body>
 <main>
@@ -34,27 +34,18 @@
 <section aria-labelledby="prompt-heading">
 <h2 id="prompt-heading">Try a prompt</h2>
 <p id="weight-source" class="hint">Predictions use weights from the saved run.</p>
-<form id="prompt-form">
-<div class="controls"><label>Tokens <input id="length" type="number" min="7" max="30" value="7"></label>
+<form id="prompt-form" novalidate>
+<div class="controls"><label>Prompt length <input id="length" type="number" min="7" max="30" value="7"></label>
 <label>Query <select id="query"><option>fruit</option><option>vegetable</option></select></label>
 <button type="button" id="new-example">New held-out pair</button></div>
 <label for="prompt">Prompt <span id="token-count"></span></label>
 <textarea id="prompt" rows="3" spellcheck="false">Items: apple, tree, carrot. Name the fruit:</textarea>
-<p class="hint">Use <code>Items: … Name the fruit:</code> or <code>Items: … Name the vegetable:</code>. Include exactly one fruit and one vegetable. Both models use the same 7–30 token limit in this demo.</p>
+<p class="hint">Edit the prompt to update both predictions. Changing the length adds or removes distractors. Use <code>Items: … Name the fruit:</code> or <code>Items: … Name the vegetable:</code>, with one listed fruit, one listed vegetable, and 7–30 words total.</p>
 <div class="controls"><button type="submit" class="primary">Predict</button><button type="button" id="swap">Swap fruit and vegetable</button></div>
 </form>
 <p id="status" role="status"></p>
 <div class="grid results" id="predictions" aria-live="polite"></div>
 <details><summary>Words you can use</summary><div id="vocab"></div></details>
-</section>
-<section aria-labelledby="charts-heading">
-<h2 id="charts-heading">Saved run: how the models did on held-out pairs</h2>
-<p><span class="attention">● Attention</span> <span class="mlp">● Padded MLP</span></p>
-<div class="grid">
-<figure><canvas id="ce" width="580" height="260" aria-label="Test cross-entropy over optimizer steps"></canvas><figcaption>Test cross-entropy (log scale)</figcaption></figure>
-<figure><canvas id="acc" width="580" height="260" aria-label="Final test accuracy by prompt length"></canvas><figcaption>Final accuracy by prompt length</figcaption></figure>
-</div>
-<p id="run-details" class="hint"></p>
 </section>
 <section aria-labelledby="trace-heading">
 <h2 id="trace-heading">Inspect the attention scores</h2>

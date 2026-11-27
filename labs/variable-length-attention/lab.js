@@ -6,24 +6,33 @@ const fruit = new Set(data.fruits);
 const vegetable = new Set(data.vegetables);
 const distractor = new Set(data.distractors);
 const promptField = byId("prompt");
+const lengthField = byId("length");
+const queryField = byId("query");
 let liveWeights = null;
 const dot = (a, b) => a.reduce((sum, v, i) => sum + v * b[i], 0);
 const matvec = (matrix, vector) => matrix.map(row => dot(row, vector));
 const argmax = xs => xs.reduce((i, x, j) => x > xs[i] ? j : i, 0);
 const rate = n => (100 * n).toFixed(1) + "%";
 
-function inspectPrompt(text) {
-  const words = text.toLowerCase().match(/[a-z]+/g) || [];
-  if (words.length < 7 || words.length > 30) throw Error("Enter a prompt with 7–30 tokens.");
+function promptWords() {
+  return promptField.value.toLowerCase().match(/[\p{L}\p{N}_]+/gu) || [];
+}
+
+function inspectPrompt(words, checkLength = true) {
+  if (checkLength && (words.length < 7 || words.length > 30)) {
+    throw Error("This prompt has " + words.length + " words. Use a total of 7–30.");
+  }
   const [name, the, query] = words.slice(-3);
   if (words[0] !== "items" || name !== "name" || the !== "the" || !["fruit", "vegetable"].includes(query)) {
     throw Error("Use the template “Items: … Name the fruit:” or “Items: … Name the vegetable:”");
   }
   const items = words.slice(1, -3);
+  const unknown = items.find(w => !fruit.has(w) && !vegetable.has(w) && !distractor.has(w));
+  if (unknown) throw Error("“" + unknown + "” is outside the lab vocabulary. Check “Words you can use”.");
   const fruits = items.filter(w => fruit.has(w));
   const vegetables = items.filter(w => vegetable.has(w));
-  if (fruits.length !== 1 || vegetables.length !== 1 || items.some(w => !fruit.has(w) && !vegetable.has(w) && !distractor.has(w))) {
-    throw Error("Use exactly one listed fruit, one listed vegetable, and listed distractors.");
+  if (fruits.length !== 1 || vegetables.length !== 1) {
+    throw Error("Include exactly one fruit and one vegetable.");
   }
   return {words, query, target: query === "fruit" ? fruits[0] : vegetables[0], fruits, vegetables};
 }
@@ -71,21 +80,25 @@ function showCard(name, cls, logits, target) {
 function printPrompt(words) {
   return "Items: " + words.slice(1, -3).join(", ") + ". Name the " + words[words.length - 1] + ":";
 }
-function updateCount() {
-  byId("token-count").textContent = "· " + ((promptField.value.match(/[a-z]+/gi) || []).length) + " tokens";
+function updateControls(words) {
+  byId("token-count").textContent = "· " + words.length + " " + (words.length === 1 ? "token" : "tokens");
+  lengthField.value = words.length;
+  const query = words.at(-1);
+  if (query === "fruit" || query === "vegetable") queryField.value = query;
 }
-function run() {
-  updateCount();
+function run(syncControls = true) {
+  const words = promptWords();
+  if (syncControls) updateControls(words);
   const cards = byId("predictions");
   const trace = byId("trace");
   cards.replaceChildren(); trace.replaceChildren();
   try {
-    const inp = inspectPrompt(promptField.value);
+    const inp = inspectPrompt(words);
     const ids = inp.words.map(w => wordIds.get(w));
     const raw = predictAttention(ids);
     cards.append(showCard("Attention", "", raw.logits, inp.target),
       showCard("Padded MLP", "mlp-card", predictMlp(ids), inp.target));
-    byId("status").textContent = "";
+    byId("status").textContent = "Expected answer: " + inp.target;
     const largest = Math.max(1e-12, ...raw.scores.map(Math.abs));
     raw.scores.forEach((score, j) => {
       const box = element("div", "", "score" + (inp.words[j] === inp.target ? " target" : ""));
@@ -98,22 +111,48 @@ function run() {
     byId("status").textContent = error.message;
   }
 }
+
+function shuffle(words) {
+  for (let i = words.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [words[i], words[j]] = [words[j], words[i]];
+  }
+  return words;
+}
+
+function resizePrompt() {
+  const requested = lengthField.valueAsNumber;
+  const current = promptWords();
+  if (!Number.isInteger(requested) || requested < 7 || requested > 30) {
+    updateControls(current);
+    byId("status").textContent = "Choose a prompt length from 7 to 30.";
+    return;
+  }
+  try {
+    inspectPrompt(current, false);
+  } catch (error) {
+    updateControls(current);
+    byId("status").textContent = "Fix the prompt before changing its length. " + error.message;
+    return;
+  }
+  const items = current.slice(1, -3);
+  while (items.length > requested - 4) {
+    items.splice(items.findLastIndex(word => distractor.has(word)), 1);
+  }
+  const available = shuffle(data.distractors.filter(word => !items.includes(word)));
+  items.push(...available.slice(0, requested - 4 - items.length));
+  promptField.value = printPrompt(["items", ...items, ...current.slice(-3)]);
+  run();
+}
+
 function newExample() {
-  const requested = Number(byId("length").value);
+  const requested = lengthField.valueAsNumber;
   const n = Number.isFinite(requested) ? Math.min(30, Math.max(7, Math.trunc(requested))) : 7;
-  byId("length").value = n;
   const i = Math.floor(Math.random() * data.fruits.length);
   const j = (7 * i + Math.floor(Math.random() * 6)) % data.vegetables.length;
-  const shuffle = a => {
-    for (let k = a.length - 1; k > 0; k--) {
-      const swap = Math.floor(Math.random() * (k + 1));
-      [a[k], a[swap]] = [a[swap], a[k]];
-    }
-    return a;
-  };
   const words = shuffle([data.fruits[i], data.vegetables[j],
     ...shuffle([...data.distractors]).slice(0, n - 6)]);
-  promptField.value = printPrompt(["items", ...words, "name", "the", byId("query").value]);
+  promptField.value = printPrompt(["items", ...words, "name", "the", queryField.value]);
   run();
 }
 
@@ -138,38 +177,17 @@ function plot(canvas, series, xMin, xMax, yMin, yMax, xTicks, yTicks, labelY, la
     points.forEach(([x, y]) => {g.beginPath();g.fillStyle = color;g.arc(sx(x), sy(y), 3.5, 0, Math.PI * 2);g.fill();});
   });
 }
-const frames = name => data.models[name].frames;
-const last = name => frames(name)[frames(name).length - 1];
-const seriesFor = get => ["attention", "mlp"].map((name, i) => ({
-  color: i ? "#a34c27" : "#146354", points: get(name)
-}));
-function charts() {
-  const ce = seriesFor(name => frames(name).map(row => [row.step, Math.log10(Math.max(row.ce, 1e-12))]));
-  const lo = Math.floor(Math.min(...ce.flatMap(s => s.points.map(pt => pt[1]))));
-  const hi = Math.ceil(Math.max(...ce.flatMap(s => s.points.map(pt => pt[1]))));
-  const stride = Math.max(1, Math.ceil((hi - lo) / 7));
-  const marks = [];
-  for (let j = lo; j <= hi; j += stride) marks.push(j);
-  plot(byId("ce"), ce, 0, data.steps, lo, hi, [0, data.steps / 2, data.steps], marks,
-    y => (10 ** y >= 1 ? String(10 ** y) : (10 ** y).toExponential(0)), String);
-  const accuracy = seriesFor(name => Object.entries(last(name).by_length).map(([len, [right, all]]) => [+len, right / all]));
-  plot(byId("acc"), accuracy, 7, 30, 0, 1, [7, 10, 15, 20, 25, 30],
-    [0, .25, .5, .75, 1], y => Math.round(y * 100) + "%", String);
-  byId("run-details").textContent = "Seed " + data.seed + " · " + data.train.toLocaleString() + " training prompts · " +
-    data.test.toLocaleString() + " held-out prompts · Attention " + last("attention").correct.toLocaleString() +
-    " / " + data.test.toLocaleString() + " · MLP " + last("mlp").correct.toLocaleString() + " / " + data.test.toLocaleString();
-}
-
 byId("prompt-form").addEventListener("submit", event => { event.preventDefault(); run(); });
-promptField.addEventListener("input", updateCount);
+promptField.addEventListener("input", () => run());
+lengthField.addEventListener("change", resizePrompt);
 byId("new-example").addEventListener("click", newExample);
-byId("query").addEventListener("change", () => {
-  promptField.value = promptField.value.replace(/(name the )\w+(:?)/i, "$1" + byId("query").value + ":");
+queryField.addEventListener("change", () => {
+  promptField.value = promptField.value.replace(/(\bname\s+the\s+)(?:fruit|vegetable)\b\s*:?\s*$/i, "$1" + queryField.value + ":");
   run();
 });
 byId("swap").addEventListener("click", () => {
   try {
-    const {words, fruits, vegetables} = inspectPrompt(promptField.value);
+    const {words, fruits, vegetables} = inspectPrompt(promptWords());
     promptField.value = printPrompt(words.map(w => w === fruits[0] ? vegetables[0] : w === vegetables[0] ? fruits[0] : w));
     run();
   } catch (error) {
@@ -218,7 +236,7 @@ function startWorker(steps) {
     worker = new Worker("trainer.js?v=2");
   } catch (error) {
     trainingButtons(false);
-    byId("training-status").textContent = "Live training needs an HTTPS page or a local web server. The saved run still works here.";
+    byId("training-status").textContent = "Live training needs an HTTPS page or a local web server. You can still try prompts with the saved weights.";
     return;
   }
   const currentWorker = worker;
@@ -236,7 +254,7 @@ function startWorker(steps) {
     byId("weight-source").textContent = "Predictions use live weights at step " + frame.step.toLocaleString() + ".";
     liveLosses.push(...frame.losses);
     livePlot();
-    run();
+    run(false);
     if (!initialized) {
       initialized = true;
       if (pending) {
@@ -285,4 +303,4 @@ byId("saved").addEventListener("click", () => {
   run();
 });
 
-run(); charts();
+run();
